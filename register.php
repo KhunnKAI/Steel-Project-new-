@@ -175,11 +175,7 @@
             
             <form>
                 <div class="form-group">
-                    <input type="text" class="form-input" placeholder="ชื่อ" required>
-                </div>
-                
-                <div class="form-group">
-                    <input type="text" class="form-input" placeholder="นามสกุล" required>
+                    <input type="text" class="form-input" placeholder="ชื่อ-นามสกุล" required>
                 </div>
                 
                 <div class="form-group">

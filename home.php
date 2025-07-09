@@ -124,39 +124,6 @@
             box-shadow: 0 8px 32px rgba(0,0,0,0.3);
         }
 
-        .elephant {
-            width: 50px;
-            height: 50px;
-            background: #2c5477;
-            position: relative;
-        }
-
-        .elephant::before {
-            content: '';
-            position: absolute;
-            top: -8px;
-            right: -12px;
-            width: 20px;
-            height: 20px;
-            background: #dc3545;
-            border-radius: 50%;
-            box-shadow: 
-                8px 0 0 #dc3545,
-                4px -6px 0 #dc3545,
-                12px -6px 0 #dc3545,
-                -2px -4px 0 #dc3545;
-        }
-
-        .elephant-shape {
-            clip-path: polygon(
-                20% 10%, 35% 0%, 50% 10%, 65% 0%, 80% 15%,
-                90% 30%, 85% 50%, 75% 70%, 60% 85%, 40% 90%,
-                25% 85%, 15% 70%, 10% 50%, 15% 30%
-            );
-            width: 100%;
-            height: 100%;
-        }
-
         .hero-title {
             font-size: 42px;
             font-weight: bold;
@@ -176,58 +143,90 @@
             padding: 40px 20px;
         }
 
-        /* Video Section */
         .video-section {
             background: white;
-            border-radius: 12px;
             padding: 30px;
-            margin-bottom: 40px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
         }
-
-        .video-title {
-            font-size: 24px;
-            font-weight: 600;
-            text-align: center;
-            color: #333;
-            margin-bottom: 20px;
-        }
-
-        .video-container {
+        
+        /* Responsive YouTube Video Container */
+        .youtube-container {
             position: relative;
             width: 100%;
-            max-width: 600px;
-            margin: 0 auto;
-            aspect-ratio: 16/9;
-            background: #e9ecef;
+            height: 0;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            margin-bottom: 20px;
+        }
+        
+        .youtube-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
         }
-
-        .video-container:hover {
-            background: #dee2e6;
+        
+        /* Fixed size YouTube video */
+        .youtube-fixed {
+            width: 100%;
+            max-width: 800px;
+            height: 450px;
+            display: block;
+            margin: 0 auto 20px;
+            border-radius: 8px;
         }
-
-        .play-button {
-            width: 60px;
-            height: 60px;
-            background: rgba(255,255,255,0.9);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            color: #333;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            transition: transform 0.3s ease;
+        
+        /* Small YouTube video */
+        .youtube-small {
+            width: 100%;
+            max-width: 480px;
+            height: 270px;
+            display: block;
+            margin: 0 auto 20px;
+            border-radius: 8px;
         }
-
-        .play-button:hover {
-            transform: scale(1.1);
+        
+        .content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .how-to {
+            background: #e8f4f8;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .code-block {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .grid-item {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
         /* Products Section */
@@ -438,9 +437,14 @@
     <main class="main-content">
         <!-- Video Section -->
         <section class="video-section">
-            <h2 class="video-title">วิธีการสั่งซื้อ</h2>
-            <div class="video-container" onclick="playVideo()">
-                <div class="play-button">▶</div>
+            <div class="youtube-container">
+                <iframe 
+                    src="https://www.youtube.com/embed/dQw4w9WgXcQ" 
+                    title="YouTube video player" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                    allowfullscreen>
+                </iframe>
             </div>
         </section>
 
