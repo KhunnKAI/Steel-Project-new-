@@ -14,7 +14,6 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f5f5f5;
-            color: #333;
         }
 
         .header {
@@ -39,32 +38,33 @@
             font-size: 18px;
         }
 
-        .nav-links {
+        .header-nav {
             display: flex;
             gap: 20px;
             align-items: center;
-        }
-
-        .nav-links a {
-            color: white;
-            text-decoration: none;
             font-size: 14px;
         }
 
-        .nav-icons {
+        .header-nav a {
+            color: white;
+            text-decoration: none;
+        }
+
+        .header-icons {
             display: flex;
             gap: 10px;
         }
 
-        .nav-icon {
+        .header-icons .icon {
             width: 35px;
             height: 35px;
-            background-color: rgba(255,255,255,0.2);
+            background-color: white;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
+            color: #d32f2f;
+            font-weight: bold;
         }
 
         .main-container {
@@ -292,15 +292,16 @@
 </head>
 <body>
     <header class="header">
-        <div class="logo">🐘</div>
-        <nav class="nav-links">
+        <div class="logo">
+            <img src="image/logo.png" width="100px"></div>
+        <div class="header-nav">
             <a href="#">หน้าหลัก</a>
             <a href="#">ติดต่อเรา</a>
-        </nav>
-        <div class="nav-icons">
-            <div class="nav-icon">🛒</div>
-            <div class="nav-icon">🔔</div>
-            <div class="nav-icon">👤</div>
+        </div>
+        <div class="header-icons">
+            <div class="icon">🛒</div>
+            <div class="icon">🔔</div>
+            <div class="icon">👤</div>
         </div>
     </header>
 

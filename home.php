@@ -14,87 +14,58 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f8f9fa;
-            line-height: 1.6;
         }
 
         /* Header Styles */
         .header {
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            background-color: #c41e3a;
             color: white;
-            padding: 12px 0;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .header-container {
-            max-width: 1200px;
-            margin: 0 auto;
+            padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 20px;
         }
 
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .home-icon {
-            width: 24px;
-            height: 24px;
-            background: white;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        .home-icon:hover {
-            background: #f8f9fa;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 20px;
-        }
-
-        .nav-links a {
-            color: white;
-            text-decoration: none;
-            font-weight: 500;
-            transition: opacity 0.3s ease;
-        }
-
-        .nav-links a:hover {
-            opacity: 0.8;
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .user-icon, .cart-icon, .menu-icon {
-            width: 32px;
-            height: 32px;
-            background: rgba(255,255,255,0.2);
+        .logo {
+            width: 40px;
+            height: 40px;
+            background-color: white;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
+            color: #c41e3a;
+            font-weight: bold;
+            font-size: 18px;
         }
 
-        .user-icon:hover, .cart-icon:hover, .menu-icon:hover {
-            background: rgba(255,255,255,0.3);
+        .header-nav {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .header-nav a {
+            color: white;
+            text-decoration: none;
+        }
+
+        .header-icons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .header-icons .icon {
+            width: 35px;
+            height: 35px;
+            background-color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #d32f2f;
+            font-weight: bold;
         }
 
         /* Hero Section */
@@ -111,7 +82,7 @@
             padding: 0 20px;
         }
 
-        .logo {
+        .logo-page {
             width: 100px;
             height: 100px;
             background: white;
@@ -402,30 +373,25 @@
 <body>
     <!-- Header -->
     <header class="header">
-        <div class="header-container">
-            <div class="header-left">
-                <div class="home-icon">
-                    <img src="image/logo.png" width="70px">
-                </div>
-                <nav class="nav-links">
-                    <a href="http://localhost/NewProject/home.php#">หน้าแรก</a>
-                    <a href="#">สินค้า</a>
-                    <a href="#">เกี่ยวกับเรา</a>
-                    <a href="#">ติดต่อ</a>
-                </nav>
-            </div>
-            <div class="header-right">
-                <div class="user-icon">👤</div>
-                <div class="cart-icon">🛒</div>
-                <div class="menu-icon">☰</div>
-            </div>
+        <div class="logo">
+            <img src="image/logo.png" width="100px"></div>
+        <div class="header-nav">
+            <a href="#">หน้าหลัก</a>
+            <a href="#">สินค้า</a>
+            <a href="#">เกี่ยวกับเรา</a>
+            <a href="#">ติดต่อเรา</a>
+        </div>
+        <div class="header-icons">
+            <div class="icon">🛒</div>
+            <div class="icon">🔔</div>
+            <div class="icon">👤</div>
         </div>
     </header>
 
     <!-- Hero Section -->
     <section class="hero">
         <div class="hero-container">
-            <div class="logo">
+            <div class="logo-page">
                 <img src="image/logo.png" width="300px">
             </div>
             <h1 class="hero-title">ช้างเหล็กไทย</h1>
