@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>เหล็กเส้นกลม RBxx</title>
+    <link href="header.css" rel="stylesheet">
+    <link href="footer.css" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -14,57 +16,6 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f5f5f5;
-        }
-
-        .header {
-            background-color: #c41e3a;
-            color: white;
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            width: 40px;
-            height: 40px;
-            background-color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #c41e3a;
-            font-weight: bold;
-            font-size: 18px;
-        }
-
-        .header-nav {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-            font-size: 14px;
-        }
-
-        .header-nav a {
-            color: white;
-            text-decoration: none;
-        }
-
-        .header-icons {
-            display: flex;
-            gap: 10px;
-        }
-
-        .header-icons .icon {
-            width: 35px;
-            height: 35px;
-            background-color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #d32f2f;
-            font-weight: bold;
         }
 
         .main-container {
@@ -291,19 +242,8 @@
     </style>
 </head>
 <body>
-    <header class="header">
-        <div class="logo">
-            <img src="image/logo.png" width="100px"></div>
-        <div class="header-nav">
-            <a href="#">หน้าหลัก</a>
-            <a href="#">ติดต่อเรา</a>
-        </div>
-        <div class="header-icons">
-            <div class="icon">🛒</div>
-            <div class="icon">🔔</div>
-            <div class="icon">👤</div>
-        </div>
-    </header>
+    <!-- Header -->
+    <?php include("header.php");?>
 
     <div class="main-container">
         <div class="breadcrumb">
@@ -359,5 +299,8 @@
             });
         });
     </script>
+
+    <!-- Footer -->
+    <?php include("footer.php");?>
 </body>
 </html>
