@@ -1,1 +1,1 @@
-hello
+<?php include("home.php"); ?>

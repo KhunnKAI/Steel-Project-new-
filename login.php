@@ -1,3 +1,26 @@
+<?php
+require_once 'controllers/config.php';
+require_once 'models/user.php';
+require_once 'controllers/auth.php';
+
+$auth = new AuthController();
+
+// ตรวจสอบว่าเข้าสู่ระบบแล้วหรือไม่
+if($auth->isLoggedIn()) {
+    header("Location: index.php");
+    exit();
+}
+
+// ประมวลผลการเข้าสู่ระบบ
+if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['login'])) {
+    $auth->login();
+}
+
+// ประมวลผลการลืมรหัสผ่าน
+if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['forgot_password'])) {
+    $auth->forgotPassword();
+}
+?>
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -309,22 +332,21 @@
                 <h2 class="form-title">เข้าสู่ระบบ</h2>
             </div>
             
-            <form>
+            <form method="POST">
                 <div class="form-group">
-                    <input type="text" class="form-input" placeholder="ชื่อผู้ใช้">
+                    <input type="email" name="email" class="form-input" placeholder="อีเมล" required>
                 </div>
                 
                 <div class="form-group">
-                    <input type="password" class="form-input" placeholder="รหัสผ่าน">
+                    <input type="password" name="password" class="form-input" placeholder="รหัสผ่าน" required>
                 </div>
                 
-                <button type="submit" class="login-btn">เข้าสู่ระบบ</button>
+                <button type="submit" name="login" class="login-btn">เข้าสู่ระบบ</button>
 
                 <div class="forgot-password">
                     <a href="#" class="forgot-link" onclick="openForgotPasswordModal()">ลืมรหัสผ่าน</a>
-                    <a href="http://localhost/NewProject/register.php" class="register-link">ลงทะเบียน</a>
+                    <a href="register.php" class="register-link">ลงทะเบียน</a>
                 </div>
-
             </form>
         </div>
     </div>

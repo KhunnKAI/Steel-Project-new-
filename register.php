@@ -1,3 +1,22 @@
+<?php
+require_once 'controllers/config.php';
+require_once 'models/user.php';
+require_once 'controllers/auth.php';
+
+$auth = new AuthController();
+
+// ตรวจสอบว่าเข้าสู่ระบบแล้วหรือไม่
+if($auth->isLoggedIn()) {
+    header("Location: index.php");
+    exit();
+}
+
+// ประมวลผลการลงทะเบียน
+if($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $auth->register();
+    header("Location: login.php");
+}
+?>
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -173,31 +192,31 @@
                 <h2 class="form-title">ลงทะเบียน</h2>
             </div>
             
-            <form>
+            <form method="POST">
                 <div class="form-group">
-                    <input type="text" class="form-input" placeholder="ชื่อ-นามสกุล" required>
+                    <input type="text" name="name" class="form-input" placeholder="ชื่อ-นามสกุล" required>
                 </div>
                 
                 <div class="form-group">
-                    <input type="email" class="form-input" placeholder="อีเมล" required>
+                    <input type="email" name="email" class="form-input" placeholder="อีเมล" required>
                 </div>
                 
                 <div class="form-group">
-                    <input type="tel" class="form-input" placeholder="เบอร์โทรศัพท์" required>
+                    <input type="tel" name="phone" class="form-input" placeholder="เบอร์โทรศัพท์" required>
                 </div>
                 
                 <div class="form-group">
-                    <input type="password" class="form-input" placeholder="รหัสผ่าน" required>
+                    <input type="password" name="password" class="form-input" placeholder="รหัสผ่าน" required>
                 </div>
                 
                 <div class="form-group">
-                    <input type="password" class="form-input" placeholder="ยืนยันรหัสผ่าน" required>
+                    <input type="password" name="confirm_password" class="form-input" placeholder="ยืนยันรหัสผ่าน" required>
                 </div>
                 
                 <button type="submit" class="register-btn">ลงทะเบียน</button>
                 
                 <div class="login-link">
-                    <a href="http://localhost/newproject/login.php?#">มีบัญชีอยู่แล้ว? เข้าสู่ระบบ</a>
+                    <a href="login.php">มีบัญชีอยู่แล้ว? เข้าสู่ระบบ</a>
                 </div>
             </form>
         </div>
