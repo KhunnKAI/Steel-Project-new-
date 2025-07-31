@@ -97,7 +97,7 @@
             border: none;
             background: #2c3e50;
             color: white;
-            border-radius: 50%;
+            border-radius: 5px;
             cursor: pointer;
             font-size: 18px;
             display: flex;
