@@ -20,7 +20,8 @@
 
         .main-content {
             max-width: 800px;
-            margin: 0 auto;
+            margin: 30px auto;
+            padding: 0 20px;
             background: white;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.08);
@@ -118,42 +119,108 @@
             gap: 20px;
         }
 
-        .payment-methods {
-            display: flex;
-            gap: 20px;
+        .transfer-info {
             margin-bottom: 30px;
         }
 
-        .payment-option {
-            flex: 1;
+        
+        .bank-detail {
+            margin-bottom: 8px;
+            padding: 5px 0;
         }
 
-        .payment-option input[type="radio"] {
-            display: none;
+        .bank-detail strong {
+            display: inline-block;
+            width: 100px;
+            color: #666;
         }
 
-        .payment-option label {
-            display: block;
-            height: 120px;
-            padding: 20px;
-            border: 1px solid #d0d0d0;
-            border-radius: 4px;
-            background: #f8f8f8;
+        .bank-value {
+            color: #333;
+            font-weight: 500;
+        }
+
+        .qr-section {
             text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .qr-section h3 {
+            color: #333;
+            text-align: left;
+            margin-bottom: 15px;
+            font-weight: normal;
+        }
+
+        .qr-container {
+            background: #f0f0f0;
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 30px;
+            margin: 15px 0;
             cursor: pointer;
-            transition: all 0.2s;
-            font-weight: 400;
+            transition: all 0.3s ease;
         }
 
-        .payment-option input[type="radio"]:checked + label {
-            border-color: #333;
+        .qr-container:hover {
+            background: #e8e8e8;
+            border-color: #999;
+        }
+
+        .qr-code-display {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 15px;
             background: white;
+            border: 2px solid #333;
+            border-radius: 8px;
+            display: none;
+            position: relative;
+            overflow: hidden;
         }
 
-        .payment-icon {
-            font-size: 32px;
-            margin-bottom: 12px;
+        .qr-code-display.active {
             display: block;
+        }
+
+        .qr-pattern {
+            width: 100%;
+            height: 100%;
+            background: 
+                /* Corner detection patterns */
+                radial-gradient(circle at 20% 20%, #000 15%, transparent 20%),
+                radial-gradient(circle at 80% 20%, #000 15%, transparent 20%),
+                radial-gradient(circle at 20% 80%, #000 15%, transparent 20%),
+                /* Data pattern */
+                repeating-linear-gradient(45deg, #000 0px, #000 2px, transparent 2px, transparent 6px),
+                repeating-linear-gradient(-45deg, #000 0px, #000 1px, transparent 1px, transparent 4px);
+            background-size: 
+                40px 40px,
+                40px 40px,
+                40px 40px,
+                8px 8px,
+                6px 6px;
+        }
+
+        .qr-placeholder {
+            color: #999;
+            font-size: 16px;
+        }
+
+        .generate-qr-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .generate-qr-btn:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
         }
 
         .order-summary {
@@ -354,30 +421,24 @@
                 <div class="section">
                     <div class="section-title">วิธีการชำระเงิน</div>
                     
-                    <div class="payment-methods">
-                        <div class="payment-option">
-                            <input type="radio" id="bank-transfer" name="payment" value="bank-transfer" checked>
-                            <label for="bank-transfer">
-                                <span class="payment-icon">🏦</span>
-                                โอนเงิน
-                            </label>
-                        </div>
-                        <div class="payment-option">
-                            <input type="radio" id="credit-card" name="payment" value="credit-card">
-                            <label for="credit-card">
-                                <span class="payment-icon">💳</span>
-                                บัตรเครดิต
-                            </label>
-                        </div>
-                        <div class="payment-option">
-                            <input type="radio" id="cash" name="payment" value="cash">
-                            <label for="cash">
-                                <span class="payment-icon">💵</span>
-                                เงินสด
-                            </label>
-                        </div>
-                    </div>
-                </div>
+            <div class="bank-detail">
+                <strong>ธนาคาร:</strong>
+                <span class="bank-value">กรุงไทย</span>
+            </div>
+            <div class="bank-detail">
+                <strong>ชื่อบัญชี:</strong>
+                <span class="bank-value">ปวิชญา อุดมสิทธิพัฒนา</span>
+            </div>
+            <div class="bank-detail">
+                <strong>เลขที่บัญชี:</strong>
+                <span class="bank-value">111-1-11111-1</span>
+            </div>
+        </div>
+
+        <div class="qr-section">
+            <h3>หรือสแกนคิวอาร์โค้ด</h3>
+            <img src="image/qr.jpg" width="500px">
+        </div>
 
                 <div class="order-summary">
                     <h3>สรุปคำสั่งซื้อ</h3>
