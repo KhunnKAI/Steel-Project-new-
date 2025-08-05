@@ -400,16 +400,7 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label>จังหวัด <span class="required">*จำเป็น</span></label>
-                            <select id="province" name="province" required>
-                                <option value="">เลือกจังหวัด</option>
-                                <option value="กรุงเทพมหานคร">กรุงเทพมหานคร</option>
-                                <option value="นนทบุรี">นนทบุรี</option>
-                                <option value="ปทุมธานี">ปทุมธานี</option>
-                                <option value="สมุทรปราการ">สมุทรปราการ</option>
-                                <option value="เชียงใหม่">เชียงใหม่</option>
-                                <option value="ขอนแก่น">ขอนแก่น</option>
-                                <option value="ชลบุรี">ชลบุรี</option>
-                            </select>
+                            <input type="text" id="province" name="province" required>
                         </div>
                         <div class="form-group small">
                             <label>รหัสไปรษณีย์ <span class="required">*จำเป็น</span></label>
