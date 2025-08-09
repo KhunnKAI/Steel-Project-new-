@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>เหล็กเส้นกลม RBxx</title>
+    <title>สินค้า</title>
     <link href="header.css" rel="stylesheet">
     <link href="footer.css" rel="stylesheet">
     <style>
@@ -247,7 +247,7 @@
 
     <div class="main-container">
         <div class="breadcrumb">
-            < <a href="#">กลับไปหน้าหลัก</a>
+            < <a href="allproduct.php">กลับไปหน้าสินค้า</a>
         </div>
 
         <div class="product-container">

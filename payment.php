@@ -122,8 +122,64 @@
         .transfer-info {
             margin-bottom: 30px;
         }
-
         
+.address-section {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .address-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .address-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .address-item.selected {
+            border-color: #c41e3a;
+            background-color: #fff5f5;
+        }
+
+        .address-item:hover {
+            border-color: #c41e3a;
+        }
+
+        .address-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .address-details {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .add-address-btn {
+            background: #1e3a5f;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-size: 12px;
+            cursor: pointer;
+            float: right;
+            margin-top: -40px;
+        }
+
+
         .bank-detail {
             margin-bottom: 8px;
             padding: 5px 0;
@@ -378,7 +434,39 @@
 
                 <div class="section">
                     <div class="section-title">ที่อยู่จัดส่ง</div>
+                    <button class="add-address-btn">+ เพิ่มที่อยู่</button>
                     
+                    <!-- Address Section -->
+            <div class="address-section">
+                
+                <div class="address-item selected">
+                    <div class="address-name">บางลาง ปริญญา วันบาร</div>
+                    <div class="address-details">
+                        011-111-1111<br>
+                        155/88 หมู่ 5 ซอย สีกาน 29 ถนน สีกาน<br>
+                        แขวง คืนนักติ เขต คืนติดก กรุงเทพมหานคร 88888
+                    </div>
+                </div>
+
+                <div class="address-item">
+                    <div class="address-name">บายนท์ บานา</div>
+                    <div class="address-details">
+                        022-222-2222<br>
+                        245/4 หมู่ 8 ซอย ซองสราร์ 3 ถนน สันท์<br>
+                        แขวง สสัน เขต คำอลีซอง กรุงเทพมหานคร 33333
+                    </div>
+                </div>
+
+                <div class="address-item">
+                    <div class="address-name">บายปฏา กีน</div>
+                    <div class="address-details">
+                        033-333-3333<br>
+                        1 หมู่ 7 ซอย บานา 34 ถนน บานา<br>
+                        แขวง ยักลา เขต ยักกำ กรุงเทพมหานคร 55555
+                    </div>
+                </div>
+                    
+                    <!--
                     <div class="form-row">
                         <div class="form-group full-width">
                             <label>ที่อยู่ <span class="required">*จำเป็น</span></label>
@@ -407,6 +495,7 @@
                             <input type="text" id="zipcode" name="zipcode" required maxlength="5">
                         </div>
                     </div>
+                    -->
                 </div>
 
                 <div class="section">
@@ -541,6 +630,138 @@
                 value = value.substring(0, 10);
             }
             e.target.value = value;
+        });
+        </script>
+
+        </html>="address-item selected">
+                    <div class="address-name">บางลาง ปริญญา วันบาร</div>
+                    <div class="address-details">
+                        011-111-1111<br>
+                        155/88 หมู่ 5 ซอย สีกาน 29 ถนน สีกาน<br>
+                        แขวง คืนนักติ เขต คืนติดก กรุงเทพมหานคร 88888
+                    </div>
+                </div>
+
+                <div class="address-item">
+                    <div class="address-name">บายนท์ บานา</div>
+                    <div class="address-details">
+                        022-222-2222<br>
+                        245/4 หมู่ 8 ซอย ซองสราร์ 3 ถนน สันท์<br>
+                        แขวง สสัน เขต คำอลีซอง กรุงเทพมหานคร 33333
+                    </div>
+                </div>
+
+                <div class="address-item">
+                    <div class="address-name">บายปฏา กีน</div>
+                    <div class="address-details">
+                        033-333-3333<br>
+                        1 หมู่ 7 ซอย บานา 34 ถนน บานา<br>
+                        แขวง ยักลา เขต ยักกำ กรุงเทพมหานคร 55555
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Details Section -->
+        <div class="form-section payment-section">
+            <h3 class="section-title">วิธีการชำระเงิน</h3>
+            
+            <div class="form-group">
+                <label class="form-label">ธนาคาร</label>
+                <span>กรุงไทย</span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">ชื่อบัญชี</label>
+                <span>ปริญญา สุดสิลาพีพัฒนา</span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">เลขที่บัญชี</label>
+                <span>111-1-11111-1</span>
+            </div>
+
+            <div class="payment-method">
+                <div class="form-label">หรือสแกนเก็บข้อมูลได้ที่</div>
+                
+                <div class="elephant-icon">
+                    <div class="elephant"></div>
+                    <div class="gear gear1"></div>
+                    <div class="gear gear2"></div>
+                </div>
+            </div>
+
+            <!-- Services List -->
+            <div class="service-list">
+                <h4 class="service-title">สรุปค่าสำคัญ</h4>
+                
+                <div class="service-item">
+                    <div>
+                        <div class="service-name">เพนโดมิล D816</div>
+                        <div class="service-details">จำนวน: 50 ชิ้น × 100 บาท</div>
+                    </div>
+                    <div class="service-price">5,000 ฿</div>
+                </div>
+
+                <div class="service-item">
+                    <div>
+                        <div class="service-name">เพนโดมิน 3mm</div>
+                        <div class="service-details">จำนวน: 10 ชิ้น × 250 บาท</div>
+                    </div>
+                    <div class="service-price">2,500 ฿</div>
+                </div>
+
+                <div class="service-item">
+                    <div>
+                        <div class="service-name">ข้อมูลอีก 2 รัง</div>
+                        <div class="service-details">จำนวน: 20 ชิ้น × 150 บาท</div>
+                    </div>
+                    <div class="service-price">3,000 ฿</div>
+                </div>
+
+                <div class="total-section">
+                    <div class="total-item">
+                        <span>ราคาสินค้า</span>
+                        <span>10,500 ฿</span>
+                    </div>
+                    <div class="total-item">
+                        <span>ค่าจัดส่ง</span>
+                        <span>500 ฿</span>
+                    </div>
+                    <div class="total-item">
+                        <span>ภาษี (7%)</span>
+                        <span>770 ฿</span>
+                    </div>
+                    <div class="total-item total-final">
+                        <span>รวมทั้งสิน</span>
+                        <span>11,770 ฿</span>
+                    </div>
+                </div>
+            </div>
+
+            <button class="submit-btn">ยืนยันการสั่งซื้อ</button>
+        </div>
+    </div>
+
+    <script>
+        // Address selection functionality
+        document.querySelectorAll('.address-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.address-item').forEach(addr => {
+                    addr.classList.remove('selected');
+                });
+                this.classList.add('selected');
+            });
+        });
+
+        // Form submission
+        document.querySelector('.submit-btn').addEventListener('click', function() {
+            alert('การสั่งซื้อเสร็จสมบูรณ์!');
+        });
+
+        // Add address button
+        document.querySelector('.add-address-btn').addEventListener('click', function() {
+            alert('เพิ่มที่อยู่ใหม่');
         });
     </script>
 </body>

@@ -353,7 +353,7 @@
         <!-- Products Section -->
         <section class="products-section">
             <div class="products-header">
-                <h2 class="products-title">สินค้า</h2>
+                <h2 class="products-title">สินค้าขายดี</h2>
                 <div class="search-container">
                     <input type="text" class="search-input" placeholder="ค้นหาสินค้า...">
                     <button class="search-btn">🔍</button>
