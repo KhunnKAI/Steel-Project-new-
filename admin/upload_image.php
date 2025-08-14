@@ -1,0 +1,270 @@
+<?php
+header('Content-Type: application/json; charset=utf-8');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
+
+// Handle OPTIONS request for CORS
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+
+// Database configuration
+$DB_HOST = 'localhost';
+$DB_USER = 'root';
+$DB_PASS = '';
+$DB_NAME = 'teststeel';
+
+function send_json_error($message, $code = 500) {
+    http_response_code($code);
+    echo json_encode([
+        'success' => false,
+        'status' => 'error',
+        'message' => $message
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+function send_json_success($message, $data = null) {
+    $response = [
+        'success' => true,
+        'status' => 'success',
+        'message' => $message
+    ];
+    if ($data !== null) {
+        $response['data'] = $data;
+    }
+    echo json_encode($response, JSON_UNESCAPED_UNICODE);
+}
+
+// Configuration
+$UPLOAD_DIR = 'uploads/products/';
+$MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+$ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+$ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+
+try {
+    // Only allow POST method
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        send_json_error('Only POST method is allowed', 405);
+    }
+
+    // Database connection
+    $conn = new mysqli($DB_HOST, $DB_USER, $DB_PASS, $DB_NAME);
+    if ($conn->connect_error) {
+        send_json_error('Database connection failed');
+    }
+    $conn->set_charset('utf8mb4');
+
+    // Create upload directory if not exists
+    if (!file_exists($UPLOAD_DIR)) {
+        if (!mkdir($UPLOAD_DIR, 0755, true)) {
+            send_json_error('Failed to create upload directory');
+        }
+    }
+
+    // Validate required fields
+    if (!isset($_FILES['image'])) {
+        send_json_error('No image file provided');
+    }
+    if (!isset($_POST['product_id']) || empty($_POST['product_id'])) {
+        send_json_error('Product ID is required');
+    }
+
+    $file = $_FILES['image'];
+    $product_id = trim($_POST['product_id']);
+    $is_main = isset($_POST['is_main']) ? filter_var($_POST['is_main'], FILTER_VALIDATE_BOOLEAN) : false;
+
+    // Validate file upload
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        $error_messages = [
+            UPLOAD_ERR_INI_SIZE => 'File too large (server limit)',
+            UPLOAD_ERR_FORM_SIZE => 'File too large (form limit)',
+            UPLOAD_ERR_PARTIAL => 'File only partially uploaded',
+            UPLOAD_ERR_NO_FILE => 'No file uploaded',
+            UPLOAD_ERR_NO_TMP_DIR => 'No temporary directory',
+            UPLOAD_ERR_CANT_WRITE => 'Cannot write to disk',
+            UPLOAD_ERR_EXTENSION => 'Upload stopped by extension'
+        ];
+        $error_message = isset($error_messages[$file['error']]) 
+            ? $error_messages[$file['error']] 
+            : 'Unknown upload error';
+        send_json_error($error_message);
+    }
+
+    // Check if product exists
+    $check_stmt = $conn->prepare("SELECT product_id, productimage_id FROM Product WHERE product_id = ?");
+    if (!$check_stmt) {
+        send_json_error('Database prepare failed');
+    }
+    $check_stmt->bind_param('s', $product_id);
+    $check_stmt->execute();
+    $result = $check_stmt->get_result();
+
+    if ($result->num_rows === 0) {
+        $check_stmt->close();
+        send_json_error('Product not found', 404);
+    }
+
+    $product_data = $result->fetch_assoc();
+    $current_productimage_id = $product_data['productimage_id'];
+    $check_stmt->close();
+
+    // Validate file type
+    $file_info = new finfo(FILEINFO_MIME_TYPE);
+    $detected_type = $file_info->file($file['tmp_name']);
+    
+    if (!in_array($file['type'], $ALLOWED_TYPES) && !in_array($detected_type, $ALLOWED_TYPES)) {
+        send_json_error('Invalid file type. Allowed: JPG, PNG, GIF, WebP');
+    }
+
+    // Validate file extension
+    $file_extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    if (!in_array($file_extension, $ALLOWED_EXTENSIONS)) {
+        send_json_error('Invalid file extension');
+    }
+
+    // Validate file size
+    if ($file['size'] > $MAX_FILE_SIZE) {
+        send_json_error('File too large. Maximum size: ' . ($MAX_FILE_SIZE / 1024 / 1024) . 'MB');
+    }
+
+    // Additional security checks
+    if ($file['size'] === 0) {
+        send_json_error('Empty file not allowed');
+    }
+
+    // Check if file is actually an image
+    $image_info = getimagesize($file['tmp_name']);
+    if ($image_info === false) {
+        send_json_error('File is not a valid image');
+    }
+
+    // Generate secure filename
+    $file_extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    $safe_filename = time() . '_' . bin2hex(random_bytes(8)) . '.' . $file_extension;
+    $file_path = $UPLOAD_DIR . $safe_filename;
+
+    // Move uploaded file
+    if (!move_uploaded_file($file['tmp_name'], $file_path)) {
+        send_json_error('Failed to move uploaded file');
+    }
+
+    // Generate image URL
+    $base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') 
+                . '://' . $_SERVER['HTTP_HOST'];
+    $script_dir = dirname($_SERVER['SCRIPT_NAME']);
+    $image_url = $base_url . $script_dir . '/' . $file_path;
+
+    // Generate unique productimage_id
+    $productimage_id = 'IMG' . date('YmdHis') . bin2hex(random_bytes(4));
+
+    // Start transaction
+    $conn->begin_transaction();
+
+    try {
+        // If this is set as main image, or if product has no images yet
+        $should_be_main = $is_main || empty($current_productimage_id);
+
+        // If setting as main, update existing main images
+        if ($should_be_main) {
+            // Remove main flag from all existing images for this product
+            $update_main_stmt = $conn->prepare("
+                UPDATE ProductImage 
+                SET is_main = FALSE, updated_at = NOW() 
+                WHERE product_id = ? OR productimage_id = ?
+            ");
+            if ($update_main_stmt) {
+                $update_main_stmt->bind_param('ss', $product_id, $current_productimage_id);
+                $update_main_stmt->execute();
+                $update_main_stmt->close();
+            }
+        }
+
+        // Insert new image record
+        $insert_stmt = $conn->prepare("
+            INSERT INTO ProductImage (productimage_id, product_id, image_url, is_main, created_at, updated_at) 
+            VALUES (?, ?, ?, ?, NOW(), NOW())
+        ");
+        if (!$insert_stmt) {
+            throw new Exception('Failed to prepare insert statement');
+        }
+
+        $insert_stmt->bind_param('sssi', $productimage_id, $product_id, $image_url, $should_be_main);
+        if (!$insert_stmt->execute()) {
+            throw new Exception('Failed to insert image record');
+        }
+        $insert_stmt->close();
+
+        // Update product's main image reference if this is the main image
+        if ($should_be_main) {
+            $update_product_stmt = $conn->prepare("
+                UPDATE Product 
+                SET productimage_id = ?, updated_at = NOW() 
+                WHERE product_id = ?
+            ");
+            if ($update_product_stmt) {
+                $update_product_stmt->bind_param('ss', $productimage_id, $product_id);
+                $update_product_stmt->execute();
+                $update_product_stmt->close();
+            }
+        }
+
+        // Get total image count for this product
+        $count_stmt = $conn->prepare("
+            SELECT COUNT(*) as total 
+            FROM ProductImage 
+            WHERE product_id = ?
+        ");
+        $count_stmt->bind_param('s', $product_id);
+        $count_stmt->execute();
+        $count_result = $count_stmt->get_result();
+        $total_images = $count_result->fetch_assoc()['total'];
+        $count_stmt->close();
+
+        // Commit transaction
+        $conn->commit();
+
+        // Response data
+        $response_data = [
+            'productimage_id' => $productimage_id,
+            'product_id' => $product_id,
+            'image_url' => $image_url,
+            'filename' => $safe_filename,
+            'is_main' => (bool)$should_be_main,
+            'file_size' => $file['size'],
+            'file_type' => $detected_type,
+            'dimensions' => [
+                'width' => $image_info[0],
+                'height' => $image_info[1]
+            ],
+            'total_images' => (int)$total_images
+        ];
+
+        $message = 'Image uploaded successfully' . ($should_be_main ? ' (set as main image)' : '');
+        send_json_success($message, $response_data);
+
+    } catch (Exception $e) {
+        // Rollback transaction
+        $conn->rollback();
+        
+        // Delete uploaded file if database operation failed
+        if (file_exists($file_path)) {
+            unlink($file_path);
+        }
+        
+        throw $e;
+    }
+
+    $conn->close();
+
+} catch (Exception $e) {
+    error_log("Error in upload_image.php: " . $e->getMessage());
+    send_json_error('Upload failed: ' . $e->getMessage());
+}
+?>

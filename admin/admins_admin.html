@@ -1,0 +1,1877 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดการผู้ดูแล - ระบบจัดการร้านค้า</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter';
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+
+        .navbar-toggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 1001;
+            color: #333;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: none;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-toggle:hover {
+            background: #f8f9fa;
+            transform: scale(1.05);
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            margin-left: 260px;
+            transition: all 0.3s ease;
+            min-height: 100vh;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            background: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .search-add {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .search-container {
+            position: relative;
+        }
+
+        .search-container input[type="text"] {
+            padding: 12px 45px 12px 15px;
+            width: 350px;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .search-container input[type="text"]:focus {
+            outline: none;
+            border-color: #990000;
+            box-shadow: 0 0 0 3px rgba(153, 0, 0, 0.1);
+        }
+
+        .search-container i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+        }
+
+        .add-btn {
+            padding: 12px 24px;
+            background: linear-gradient(45deg, #990000, #cc0000);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .add-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(153, 0, 0, 0.3);
+        }
+
+        .filters-section {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+
+        .filters-row {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-group label {
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .filter-group select {
+            padding: 8px 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+
+        .stat-card.total::before { background: linear-gradient(90deg, #007bff, #0056b3); }
+        .stat-card.active::before { background: linear-gradient(90deg, #28a745, #20c997); }
+        .stat-card.inactive::before { background: linear-gradient(90deg, #dc3545, #c82333); }
+        .stat-card.super::before { background: linear-gradient(90deg, #6f42c1, #5a2d91); }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            color: #555;
+        }
+
+        .admin-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .admin-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #990000, #ff6b6b);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .admin-details {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .admin-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .admin-email {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .role-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .role-super { background: #e7e3ff; color: #6f42c1; }
+        .role-admin { background: #cce5ff; color: #007bff; }
+        .role-moderator { background: #d4edda; color: #28a745; }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-active { background: #d4edda; color: #155724; }
+        .status-inactive { background: #f8d7da; color: #721c24; }
+
+        .date-info {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .last-login {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .login-date {
+            color: #333;
+            font-weight: 500;
+        }
+
+        .login-ip {
+            font-size: 12px;
+            color: #999;
+            font-family: 'Courier New', monospace;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .actions button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .actions button:hover {
+            transform: translateY(-2px);
+        }
+
+        .view-btn {
+            background: linear-gradient(45deg, #17a2b8, #20c997);
+            color: white;
+        }
+
+        .view-btn:hover {
+            box-shadow: 0 4px 12px rgba(23, 162, 184, 0.4);
+        }
+
+        .edit-btn {
+            background: linear-gradient(45deg, #ffc107, #ffb300);
+            color: white;
+        }
+
+        .edit-btn:hover {
+            box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
+        }
+
+        .toggle-btn {
+            background: linear-gradient(45deg, #6c757d, #5a6268);
+            color: white;
+        }
+
+        .toggle-btn:hover {
+            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4);
+        }
+
+        .delete-btn {
+            background: linear-gradient(45deg, #dc3545, #c82333);
+            color: white;
+        }
+
+        .delete-btn:hover {
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 20px;
+        }
+
+        .pagination button {
+            padding: 8px 12px;
+            border: 2px solid #e9ecef;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .pagination button:hover,
+        .pagination button.active {
+            background: #990000;
+            color: white;
+            border-color: #990000;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .modal-header h2 {
+            color: #333;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #990000;
+        }
+
+        .form-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 8px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .permissions-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .permissions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .permission-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background: white;
+            border-radius: 6px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .form-actions button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .save-btn {
+            background: #990000;
+            color: white;
+        }
+
+        .cancel-form-btn {
+            background: #6c757d;
+            color: white;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            background: #940606;
+            color: white;
+            width: 260px;
+            min-width: 260px;
+            height: 100%;
+            position: fixed;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+            box-shadow: 4px 0 20px rgba(0,0,0,0.1);
+        }
+
+        .sidebar.collapsed {
+            width: 0;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .logo {
+            padding: 30px 20px;
+            text-align: center;
+            border-bottom: 1px solid #940606;
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        nav ul {
+            list-style: none;
+            padding: 20px 0;
+        }
+
+        nav li {
+            margin: 5px 0;
+            transition: all 0.3s ease;
+        }
+
+        nav li a {
+            display: flex;
+            align-items: center;
+            padding: 15px 25px;
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+
+        nav li a i {
+            margin-right: 12px;
+            width: 20px;
+            text-align: center;
+        }
+
+        nav li.active a,
+        nav li a:hover {
+            background: #051A37;
+        }
+
+        @media screen and (max-width: 768px) {
+            .navbar-toggle {
+                display: block;
+            }
+
+            .main-content {
+                padding: 80px 20px 20px;
+                margin-left: 0;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .search-container input[type="text"] {
+                width: 100%;
+            }
+
+            .filters-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .admin-info {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+
+            table {
+                font-size: 14px;
+            }
+
+            th, td {
+                padding: 10px 8px;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: -260px;
+                height: 100vh;
+                z-index: 1000;
+            }
+
+            .sidebar.show {
+                left: 0;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .actions button {
+                font-size: 11px;
+                padding: 6px 8px;
+            }
+
+            .modal-content {
+                width: 95%;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="navbar-toggle" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </div>
+
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="logo">
+                <div>
+                    <img src="image_admin/logo_cropped.png" width="100px">
+                </div>
+                <h2>ระบบผู้ดูแล</h2>
+            </div>
+            
+            <nav>
+                <ul>
+                    <li>
+                        <a href="dashboard_admin.html" onclick="showSection('dashboard')">
+                            <i class="fas fa-tachometer-alt"></i>
+                            แดชบอร์ด
+                        </a>
+                    </li>
+                    <li>
+                        <a href="products_admin.html" onclick="showSection('products')">
+                            <i class="fas fa-box"></i>
+                            จัดการสินค้า
+                        </a>
+                    </li>
+                    <li>
+                        <a href="orders_admin.html" onclick="showSection('orders')">
+                            <i class="fas fa-shopping-cart"></i>
+                            จัดการคำสั่งซื้อ
+                        </a>
+                    </li>
+                    <li class="active">
+                        <a href="admins_admin.html" onclick="showSection('admins')">
+                            <i class="fas fa-users-cog"></i>
+                            จัดการผู้ดูแล
+                        </a>
+                    </li>
+                    <li>
+                        <a href="reports_admin.html" onclick="showSection('reports')">
+                            <i class="fas fa-chart-bar"></i>
+                            รายงาน
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div class="header">
+                <h1><i class="fas fa-users-cog"></i> จัดการผู้ดูแล</h1>
+                <div class="search-add">
+                    <div class="search-container">
+                        <input type="text" id="searchInput" placeholder="ค้นหาชื่อ, อีเมล หรือบทบาท...">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <button class="add-btn" onclick="openAddModal()">
+                        <i class="fas fa-user-plus"></i> เพิ่มผู้ดูแล
+                    </button>
+                </div>
+            </div>
+
+            <div class="stats-row">
+                <div class="stat-card total">
+                    <div class="stat-number" id="totalAdmins">0</div>
+                    <div class="stat-label">ผู้ดูแลทั้งหมด</div>
+                </div>
+                <div class="stat-card active">
+                    <div class="stat-number" id="activeAdmins">0</div>
+                    <div class="stat-label">ใช้งานอยู่</div>
+                </div>
+                <div class="stat-card inactive">
+                    <div class="stat-number" id="inactiveAdmins">0</div>
+                    <div class="stat-label">ไม่ได้ใช้งาน</div>
+                </div>
+                <div class="stat-card super">
+                    <div class="stat-number" id="superAdmins">0</div>
+                    <div class="stat-label">ผู้ดูแลระบบ</div>
+                </div>
+            </div>
+
+            <div class="filters-section">
+                <div class="filters-row">
+                    <div class="filter-group">
+                        <label>บทบาท</label>
+                        <select id="roleFilter">
+                            <option value="">ทั้งหมด</option>
+                            <option value="super">ผู้ดูแลระบบ</option>
+                            <option value="admin">ผู้ดูแล</option>
+                            <option value="moderator">ผู้ช่วยดูแล</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>สถานะ</label>
+                        <select id="statusFilter">
+                            <option value="">ทั้งหมด</option>
+                            <option value="active">ใช้งานอยู่</option>
+                            <option value="inactive">ไม่ได้ใช้งาน</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>เรียงตาม</label>
+                        <select id="sortFilter">
+                            <option value="name">ชื่อ</option>
+                            <option value="email">อีเมล</option>
+                            <option value="role">บทบาท</option>
+                            <option value="lastLogin">ล็อกอินล่าสุด</option>
+                            <option value="createdDate">วันที่สร้าง</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="adminsTable">
+                    <thead>
+                        <tr>
+                            <th>ผู้ดูแล</th>
+                            <th>บทบาท</th>
+                            <th>สถานะ</th>
+                            <th>ล็อกอินล่าสุด</th>
+                            <th>วันที่สร้าง</th>
+                            <th>การจัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminsTableBody">
+                        <!-- Admin rows will be dynamically inserted here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination" id="pagination">
+                <!-- Pagination buttons will be inserted here -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Admin Modal -->
+    <div id="adminModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">เพิ่มผู้ดูแลใหม่</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            
+            <form id="adminForm">
+                <div class="form-group">
+                    <label>ชื่อผู้ดูแล *</label>
+                    <input type="text" id="adminName" required>
+                </div>
+                <div class="form-group">
+                    <label>อีเมล *</label>
+                    <input type="email" id="adminEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>รหัสผ่าน *</label>
+                    <input type="password" id="adminPassword" required>
+                    <small style="color: #666; font-size: 12px;">รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร</small>
+                </div>
+                <div class="form-group">
+                    <label>ยืนยันรหัสผ่าน *</label>
+                    <input type="password" id="adminPasswordConfirm" required>
+                </div>
+                <div class="form-group">
+                    <label>เบอร์โทร</label>
+                    <input type="tel" id="adminPhone">
+                </div>
+                <div class="form-group">
+                    <label>บทบาท *</label>
+                    <select id="adminRole" required onchange="updatePermissions()">
+                        <option value="">เลือกบทบาท</option>
+                        <option value="super">ผู้ดูแลระบบ (สิทธิ์เต็ม)</option>
+                        <option value="admin">ผู้ดูแล (สิทธิ์หลัก)</option>
+                        <option value="moderator">ผู้ช่วยดูแล (สิทธิ์จำกัด)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>สิทธิ์การใช้งาน</label>
+                    <div class="permissions-section">
+                        <div class="permissions-grid" id="permissionsGrid">
+                            <div class="permission-item">
+                                <input type="checkbox" id="perm-dashboard" value="dashboard">
+                                <label for="perm-dashboard">แดชบอร์ด</label>
+                            </div>
+                            <div class="permission-item">
+                                <input type="checkbox" id="perm-products" value="products">
+                                <label for="perm-products">จัดการสินค้า</label>
+                            </div>
+                            <div class="permission-item">
+                                <input type="checkbox" id="perm-orders" value="orders">
+                                <label for="perm-orders">จัดการคำสั่งซื้อ</label>
+                            </div>
+                            <div class="permission-item">
+                                <input type="checkbox" id="perm-users" value="users">
+                                <label for="perm-users">จัดการลูกค้า</label>
+                            </div>
+                            <div class="permission-item">
+                                <input type="checkbox" id="perm-reports" value="reports">
+                                <label for="perm-reports">รายงาน</label>
+                            </div>
+                            <div class="permission-item">
+                                <input type="checkbox" id="perm-settings" value="settings">
+                                <label for="perm-settings">ตั้งค่าระบบ</label>
+                            </div>
+                            <div class="permission-item">
+                                <input type="checkbox" id="perm-admins" value="admins">
+                                <label for="perm-admins">จัดการผู้ดูแล</label>
+                            </div>
+                            <div class="permission-item">
+                                <input type="checkbox" id="perm-backup" value="backup">
+                                <label for="perm-backup">สำรองข้อมูล</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="adminActive" checked>
+                        <label for="adminActive">เปิดใช้งานทันที</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>หมายเหตุ</label>
+                    <textarea id="adminNotes" rows="3" placeholder="หมายเหตุเพิ่มเติม..."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="cancel-form-btn" onclick="closeModal()">ยกเลิก</button>
+                    <button type="submit" class="save-btn">บันทึก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Details Modal -->
+    <div id="adminDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="adminDetailsTitle">รายละเอียดผู้ดูแล</h2>
+                <button class="close-btn" onclick="closeAdminDetailsModal()">&times;</button>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
+                    <h3 style="color: #333; margin-bottom: 15px;"><i class="fas fa-user"></i> ข้อมูลส่วนตัว</h3>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span style="font-weight: 600; color: #666;">ชื่อ:</span>
+                        <span style="color: #333;" id="detailName"></span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span style="font-weight: 600; color: #666;">อีเมล:</span>
+                        <span style="color: #333;" id="detailEmail"></span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span style="font-weight: 600; color: #666;">เบอร์โทร:</span>
+                        <span style="color: #333;" id="detailPhone"></span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span style="font-weight: 600; color: #666;">บทบาท:</span>
+                        <span id="detailRole"></span>
+                    </div>
+                </div>
+                
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
+                    <h3 style="color: #333; margin-bottom: 15px;"><i class="fas fa-info-circle"></i> ข้อมูลระบบ</h3>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span style="font-weight: 600; color: #666;">สถานะ:</span>
+                        <span id="detailStatus"></span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span style="font-weight: 600; color: #666;">วันที่สร้าง:</span>
+                        <span style="color: #333;" id="detailCreatedDate"></span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span style="font-weight: 600; color: #666;">ล็อกอินล่าสุด:</span>
+                        <span style="color: #333;" id="detailLastLogin"></span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span style="font-weight: 600; color: #666;">IP Address:</span>
+                        <span style="color: #333; font-family: 'Courier New', monospace;" id="detailLastIP"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
+                <h3 style="color: #333; margin-bottom: 15px;"><i class="fas fa-key"></i> สิทธิ์การใช้งาน</h3>
+                <div id="detailPermissions" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                    <!-- Permissions will be inserted here -->
+                </div>
+            </div>
+
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-top: 20px;">
+                <h3 style="color: #333; margin-bottom: 15px;"><i class="fas fa-sticky-note"></i> หมายเหตุ</h3>
+                <p id="detailNotes" style="color: #666; line-height: 1.5;"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample admin data
+        let admins = [
+            {
+                id: 1,
+                name: "นาย วิชาญ ผู้ดูแล",
+                email: "admin@steelshop.com",
+                phone: "089-123-4567",
+                role: "super",
+                status: "active",
+                permissions: ["dashboard", "products", "orders", "users", "reports", "settings", "admins", "backup"],
+                createdDate: "2025-01-15",
+                lastLogin: "2025-08-04T10:30:00",
+                lastIP: "192.168.1.100",
+                notes: "ผู้ดูแลระบบหลัก มีสิทธิ์เต็มในการจัดการทุกส่วน"
+            },
+            {
+                id: 2,
+                name: "นาง สุดา จัดการ",
+                email: "suda@steelshop.com",
+                phone: "081-987-6543",
+                role: "admin",
+                status: "active",
+                permissions: ["dashboard", "products", "orders", "users", "reports"],
+                createdDate: "2025-02-01",
+                lastLogin: "2025-08-04T09:15:00",
+                lastIP: "192.168.1.101",
+                notes: "ผู้ดูแลหลัก รับผิดชอบด้านสินค้าและคำสั่งซื้อ"
+            },
+            {
+                id: 3,
+                name: "นาย อนุชา ช่วยดู",
+                email: "anucha@steelshop.com",
+                phone: "088-555-7777",
+                role: "moderator",
+                status: "active",
+                permissions: ["dashboard", "products", "orders"],
+                createdDate: "2025-03-10",
+                lastLogin: "2025-08-03T16:45:00",
+                lastIP: "192.168.1.102",
+                notes: "ผู้ช่วยดูแล รับผิดชอบงานประจำวัน"
+            },
+            {
+                id: 4,
+                name: "นาง วิภา เก่าแก่",
+                email: "wipa@steelshop.com",
+                phone: "082-111-2222",
+                role: "admin",
+                status: "inactive",
+                permissions: ["dashboard", "products", "orders", "users"],
+                createdDate: "2024-12-01",
+                lastLogin: "2025-07-15T14:20:00",
+                lastIP: "192.168.1.103",
+                notes: "ผู้ดูแลเก่า ปัจจุบันไม่ได้ใช้งาน"
+            },
+            {
+                id: 5,
+                name: "นาย ทดสอบ ระบบ",
+                email: "test@steelshop.com",
+                phone: "099-888-9999",
+                role: "moderator",
+                status: "active",
+                permissions: ["dashboard", "products"],
+                createdDate: "2025-07-20",
+                lastLogin: "2025-08-01T11:30:00",
+                lastIP: "192.168.1.104",
+                notes: "บัญชีทดสอบระบบ"
+            }
+        ];
+
+        let currentPage = 1;
+        const itemsPerPage = 10;
+        let filteredAdmins = [...admins];
+        let currentEditId = null;
+
+        // Get role info
+        function getRoleInfo(role) {
+            const roleMap = {
+                'super': { class: 'role-super', text: 'ผู้ดูแลระบบ' },
+                'admin': { class: 'role-admin', text: 'ผู้ดูแล' },
+                'moderator': { class: 'role-moderator', text: 'ผู้ช่วยดูแล' }
+            };
+            return roleMap[role] || { class: 'role-moderator', text: 'ไม่ทราบ' };
+        }
+
+        // Get status info
+        function getStatusInfo(status) {
+            const statusMap = {
+                'active': { class: 'status-active', text: 'ใช้งานอยู่' },
+                'inactive': { class: 'status-inactive', text: 'ไม่ได้ใช้งาน' }
+            };
+            return statusMap[status] || { class: 'status-inactive', text: 'ไม่ทราบ' };
+        }
+
+        // Format date for display
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('th-TH', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        // Format date and time for display
+        function formatDateTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('th-TH', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Get admin initials for avatar
+        function getInitials(name) {
+            return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        }
+
+        // Render admins table
+        function renderAdmins() {
+            const tbody = document.getElementById('adminsTableBody');
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageAdmins = filteredAdmins.slice(startIndex, endIndex);
+
+            tbody.innerHTML = pageAdmins.map(admin => {
+                const roleInfo = getRoleInfo(admin.role);
+                const statusInfo = getStatusInfo(admin.status);
+                const initials = getInitials(admin.name);
+                
+                return `
+                    <tr>
+                        <td>
+                            <div class="admin-info">
+                                <div class="admin-avatar">${initials}</div>
+                                <div class="admin-details">
+                                    <div class="admin-name">${admin.name}</div>
+                                    <div class="admin-email">${admin.email}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="role-badge ${roleInfo.class}">${roleInfo.text}</span>
+                        </td>
+                        <td>
+                            <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
+                        </td>
+                        <td>
+                            <div class="last-login">
+                                <div class="login-date">${formatDateTime(admin.lastLogin)}</div>
+                                <div class="login-ip">${admin.lastIP}</div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="date-info">${formatDate(admin.createdDate)}</div>
+                        </td>
+                        <td class="actions">
+                            <button class="view-btn" onclick="viewAdminDetails(${admin.id})" title="ดูรายละเอียด">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="edit-btn" onclick="editAdmin(${admin.id})" title="แก้ไข">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="toggle-btn" onclick="toggleAdminStatus(${admin.id})" title="${admin.status === 'active' ? 'ปิดใช้งาน' : 'เปิดใช้งาน'}">
+                                <i class="fas fa-${admin.status === 'active' ? 'ban' : 'check'}"></i>
+                            </button>
+                            ${admin.role !== 'super' ? `
+                                <button class="delete-btn" onclick="deleteAdmin(${admin.id})" title="ลบ">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            ` : ''}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            renderPagination();
+            updateStats();
+        }
+
+        // Render pagination
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredAdmins.length / itemsPerPage);
+            const pagination = document.getElementById('pagination');
+            
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+
+            let buttons = [];
+            
+            // Previous button
+            buttons.push(`
+                <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+            `);
+
+            // Page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                buttons.push(`
+                    <button onclick="changePage(${i})" ${i === currentPage ? 'class="active"' : ''}>
+                        ${i}
+                    </button>
+                `);
+            }
+
+            // Next button
+            buttons.push(`
+                <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            `);
+
+            pagination.innerHTML = buttons.join('');
+        }
+
+        // Change page
+        function changePage(page) {
+            const totalPages = Math.ceil(filteredAdmins.length / itemsPerPage);
+            if (page >= 1 && page <= totalPages) {
+                currentPage = page;
+                renderAdmins();
+            }
+        }
+
+        // Update statistics
+        function updateStats() {
+            const stats = {
+                total: filteredAdmins.length,
+                active: filteredAdmins.filter(a => a.status === 'active').length,
+                inactive: filteredAdmins.filter(a => a.status === 'inactive').length,
+                super: filteredAdmins.filter(a => a.role === 'super').length
+            };
+
+            document.getElementById('totalAdmins').textContent = stats.total;
+            document.getElementById('activeAdmins').textContent = stats.active;
+            document.getElementById('inactiveAdmins').textContent = stats.inactive;
+            document.getElementById('superAdmins').textContent = stats.super;
+        }
+
+        // Filter and search functions
+        function applyFilters() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const roleFilter = document.getElementById('roleFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            filteredAdmins = admins.filter(admin => {
+                const matchesSearch = admin.name.toLowerCase().includes(searchTerm) ||
+                                    admin.email.toLowerCase().includes(searchTerm) ||
+                                    getRoleInfo(admin.role).text.toLowerCase().includes(searchTerm);
+                
+                const matchesRole = !roleFilter || admin.role === roleFilter;
+                const matchesStatus = !statusFilter || admin.status === statusFilter;
+
+                return matchesSearch && matchesRole && matchesStatus;
+            });
+
+            // Apply sorting after filtering
+            applySorting();
+
+            currentPage = 1;
+            renderAdmins();
+        }
+
+        // Sort admins function
+        function applySorting() {
+            const sortBy = document.getElementById('sortFilter').value;
+            
+            filteredAdmins.sort((a, b) => {
+                switch (sortBy) {
+                    case 'name':
+                        return a.name.localeCompare(b.name, 'th');
+                    case 'email':
+                        return a.email.localeCompare(b.email);
+                    case 'role':
+                        return a.role.localeCompare(b.role);
+                    case 'lastLogin':
+                        return new Date(b.lastLogin) - new Date(a.lastLogin); // Most recent first
+                    case 'createdDate':
+                        return new Date(b.createdDate) - new Date(a.createdDate); // Newest first
+                    default:
+                        return 0;
+                }
+            });
+        }
+
+        // Sort admins when dropdown changes
+        function onSortChange() {
+            applySorting();
+            renderAdmins();
+        }
+
+        // Update permissions based on role
+        function updatePermissions() {
+            const role = document.getElementById('adminRole').value;
+            const permissionCheckboxes = document.querySelectorAll('#permissionsGrid input[type="checkbox"]');
+            
+            // Clear all permissions first
+            permissionCheckboxes.forEach(checkbox => {
+                checkbox.checked = false;
+                checkbox.disabled = false;
+            });
+
+            // Set permissions based on role
+            if (role === 'super') {
+                permissionCheckboxes.forEach(checkbox => {
+                    checkbox.checked = true;
+                    checkbox.disabled = true; // Super admin has all permissions
+                });
+            } else if (role === 'admin') {
+                const adminPermissions = ['dashboard', 'products', 'orders', 'users', 'reports'];
+                adminPermissions.forEach(perm => {
+                    const checkbox = document.getElementById(`perm-${perm}`);
+                    if (checkbox) checkbox.checked = true;
+                });
+            } else if (role === 'moderator') {
+                const moderatorPermissions = ['dashboard', 'products', 'orders'];
+                moderatorPermissions.forEach(perm => {
+                    const checkbox = document.getElementById(`perm-${perm}`);
+                    if (checkbox) checkbox.checked = true;
+                });
+            }
+        }
+
+        // Modal functions
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = 'เพิ่มผู้ดูแลใหม่';
+            document.getElementById('adminForm').reset();
+            document.getElementById('adminActive').checked = true;
+            currentEditId = null;
+            updatePermissions(); // Clear permissions
+            document.getElementById('adminModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('adminModal').style.display = 'none';
+            currentEditId = null;
+        }
+
+        function closeAdminDetailsModal() {
+            document.getElementById('adminDetailsModal').style.display = 'none';
+        }
+
+        // Admin CRUD operations
+        function viewAdminDetails(id) {
+            const admin = admins.find(a => a.id === id);
+            if (!admin) return;
+
+            const roleInfo = getRoleInfo(admin.role);
+            const statusInfo = getStatusInfo(admin.status);
+
+            // Populate admin details
+            document.getElementById('adminDetailsTitle').textContent = `รายละเอียดผู้ดูแล - ${admin.name}`;
+            document.getElementById('detailName').textContent = admin.name;
+            document.getElementById('detailEmail').textContent = admin.email;
+            document.getElementById('detailPhone').textContent = admin.phone || 'ไม่ระบุ';
+            document.getElementById('detailRole').innerHTML = `<span class="role-badge ${roleInfo.class}">${roleInfo.text}</span>`;
+            document.getElementById('detailStatus').innerHTML = `<span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>`;
+            document.getElementById('detailCreatedDate').textContent = formatDate(admin.createdDate);
+            document.getElementById('detailLastLogin').textContent = formatDateTime(admin.lastLogin);
+            document.getElementById('detailLastIP').textContent = admin.lastIP;
+            document.getElementById('detailNotes').textContent = admin.notes || 'ไม่มีหมายเหตุ';
+
+            // Populate permissions
+            const permissionsContainer = document.getElementById('detailPermissions');
+            const permissionLabels = {
+                dashboard: 'แดชบอร์ด',
+                products: 'จัดการสินค้า',
+                orders: 'จัดการคำสั่งซื้อ',
+                users: 'จัดการลูกค้า',
+                reports: 'รายงาน',
+                settings: 'ตั้งค่าระบบ',
+                admins: 'จัดการผู้ดูแล',
+                backup: 'สำรองข้อมูล'
+            };
+
+            permissionsContainer.innerHTML = admin.permissions.map(perm => `
+                <div style="padding: 8px; background: white; border-radius: 6px; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-check" style="color: #28a745;"></i>
+                    <span>${permissionLabels[perm] || perm}</span>
+                </div>
+            `).join('');
+
+            document.getElementById('adminDetailsModal').style.display = 'block';
+        }
+
+        function editAdmin(id) {
+            const admin = admins.find(a => a.id === id);
+            if (!admin) return;
+
+            currentEditId = id;
+            document.getElementById('modalTitle').textContent = 'แก้ไขผู้ดูแล';
+            document.getElementById('adminName').value = admin.name;
+            document.getElementById('adminEmail').value = admin.email;
+            document.getElementById('adminPhone').value = admin.phone || '';
+            document.getElementById('adminRole').value = admin.role;
+            document.getElementById('adminActive').checked = admin.status === 'active';
+            document.getElementById('adminNotes').value = admin.notes || '';
+            
+            // Hide password fields for editing
+            document.getElementById('adminPassword').closest('.form-group').style.display = 'none';
+            document.getElementById('adminPasswordConfirm').closest('.form-group').style.display = 'none';
+            document.getElementById('adminPassword').required = false;
+            document.getElementById('adminPasswordConfirm').required = false;
+
+            // Set permissions
+            updatePermissions();
+            admin.permissions.forEach(perm => {
+                const checkbox = document.getElementById(`perm-${perm}`);
+                if (checkbox && !checkbox.disabled) {
+                    checkbox.checked = true;
+                }
+            });
+
+            document.getElementById('adminModal').style.display = 'block';
+        }
+
+        function toggleAdminStatus(id) {
+            const admin = admins.find(a => a.id === id);
+            if (!admin) return;
+
+            const newStatus = admin.status === 'active' ? 'inactive' : 'active';
+            const statusText = newStatus === 'active' ? 'เปิดใช้งาน' : 'ปิดใช้งาน';
+            
+            if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการ${statusText} "${admin.name}"?`)) {
+                admin.status = newStatus;
+                applyFilters();
+                showNotification(`${statusText} "${admin.name}" แล้ว`, 'success');
+            }
+        }
+
+        function deleteAdmin(id) {
+            const admin = admins.find(a => a.id === id);
+            if (!admin) return;
+
+            if (admin.role === 'super') {
+                showNotification('ไม่สามารถลบผู้ดูแลระบบได้', 'error');
+                return;
+            }
+
+            if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบ "${admin.name}"?\n\nการกระทำนี้ไม่สามารถย้อนกลับได้`)) {
+                admins = admins.filter(a => a.id !== id);
+                applyFilters();
+                showNotification(`ลบผู้ดูแล "${admin.name}" แล้ว`, 'success');
+            }
+        }
+
+        // Validate form
+        function validateForm() {
+            const password = document.getElementById('adminPassword').value;
+            const passwordConfirm = document.getElementById('adminPasswordConfirm').value;
+            const email = document.getElementById('adminEmail').value;
+
+            // Check if email already exists (for new admin)
+            if (!currentEditId) {
+                const existingAdmin = admins.find(a => a.email === email);
+                if (existingAdmin) {
+                    showNotification('อีเมลนี้มีผู้ใช้งานแล้ว', 'error');
+                    return false;
+                }
+            }
+
+            // Check password for new admin
+            if (!currentEditId) {
+                if (password.length < 8) {
+                    showNotification('รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร', 'error');
+                    return false;
+                }
+
+                if (password !== passwordConfirm) {
+                    showNotification('รหัสผ่านไม่ตรงกัน', 'error');
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        // Save admin form
+        document.getElementById('adminForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!validateForm()) {
+                return;
+            }
+
+            // Get selected permissions
+            const selectedPermissions = [];
+            document.querySelectorAll('#permissionsGrid input[type="checkbox"]:checked').forEach(checkbox => {
+                selectedPermissions.push(checkbox.value);
+            });
+
+            const formData = {
+                name: document.getElementById('adminName').value,
+                email: document.getElementById('adminEmail').value,
+                phone: document.getElementById('adminPhone').value,
+                role: document.getElementById('adminRole').value,
+                status: document.getElementById('adminActive').checked ? 'active' : 'inactive',
+                permissions: selectedPermissions,
+                notes: document.getElementById('adminNotes').value
+            };
+
+            if (currentEditId) {
+                // Update existing admin
+                const adminIndex = admins.findIndex(a => a.id === currentEditId);
+                if (adminIndex !== -1) {
+                    admins[adminIndex] = { ...admins[adminIndex], ...formData };
+                    showNotification('แก้ไขผู้ดูแลเรียบร้อยแล้ว', 'success');
+                }
+            } else {
+                // Add new admin
+                const newAdmin = {
+                    id: Date.now(), // Simple ID generation
+                    ...formData,
+                    createdDate: new Date().toISOString().split('T')[0],
+                    lastLogin: new Date().toISOString(),
+                    lastIP: '192.168.1.105'
+                };
+                admins.push(newAdmin);
+                showNotification('เพิ่มผู้ดูแลเรียบร้อยแล้ว', 'success');
+            }
+
+            closeModal();
+            applyFilters();
+            
+            // Reset form
+            document.getElementById('adminPassword').closest('.form-group').style.display = 'block';
+            document.getElementById('adminPasswordConfirm').closest('.form-group').style.display = 'block';
+            document.getElementById('adminPassword').required = true;
+            document.getElementById('adminPasswordConfirm').required = true;
+        });
+
+        // Show notification function
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: 8px;
+                color: white;
+                font-weight: 600;
+                z-index: 3000;
+                opacity: 0;
+                transform: translateX(100%);
+                transition: all 0.3s ease;
+                ${type === 'success' ? 'background: #28a745;' : ''}
+                ${type === 'error' ? 'background: #dc3545;' : ''}
+                ${type === 'info' ? 'background: #17a2b8;' : ''}
+            `;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.opacity = '1';
+                notification.style.transform = 'translateX(0)';
+            }, 100);
+            
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (document.body.contains(notification)) {
+                        document.body.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        // Advanced search with debounce
+        let searchTimeout;
+        function debounceSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(applyFilters, 300);
+        }
+
+        // Toggle sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById("sidebar");
+            const main = document.querySelector(".main-content");
+
+            if (sidebar) {
+                sidebar.classList.toggle("show");
+                main.classList.toggle("overlay");
+            }
+        }
+
+        // Show different sections
+        function showSection(section) {
+            if (section === 'dashboard') {
+                window.location.href = 'dashboard_admin.html';
+            } else if (section === 'products') {
+                window.location.href = 'products_admin.html';
+            } else if (section === 'orders') {
+                window.location.href = 'orders_admin.html';
+            } else if (section === 'reports') {
+            window.location.href = 'reports_admin.html';
+            } else if (section === 'admins') {
+                if (window.innerWidth <= 768) {
+                    const sidebar = document.getElementById("sidebar");
+                    const main = document.querySelector(".main-content");
+                    if (sidebar) {
+                        sidebar.classList.remove("show");
+                        main.classList.remove("overlay");
+                    }
+                }
+            }
+        }
+
+        // Close sidebar when clicking outside (mobile only)
+        document.addEventListener("click", function (e) {
+            const sidebar = document.getElementById("sidebar");
+            const toggle = document.querySelector(".navbar-toggle");
+            const main = document.querySelector(".main-content");
+
+            if (!sidebar) return;
+
+            const clickedOutside = !sidebar.contains(e.target) && !toggle.contains(e.target);
+
+            if (sidebar.classList.contains("show") && clickedOutside && window.innerWidth <= 768) {
+                sidebar.classList.remove("show");
+                main.classList.remove("overlay");
+            }
+        });
+
+        // Export functions for global access
+        window.viewAdminDetails = viewAdminDetails;
+        window.editAdmin = editAdmin;
+        window.deleteAdmin = deleteAdmin;
+        window.toggleAdminStatus = toggleAdminStatus;
+        window.openAddModal = openAddModal;
+        window.closeModal = closeModal;
+        window.closeAdminDetailsModal = closeAdminDetailsModal;
+        window.changePage = changePage;
+        window.toggleSidebar = toggleSidebar;
+        window.showSection = showSection;
+        window.updatePermissions = updatePermissions;
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initial render
+            renderAdmins();
+            
+            // Set up event listeners
+            document.getElementById('searchInput').addEventListener('input', debounceSearch);
+            document.getElementById('roleFilter').addEventListener('change', applyFilters);
+            document.getElementById('statusFilter').addEventListener('change', applyFilters);
+            document.getElementById('sortFilter').addEventListener('change', onSortChange);
+            
+            // Close modals when clicking outside
+            document.getElementById('adminModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeModal();
+                }
+            });
+            
+            document.getElementById('adminDetailsModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeAdminDetailsModal();
+                }
+            });
+            
+            // Close modals with Escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    if (document.getElementById('adminModal').style.display === 'block') {
+                        closeModal();
+                    }
+                    if (document.getElementById('adminDetailsModal').style.display === 'block') {
+                        closeAdminDetailsModal();
+                    }
+                }
+            });
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl+N or Cmd+N for new admin
+            if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                e.preventDefault();
+                openAddModal();
+            }
+            
+            // Ctrl+F or Cmd+F for search focus
+            if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                e.preventDefault();
+                document.getElementById('searchInput').focus();
+            }
+        });
+
+        // Initialize tooltips and additional features
+        function initializeAdditionalFeatures() {
+            // Add confirmation dialogs for sensitive actions
+            const deleteButtons = document.querySelectorAll('.delete-btn');
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const adminId = this.getAttribute('data-admin-id');
+                    if (adminId) {
+                        deleteAdmin(parseInt(adminId));
+                    }
+                });
+            });
+
+            // Add keyboard navigation for table
+            document.addEventListener('keydown', function(e) {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+                
+                switch(e.key) {
+                    case 'ArrowUp':
+                        // Navigate up in table
+                        break;
+                    case 'ArrowDown':
+                        // Navigate down in table
+                        break;
+                    case 'Enter':
+                        // Open details for selected row
+                        break;
+                }
+            });
+        }
+
+        // Security and validation functions
+        function validateEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        function validatePhone(phone) {
+            const phoneRegex = /^[0-9-+\s()]+$/;
+            return phoneRegex.test(phone);
+        }
+
+        function generateStrongPassword() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+            let password = '';
+            for (let i = 0; i < 12; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return password;
+        }
+
+        // Add password generator button functionality
+        function addPasswordGenerator() {
+            const passwordField = document.getElementById('adminPassword');
+            const generateBtn = document.createElement('button');
+            generateBtn.type = 'button';
+            generateBtn.innerHTML = '<i class="fas fa-key"></i> สร้างรหัสผ่าน';
+            generateBtn.className = 'btn btn-outline-secondary btn-sm';
+            generateBtn.style.marginTop = '5px';
+            
+            generateBtn.onclick = function() {
+                const newPassword = generateStrongPassword();
+                passwordField.value = newPassword;
+                document.getElementById('adminPasswordConfirm').value = newPassword;
+                showNotification('สร้างรหัสผ่านใหม่แล้ว', 'info');
+            };
+            
+            passwordField.parentNode.appendChild(generateBtn);
+        }
+
+        // Session management
+        function checkSession() {
+            // This would typically check with the server
+            // For demo purposes, we'll just simulate it
+            const sessionValid = true;
+            
+            if (!sessionValid) {
+                showNotification('เซสชันหมดอายุ กรุณาล็อกอินใหม่', 'error');
+                setTimeout(() => {
+                    window.location.href = 'login.php';
+                }, 2000);
+            }
+        }
+
+        // Auto-save draft functionality
+        let autoSaveTimer;
+        function setupAutoSave() {
+            const formFields = ['adminName', 'adminEmail', 'adminPhone', 'adminRole', 'adminNotes'];
+            
+            formFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    field.addEventListener('input', function() {
+                        clearTimeout(autoSaveTimer);
+                        autoSaveTimer = setTimeout(() => {
+                            saveDraft();
+                        }, 2000);
+                    });
+                }
+            });
+        }
+
+        function saveDraft() {
+            const formData = {
+                name: document.getElementById('adminName').value,
+                email: document.getElementById('adminEmail').value,
+                phone: document.getElementById('adminPhone').value,
+                role: document.getElementById('adminRole').value,
+                notes: document.getElementById('adminNotes').value,
+                timestamp: Date.now()
+            };
+            
+            localStorage.setItem('adminFormDraft', JSON.stringify(formData));
+        }
+
+        function loadDraft() {
+            const draft = localStorage.getItem('adminFormDraft');
+            if (draft) {
+                const formData = JSON.parse(draft);
+                const timeDiff = Date.now() - formData.timestamp;
+                
+                // Only load draft if it's less than 1 hour old
+                if (timeDiff < 3600000) {
+                    if (confirm('พบข้อมูลที่บันทึกไว้ ต้องการโหลดข้อมูลนั้นหรือไม่?')) {
+                        document.getElementById('adminName').value = formData.name || '';
+                        document.getElementById('adminEmail').value = formData.email || '';
+                        document.getElementById('adminPhone').value = formData.phone || '';
+                        document.getElementById('adminRole').value = formData.role || '';
+                        document.getElementById('adminNotes').value = formData.notes || '';
+                    }
+                } else {
+                    localStorage.removeItem('adminFormDraft');
+                }
+            }
+        }
+
+        function clearDraft() {
+            localStorage.removeItem('adminFormDraft');
+        }
+
+        // Activity logging
+        function logActivity(action, target) {
+            const activity = {
+                timestamp: new Date().toISOString(),
+                action: action,
+                target: target,
+                user: 'Current Admin', // This would come from session
+                ip: '192.168.1.100' // This would come from server
+            };
+            
+            // In a real application, this would be sent to the server
+            console.log('Activity logged:', activity);
+        }
+
+        // Enhanced search with filters
+        function performAdvancedSearch() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const roleFilter = document.getElementById('roleFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            
+            let results = admins.filter(admin => {
+                const matchesSearch = !searchTerm || 
+                    admin.name.toLowerCase().includes(searchTerm) ||
+                    admin.email.toLowerCase().includes(searchTerm) ||
+                    admin.phone.includes(searchTerm) ||
+                    getRoleInfo(admin.role).text.toLowerCase().includes(searchTerm);
+                
+                const matchesRole = !roleFilter || admin.role === roleFilter;
+                const matchesStatus = !statusFilter || admin.status === statusFilter;
+                
+                return matchesSearch && matchesRole && matchesStatus;
+            });
+            
+            return results;
+        }
+
+        // Bulk operations
+        function enableBulkOperations() {
+            // Add checkboxes to table headers and rows
+            const thead = document.querySelector('#adminsTable thead tr');
+            const checkboxHeader = document.createElement('th');
+            checkboxHeader.innerHTML = '<input type="checkbox" id="selectAll">';
+            thead.insertBefore(checkboxHeader, thead.firstChild);
+            
+            // Add bulk action buttons
+            const bulkActions = document.createElement('div');
+            bulkActions.className = 'bulk-actions';
+            bulkActions.style.cssText = 'margin-bottom: 20px; padding: 15px; background: white; border-radius: 10px; display: none;';
+            bulkActions.innerHTML = `
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <span id="selectedCount">0 รายการที่เลือก</span>
+                    <button class="btn btn-warning" onclick="bulkToggleStatus()">เปลี่ยนสถานะ</button>
+                    <button class="btn btn-danger" onclick="bulkDelete()">ลบที่เลือก</button>
+                </div>
+            `;
+            
+            document.querySelector('.table-container').parentNode.insertBefore(bulkActions, document.querySelector('.table-container'));
+        }
+
+        // Initialize everything when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check session periodically
+            setInterval(checkSession, 300000); // Check every 5 minutes
+            
+            // Setup auto-save
+            setupAutoSave();
+            
+            // Initialize additional features
+            initializeAdditionalFeatures();
+            
+            // Load any saved drafts
+            // loadDraft(); // Uncomment if you want to enable draft loading
+        });
+    </script>
+</body>
+</html>
