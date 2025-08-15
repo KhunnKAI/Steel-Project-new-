@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-    
+
     <style>
         * {
             margin: 0;
@@ -32,7 +33,7 @@
             background: white;
             padding: 10px;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             display: none;
             transition: all 0.3s ease;
         }
@@ -63,7 +64,7 @@
             background: white;
             padding: 20px 30px;
             border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
         }
 
         .header h1 {
@@ -101,7 +102,7 @@
             background: white;
             padding: 25px;
             border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
@@ -116,14 +117,25 @@
             height: 4px;
         }
 
-        .stat-card.sales::before { background: linear-gradient(90deg, #4CAF50, #8BC34A); }
-        .stat-card.orders::before { background: linear-gradient(90deg, #2196F3, #03DAC6); }
-        .stat-card.products::before { background: linear-gradient(90deg, #FF9800, #FFC107); }
-        .stat-card.users::before { background: linear-gradient(90deg, #9C27B0, #E91E63); }
+        .stat-card.sales::before {
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+        }
+
+        .stat-card.orders::before {
+            background: linear-gradient(90deg, #2196F3, #03DAC6);
+        }
+
+        .stat-card.products::before {
+            background: linear-gradient(90deg, #FF9800, #FFC107);
+        }
+
+        .stat-card.users::before {
+            background: linear-gradient(90deg, #9C27B0, #E91E63);
+        }
 
         .stat-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
         }
 
         .stat-header {
@@ -144,10 +156,21 @@
             color: white;
         }
 
-        .stat-icon.sales { background: linear-gradient(45deg, #4CAF50, #8BC34A); }
-        .stat-icon.orders { background: linear-gradient(45deg, #2196F3, #03DAC6); }
-        .stat-icon.products { background: linear-gradient(45deg, #FF9800, #FFC107); }
-        .stat-icon.users { background: linear-gradient(45deg, #9C27B0, #E91E63); }
+        .stat-icon.sales {
+            background: linear-gradient(45deg, #4CAF50, #8BC34A);
+        }
+
+        .stat-icon.orders {
+            background: linear-gradient(45deg, #2196F3, #03DAC6);
+        }
+
+        .stat-icon.products {
+            background: linear-gradient(45deg, #FF9800, #FFC107);
+        }
+
+        .stat-icon.users {
+            background: linear-gradient(45deg, #9C27B0, #E91E63);
+        }
 
         .stat-value {
             font-size: 32px;
@@ -167,8 +190,13 @@
             margin-top: 10px;
         }
 
-        .stat-change.positive { color: #4CAF50; }
-        .stat-change.negative { color: #f44336; }
+        .stat-change.positive {
+            color: #4CAF50;
+        }
+
+        .stat-change.negative {
+            color: #f44336;
+        }
 
         .content-grid {
             display: grid;
@@ -182,7 +210,7 @@
             background: white;
             border-radius: 15px;
             padding: 25px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
         }
 
         .panel-title {
@@ -227,9 +255,17 @@
             color: white;
         }
 
-        .activity-icon.order { background: #2196F3; }
-        .activity-icon.product { background: #FF9800; }
-        .activity-icon.user { background: #9C27B0; }
+        .activity-icon.order {
+            background: #2196F3;
+        }
+
+        .activity-icon.product {
+            background: #FF9800;
+        }
+
+        .activity-icon.user {
+            background: #9C27B0;
+        }
 
         .activity-content {
             flex: 1;
@@ -250,7 +286,7 @@
             background: white;
             border-radius: 15px;
             padding: 25px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
         }
 
         .orders-table {
@@ -299,11 +335,30 @@
             letter-spacing: 0.5px;
         }
 
-        .status-pending { background: #fff3cd; color: #856404; }
-        .status-processing { background: #e3f2fd; color: #1976d2; }
-        .status-shipped { background: #e8f5e8; color: #2e7d32; }
-        .status-completed { background: #d4edda; color: #155724; }
-        .status-cancelled { background: #f8d7da; color: #721c24; }
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-processing {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .status-shipped {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .status-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-cancelled {
+            background: #f8d7da;
+            color: #721c24;
+        }
 
         /* Sidebar Styles */
         .sidebar {
@@ -316,7 +371,7 @@
             display: flex;
             flex-direction: column;
             transition: all 0.3s ease;
-            box-shadow: 4px 0 20px rgba(0,0,0,0.1);
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
         }
 
         .sidebar.collapsed {
@@ -393,7 +448,7 @@
             .orders-table {
                 font-size: 14px;
             }
-            
+
             .orders-table th,
             .orders-table td {
                 padding: 10px 8px;
@@ -413,6 +468,7 @@
         }
 
         @media screen and (max-width: 480px) {
+
             .orders-table th,
             .orders-table td {
                 padding: 8px 4px;
@@ -431,11 +487,11 @@
         <aside class="sidebar" id="sidebar">
             <div class="logo">
                 <div>
-                    <img src="image_admin/logo_cropped.png" width="100px">
+                    <img src="image/logo_cropped.png" width="100px">
                 </div>
                 <h2>ระบบผู้ดูแล</h2>
             </div>
-            
+
             <nav>
                 <ul>
                     <li class="active">
@@ -671,15 +727,15 @@
         // Update current time
         function updateTime() {
             const now = new Date();
-            const options = { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
+            const options = {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
                 day: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit'
             };
-            document.getElementById('current-time').textContent = 
+            document.getElementById('current-time').textContent =
                 now.toLocaleDateString('th-TH', options);
         }
 
@@ -702,7 +758,7 @@
                 window.location.href = 'orders_admin.html';
             } else if (section === 'admins') {
                 window.location.href = 'admins_admin.html';
-                } else if (section === 'reports') {
+            } else if (section === 'reports') {
                 window.location.href = 'reports_admin.html';
             } else if (section === 'dashboard') {
                 if (window.innerWidth <= 768) {
@@ -739,13 +795,13 @@
                 if (!startTimestamp) startTimestamp = timestamp;
                 const progress = Math.min((timestamp - startTimestamp) / duration, 1);
                 const current = Math.floor(progress * (end - start) + start);
-                
+
                 if (element.id === 'sales-value') {
                     element.textContent = '฿' + current.toLocaleString();
                 } else {
                     element.textContent = current.toLocaleString();
                 }
-                
+
                 if (progress < 1) {
                     window.requestAnimationFrame(step);
                 }
@@ -761,7 +817,7 @@
         // Initialize chart
         function initChart() {
             const ctx = document.getElementById('salesChart').getContext('2d');
-            
+
             new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -796,7 +852,7 @@
                         y: {
                             beginAtZero: true,
                             ticks: {
-                                callback: function(value) {
+                                callback: function (value) {
                                     return '฿' + value.toLocaleString();
                                 }
                             }
@@ -816,7 +872,7 @@
         window.showSection = showSection;
 
         // Initialize everything
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             updateTime();
             setInterval(updateTime, 60000); // Update every minute
 
@@ -833,4 +889,5 @@
         });
     </script>
 </body>
+
 </html>

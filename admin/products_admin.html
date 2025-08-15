@@ -1,3 +1,6 @@
+<!DOCTYPE html>
+<html lang="th">
+    
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1536,40 +1539,27 @@
                 margin-left: 0;
             }
 
-            .header {
-                flex-direction: column;
-                gap: 15px;
-            }
-
-            .search-container input[type="text"] {
-                width: 100%;
-            }
-
-            .filters-row {
+            .stats-grid {
                 grid-template-columns: 1fr;
             }
 
-            .date-range-group {
-                grid-column: span 1;
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
                 flex-direction: column;
-                align-items: stretch;
+                gap: 15px;
+                text-align: center;
             }
 
-            .filter-group {
-                min-width: auto;
-            }
-
-            table {
+            .orders-table {
                 font-size: 14px;
             }
 
-            th,
-            td {
+            .orders-table th,
+            .orders-table td {
                 padding: 10px 8px;
-            }
-
-            .actions {
-                flex-direction: column;
             }
 
             .sidebar {
@@ -1583,46 +1573,13 @@
             .sidebar.show {
                 left: 0;
             }
-
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .dimension-row {
-                grid-template-columns: 1fr;
-            }
-
-            .image-preview-container {
-                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-            }
-
-            .image-preview {
-                width: 80px;
-                height: 80px;
-            }
-
-            .product-view-main {
-                grid-template-columns: 1fr;
-                gap: 20px;
-            }
-
-            .product-view-specs {
-                grid-template-columns: 1fr;
-            }
-
-            .dimensions-grid {
-                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            }
-
-            .product-view-actions {
-                flex-direction: column;
-            }
         }
 
         @media screen and (max-width: 480px) {
-            .actions button {
-                font-size: 12px;
-                padding: 6px 8px;
+
+            .orders-table th,
+            .orders-table td {
+                padding: 8px 4px;
             }
         }
     </style>
@@ -1638,7 +1595,7 @@
         <aside class="sidebar" id="sidebar">
             <div class="logo">
                 <div>
-                    <img src="image_admin/logo_cropped.png" width="100px">
+                    <img src="image/logo_cropped.png" width="100px">
                 </div>
                 <h2>ระบบผู้ดูแล</h2>
             </div>
@@ -2077,9 +2034,9 @@
         let currentImageIndex = 0;
 
         // API endpoints
-        const API_BASE = 'http://localhost/steelproject/admin/';
+        const API_BASE = 'http://localhost/steelproject/admin/controllers/';
         const ENDPOINTS = {
-            products: API_BASE + 'get_products.php',
+            products: API_BASE + 'get_product.php',
             addProduct: API_BASE + 'add_product.php',
             manageProduct: API_BASE + 'manage_product.php',
             uploadImage: API_BASE + 'upload_image.php'
