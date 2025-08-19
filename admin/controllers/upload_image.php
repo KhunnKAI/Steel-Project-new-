@@ -30,12 +30,15 @@ function send_json_error($message, $code = 500) {
     exit;
 }
 
-function send_json_success($message, $data = null) {
+function send_json_success($message, $url = null, $data = null) {
     $response = [
         'success' => true,
         'status' => 'success',
         'message' => $message
     ];
+    if ($url !== null) {
+        $response['url'] = $url;
+    }
     if ($data !== null) {
         $response['data'] = $data;
     }
@@ -48,6 +51,14 @@ $MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 $ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
 $ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
 
+// FIXED: Get the base URL for images
+function getImageBaseURL() {
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+    $host = $_SERVER['HTTP_HOST'];
+    $script_path = dirname($_SERVER['SCRIPT_NAME']);
+    return $protocol . $host . $script_path . '/';
+}
+
 try {
     // Only allow POST method
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -57,7 +68,7 @@ try {
     // Database connection
     $conn = new mysqli($DB_HOST, $DB_USER, $DB_PASS, $DB_NAME);
     if ($conn->connect_error) {
-        send_json_error('Database connection failed');
+        send_json_error('Database connection failed: ' . $conn->connect_error);
     }
     $conn->set_charset('utf8mb4');
 
@@ -91,16 +102,14 @@ try {
             UPLOAD_ERR_CANT_WRITE => 'Cannot write to disk',
             UPLOAD_ERR_EXTENSION => 'Upload stopped by extension'
         ];
-        $error_message = isset($error_messages[$file['error']]) 
-            ? $error_messages[$file['error']] 
-            : 'Unknown upload error';
+        $error_message = $error_messages[$file['error']] ?? 'Unknown upload error';
         send_json_error($error_message);
     }
 
     // Check if product exists
     $check_stmt = $conn->prepare("SELECT product_id, productimage_id FROM Product WHERE product_id = ?");
     if (!$check_stmt) {
-        send_json_error('Database prepare failed');
+        send_json_error('Database prepare failed: ' . $conn->error);
     }
     $check_stmt->bind_param('s', $product_id);
     $check_stmt->execute();
@@ -146,8 +155,8 @@ try {
     }
 
     // Generate secure filename
-    $file_extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
     $safe_filename = time() . '_' . bin2hex(random_bytes(8)) . '.' . $file_extension;
+    $safe_filename = basename($safe_filename); // extra security
     $file_path = $UPLOAD_DIR . $safe_filename;
 
     // Move uploaded file
@@ -155,11 +164,9 @@ try {
         send_json_error('Failed to move uploaded file');
     }
 
-    // Generate image URL
-    $base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') 
-                . '://' . $_SERVER['HTTP_HOST'];
-    $script_dir = dirname($_SERVER['SCRIPT_NAME']);
-    $image_url = $base_url . $script_dir . '/' . $file_path;
+    // FIXED: Generate full URL for image access
+    $base_url = getImageBaseURL();
+    $image_url = $base_url . $file_path; // Full URL like: http://localhost/steelproject/admin/controllers/uploads/products/filename.jpg
 
     // Generate unique productimage_id
     $productimage_id = 'IMG' . date('YmdHis') . bin2hex(random_bytes(4));
@@ -169,18 +176,24 @@ try {
 
     try {
         // If this is set as main image, or if product has no images yet
-        $should_be_main = $is_main || empty($current_productimage_id);
+        $should_be_main = $is_main;
+        
+        // If product has no images yet, make this the main image
+        if (empty($current_productimage_id)) {
+            $should_be_main = true;
+        }
+        
+        $is_main_int = $should_be_main ? 1 : 0;
 
         // If setting as main, update existing main images
         if ($should_be_main) {
-            // Remove main flag from all existing images for this product
             $update_main_stmt = $conn->prepare("
                 UPDATE ProductImage 
-                SET is_main = FALSE, updated_at = NOW() 
-                WHERE product_id = ? OR productimage_id = ?
+                SET is_main = 0, updated_at = NOW() 
+                WHERE product_id = ? AND is_main = 1
             ");
             if ($update_main_stmt) {
-                $update_main_stmt->bind_param('ss', $product_id, $current_productimage_id);
+                $update_main_stmt->bind_param('s', $product_id);
                 $update_main_stmt->execute();
                 $update_main_stmt->close();
             }
@@ -192,12 +205,12 @@ try {
             VALUES (?, ?, ?, ?, NOW(), NOW())
         ");
         if (!$insert_stmt) {
-            throw new Exception('Failed to prepare insert statement');
+            throw new Exception('Failed to prepare insert statement: ' . $conn->error);
         }
 
-        $insert_stmt->bind_param('sssi', $productimage_id, $product_id, $image_url, $should_be_main);
+        $insert_stmt->bind_param('sssi', $productimage_id, $product_id, $image_url, $is_main_int);
         if (!$insert_stmt->execute()) {
-            throw new Exception('Failed to insert image record');
+            throw new Exception('Failed to insert image record: ' . $insert_stmt->error);
         }
         $insert_stmt->close();
 
@@ -234,7 +247,7 @@ try {
         $response_data = [
             'productimage_id' => $productimage_id,
             'product_id' => $product_id,
-            'image_url' => $image_url,
+            'image_url' => $image_url, // This now contains the full URL
             'filename' => $safe_filename,
             'is_main' => (bool)$should_be_main,
             'file_size' => $file['size'],
@@ -246,8 +259,8 @@ try {
             'total_images' => (int)$total_images
         ];
 
-        $message = 'Image uploaded successfully' . ($should_be_main ? ' (set as main image)' : '');
-        send_json_success($message, $response_data);
+        $message = 'อัปโหลดรูปภาพสำเร็จ' . ($should_be_main ? ' (ตั้งเป็นรูปหลัก)' : '');
+        send_json_success($message, $image_url, $response_data);
 
     } catch (Exception $e) {
         // Rollback transaction
