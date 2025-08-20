@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>บันทึกการเคลื่อนไหวสต็อก - ระบบจัดการร้านค้า</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --light-bg: #ecf0f1;
+            --white: #ffffff;
+            --text-dark: #2c3e50;
+            --text-light: #7f8c8d;
+            --border-color: #bdc3c7;
+            --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: var(--light-bg);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        .header-section {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--white);
+            padding: 2rem 0;
+            box-shadow: var(--shadow);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header-title h1 {
+            font-size: 2rem;
+            font-weight: 600;
+        }
+
+        .header-title i {
+            font-size: 2.5rem;
+            opacity: 0.9;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--white);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--white);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            border-top: 4px solid var(--accent-color);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--text-light);
+            font-weight: 500;
+        }
+
+        .action-section {
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+
+        .action-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .action-title {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .btn-receive {
+            background: var(--success-color);
+            color: var(--white);
+        }
+
+        .btn-dispatch {
+            background: var(--warning-color);
+            color: var(--white);
+        }
+
+        .btn-transfer {
+            background: var(--accent-color);
+            color: var(--white);
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+
+        .filters-section {
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+
+        .filters-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .filters-header h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .filters-row {
+            padding: 1.5rem 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            align-items: end;
+        }
+
+        .filter-group label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+
+        .filter-group select,
+        .filter-group input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .reset-all-btn {
+            background: var(--danger-color);
+            color: var(--white);
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .reset-all-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+
+        .table-container {
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .search-container {
+            position: relative;
+            flex: 1;
+            max-width: 400px;
+        }
+
+        .search-container input {
+            width: 100%;
+            padding: 0.8rem 3rem 0.8rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .search-container i {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: var(--light-bg);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        tr:hover {
+            background: rgba(52, 152, 219, 0.05);
+        }
+
+        .movement-type {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .type-receive {
+            background: rgba(39, 174, 96, 0.1);
+            color: var(--success-color);
+        }
+
+        .type-dispatch {
+            background: rgba(243, 156, 18, 0.1);
+            color: var(--warning-color);
+        }
+
+        .type-transfer {
+            background: rgba(52, 152, 219, 0.1);
+            color: var(--accent-color);
+        }
+
+        .quantity-cell {
+            font-weight: 600;
+        }
+
+        .quantity-positive {
+            color: var(--success-color);
+        }
+
+        .quantity-negative {
+            color: var(--danger-color);
+        }
+
+        .pagination {
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .pagination button {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+            background: var(--white);
+            color: var(--text-dark);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background: var(--accent-color);
+            color: var(--white);
+            border-color: var(--accent-color);
+        }
+
+        .pagination button.active {
+            background: var(--accent-color);
+            color: var(--white);
+            border-color: var(--accent-color);
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: var(--white);
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            color: var(--primary-color);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            flex: 1;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            color: var(--text-light);
+            cursor: pointer;
+            padding: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            background: rgba(231, 76, 60, 0.1);
+            color: var(--danger-color);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            padding: 2rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 0.8rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .form-actions {
+            padding: 1.5rem 2rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        .form-actions button {
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .cancel-btn {
+            background: var(--text-light);
+            color: var(--white);
+        }
+
+        .save-btn {
+            background: var(--success-color);
+            color: var(--white);
+        }
+
+        .form-actions button:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                text-align: center;
+            }
+
+            .header-title h1 {
+                font-size: 1.5rem;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            .action-header,
+            .filters-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .quick-actions {
+                justify-content: center;
+            }
+
+            .table-container {
+                overflow-x: auto;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 2% auto;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header Section -->
+    <div class="header-section">
+        <div class="header-content">
+            <div class="header-title">
+                <i class="fas fa-exchange-alt"></i>
+                <h1>บันทึกการเคลื่อนไหวสต็อก</h1>
+            </div>
+            <a href="products_admin.html" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+                กลับสู่หน้าจัดการสินค้า
+            </a>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Statistics Row -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-number" id="totalMovements">0</div>
+                <div class="stat-label">การเคลื่อนไหวทั้งหมด</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="todayMovements">0</div>
+                <div class="stat-label">การเคลื่อนไหววันนี้</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="receivedToday">0</div>
+                <div class="stat-label">รับเข้าวันนี้</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="dispatchedToday">0</div>
+                <div class="stat-label">เบิกออกวันนี้</div>
+            </div>
+        </div>
+
+        <!-- Quick Actions Section -->
+        <div class="action-section">
+            <div class="action-header">
+                <div class="action-title">
+                    <i class="fas fa-bolt"></i>
+                    การดำเนินการด่วน
+                </div>
+                <div class="quick-actions">
+                    <button class="action-btn btn-receive" onclick="openMovementModal('receive')">
+                        <i class="fas fa-plus-circle"></i>
+                        รับสินค้าเข้า
+                    </button>
+                    <button class="action-btn btn-dispatch" onclick="openMovementModal('dispatch')">
+                        <i class="fas fa-minus-circle"></i>
+                        เบิกสินค้าออก
+                    </button>
+                    <button class="action-btn btn-transfer" onclick="openMovementModal('transfer')">
+                        <i class="fas fa-exchange-alt"></i>
+                        โอนย้ายสินค้า
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters Section -->
+        <div class="filters-section">
+            <div class="filters-header">
+                <i class="fas fa-filter"></i>
+                <h3>ตัวกรองข้อมูล</h3>
+            </div>
+            <div class="filters-row">
+                <div class="filter-group">
+                    <label><i class="fas fa-tags"></i> ประเภทการเคลื่อนไหว</label>
+                    <select id="movementTypeFilter">
+                        <option value="">ทั้งหมด</option>
+                        <option value="receive">รับเข้า</option>
+                        <option value="dispatch">เบิกออก</option>
+                        <option value="transfer">โอนย้าย</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label><i class="fas fa-calendar-alt"></i> วันที่เริ่มต้น</label>
+                    <input type="date" id="startDateFilter">
+                </div>
+                <div class="filter-group">
+                    <label><i class="fas fa-calendar-check"></i> วันที่สิ้นสุด</label>
+                    <input type="date" id="endDateFilter">
+                </div>
+                <div class="filter-group">
+                    <label><i class="fas fa-user"></i> ผู้ดำเนินการ</label>
+                    <input type="text" id="userFilter" placeholder="ชื่อผู้ดำเนินการ">
+                </div>
+                <div class="filter-group">
+                    <button class="reset-all-btn" onclick="resetAllFilters()">
+                        <i class="fas fa-undo"></i>
+                        รีเซ็ตทั้งหมด
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Section -->
+        <div class="table-container">
+            <div class="table-header">
+                <h3><i class="fas fa-list"></i> รายการการเคลื่อนไหวสต็อก</h3>
+                <div class="search-container">
+                    <input type="text" id="searchInput" placeholder="ค้นหาตามรหัสสินค้า, ชื่อสินค้า หรือหมายเหตุ...">
+                    <i class="fas fa-search"></i>
+                </div>
+            </div>
+
+            <table id="movementsTable">
+                <thead>
+                    <tr>
+                        <th>วันที่/เวลา</th>
+                        <th>ประเภท</th>
+                        <th>รหัสสินค้า</th>
+                        <th>ชื่อสินค้า</th>
+                        <th>ล็อต</th>
+                        <th>จำนวน</th>
+                        <th>คงเหลือหลังการเคลื่อนไหว</th>
+                        <th>ผู้ดำเนินการ</th>
+                        <th>หมายเหตุ</th>
+                    </tr>
+                </thead>
+                <tbody id="movementsTableBody">
+                    <!-- Movement rows will be inserted here -->
+                </tbody>
+            </table>
+
+            <div class="pagination" id="pagination">
+                <!-- Pagination buttons will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Movement Modal -->
+    <div id="movementModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">
+                    <i class="fas fa-plus-circle"></i>
+                    บันทึกการเคลื่อนไหวสต็อก
+                </h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="movementForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label><i class="fas fa-tags"></i> ประเภทการเคลื่อนไหว *</label>
+                        <select id="movementType" required onchange="updateModalTitle()">
+                            <option value="">เลือกประเภท</option>
+                            <option value="receive">รับเข้า</option>
+                            <option value="dispatch">เบิกออก</option>
+                            <option value="transfer">โอนย้าย</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-box"></i> สินค้า *</label>
+                        <select id="productSelect" required>
+                            <option value="">เลือกสินค้า</option>
+                            <!-- Products will be loaded here -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-layer-group"></i> ล็อต</label>
+                        <input type="text" id="productLot" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-warehouse"></i> สต็อกปัจจุบัน</label>
+                        <input type="number" id="currentStock" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-sort-numeric-up"></i> จำนวนที่ดำเนินการ *</label>
+                        <input type="number" id="quantity" required min="1" onchange="calculateNewStock()">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-calculator"></i> สต็อกหลังการดำเนินการ</label>
+                        <input type="number" id="newStock" readonly>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label><i class="fas fa-calendar-alt"></i> วันที่/เวลา *</label>
+                        <input type="datetime-local" id="movementDateTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> ผู้ดำเนินการ *</label>
+                        <input type="text" id="performedBy" required value="Admin">
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label><i class="fas fa-sticky-note"></i> หมายเหตุ</label>
+                        <textarea id="notes" rows="3" placeholder="บันทึกเพิ่มเติม (ถ้ามี)"></textarea>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="cancel-btn" onclick="closeModal()">ยกเลิก</button>
+                    <button type="submit" class="save-btn">บันทึกการเคลื่อนไหว</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Mock data for demonstration
+        let movements = [
+            {
+                id: 1,
+                datetime: '2024-08-17 09:30:00',
+                type: 'receive',
+                productCode: 'RB001',
+                productName: 'เหลล็กเส้น DB10',
+                lot: 'LOT240817001',
+                quantity: 100,
+                stockAfter: 250,
+                performedBy: 'Admin',
+                notes: 'รับสินค้าจากซัพพลายเออร์'
+            },
+            {
+                id: 2,
+                datetime: '2024-08-17 10:15:00',
+                type: 'dispatch',
+                productCode: 'SP001',
+                productName: 'เหล็กแผ่น 3mm',
+                lot: 'LOT240815002',
+                quantity: -25,
+                stockAfter: 75,
+                performedBy: 'Admin',
+                notes: 'จ่ายให้ลูกค้า บจ.ABC'
+            },
+            {
+                id: 3,
+                datetime: '2024-08-17 11:00:00',
+                type: 'transfer',
+                productCode: 'ST001',
+                productName: 'เหล็กรูปพรรณ H-Beam',
+                lot: 'LOT240816003',
+                quantity: 10,
+                stockAfter: 45,
+                performedBy: 'Admin',
+                notes: 'โอนย้ายไปคลังสาขา 2'
+            }
+        ];
+
+        let currentPage = 1;
+        const itemsPerPage = 10;
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProducts();
+            updateStats();
+            filterMovements();
+            setCurrentDateTime();
+        });
+
+        // Load products for selection
+        function loadProducts() {
+            const productSelect = document.getElementById('productSelect');
+            // Mock products data
+            const products = [
+                { code: 'RB001', name: 'เหล็กเส้น DB10', lot: 'LOT240817001', stock: 150 },
+                { code: 'SP001', name: 'เหล็กแผ่น 3mm', lot: 'LOT240815002', stock: 100 },
+                { code: 'ST001', name: 'เหล็กรูปพรรณ H-Beam', lot: 'LOT240816003', stock: 35 }
+            ];
+
+            products.forEach(product => {
+                const option = document.createElement('option');
+                option.value = product.code;
+                option.textContent = `${product.code} - ${product.name}`;
+                option.dataset.lot = product.lot;
+                option.dataset.stock = product.stock;
+                productSelect.appendChild(option);
+            });
+        }
+
+        // Update statistics
+        function updateStats() {
+            const today = new Date().toISOString().split('T')[0];
+            const todayMovements = movements.filter(m => m.datetime.startsWith(today));
+            const receivedToday = todayMovements.filter(m => m.type === 'receive').length;
+            const dispatchedToday = todayMovements.filter(m => m.type === 'dispatch').length;
+
+            document.getElementById('totalMovements').textContent = movements.length;
+            document.getElementById('todayMovements').textContent = todayMovements.length;
+            document.getElementById('receivedToday').textContent = receivedToday;
+            document.getElementById('dispatchedToday').textContent = dispatchedToday;
+        }
+
+        // Filter and display movements
+        function filterMovements() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const typeFilter = document.getElementById('movementTypeFilter').value;
+            const startDate = document.getElementById('startDateFilter').value;
+            const endDate = document.getElementById('endDateFilter').value;
+            const userFilter = document.getElementById('userFilter').value.toLowerCase();
+
+            let filteredMovements = movements.filter(movement => {
+                const matchesSearch = movement.productCode.toLowerCase().includes(searchTerm) ||
+                                    movement.productName.toLowerCase().includes(searchTerm) ||
+                                    movement.notes.toLowerCase().includes(searchTerm);
+                
+                const matchesType = !typeFilter || movement.type === typeFilter;
+                
+                const movementDate = movement.datetime.split(' ')[0];
+                const matchesDateRange = (!startDate || movementDate >= startDate) &&
+                                       (!endDate || movementDate <= endDate);
+                
+                const matchesUser = !userFilter || movement.performedBy.toLowerCase().includes(userFilter);
+
+                return matchesSearch && matchesType && matchesDateRange && matchesUser;
+            });
+
+            displayMovements(filteredMovements);
+            setupPagination(filteredMovements);
+        }
+
+        // Display movements in table
+        function displayMovements(movementList) {
+            const tbody = document.getElementById('movementsTableBody');
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedMovements = movementList.slice(startIndex, endIndex);
+
+            tbody.innerHTML = '';
+
+            if (paginatedMovements.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 2rem; color: var(--text-light);">
+                            <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                            ไม่พบข้อมูลการเคลื่อนไหวสต็อก
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            paginatedMovements.forEach(movement => {
+                const row = document.createElement('tr');
+                
+                const typeClass = `type-${movement.type}`;
+                const typeText = {
+                    'receive': 'รับเข้า',
+                    'dispatch': 'เบิกออก',
+                    'transfer': 'โอนย้าย'
+                }[movement.type];
+
+                const quantityClass = movement.quantity > 0 ? 'quantity-positive' : 'quantity-negative';
+                const quantitySign = movement.quantity > 0 ? '+' : '';
+
+                row.innerHTML = `
+                    <td>${formatDateTime(movement.datetime)}</td>
+                    <td><span class="movement-type ${typeClass}">${typeText}</span></td>
+                    <td><strong>${movement.productCode}</strong></td>
+                    <td>${movement.productName}</td>
+                    <td>${movement.lot}</td>
+                    <td class="quantity-cell ${quantityClass}">${quantitySign}${Math.abs(movement.quantity)}</td>
+                    <td><strong>${movement.stockAfter}</strong></td>
+                    <td>${movement.performedBy}</td>
+                    <td>${movement.notes}</td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+
+        // Setup pagination
+        function setupPagination(movementList) {
+            const totalPages = Math.ceil(movementList.length / itemsPerPage);
+            const paginationContainer = document.getElementById('pagination');
+            
+            paginationContainer.innerHTML = '';
+
+            if (totalPages <= 1) return;
+
+            // Previous button
+            const prevBtn = document.createElement('button');
+            prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+            prevBtn.disabled = currentPage === 1;
+            prevBtn.onclick = () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    filterMovements();
+                }
+            };
+            paginationContainer.appendChild(prevBtn);
+
+            // Page numbers
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, startPage + 4);
+
+            for (let i = startPage; i <= endPage; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.textContent = i;
+                pageBtn.className = i === currentPage ? 'active' : '';
+                pageBtn.onclick = () => {
+                    currentPage = i;
+                    filterMovements();
+                };
+                paginationContainer.appendChild(pageBtn);
+            }
+
+            // Next button
+            const nextBtn = document.createElement('button');
+            nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+            nextBtn.disabled = currentPage === totalPages;
+            nextBtn.onclick = () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    filterMovements();
+                }
+            };
+            paginationContainer.appendChild(nextBtn);
+        }
+
+        // Format datetime for display
+        function formatDateTime(datetime) {
+            const date = new Date(datetime);
+            return date.toLocaleString('th-TH', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Open movement modal
+        function openMovementModal(type = '') {
+            const modal = document.getElementById('movementModal');
+            const movementTypeSelect = document.getElementById('movementType');
+            
+            if (type) {
+                movementTypeSelect.value = type;
+                updateModalTitle();
+            }
+            
+            resetForm();
+            setCurrentDateTime();
+            modal.style.display = 'block';
+        }
+
+        // Close modal
+        function closeModal() {
+            const modal = document.getElementById('movementModal');
+            modal.style.display = 'none';
+            resetForm();
+        }
+
+        // Update modal title based on movement type
+        function updateModalTitle() {
+            const type = document.getElementById('movementType').value;
+            const modalTitle = document.getElementById('modalTitle');
+            const icons = {
+                'receive': 'fas fa-plus-circle',
+                'dispatch': 'fas fa-minus-circle',
+                'transfer': 'fas fa-exchange-alt'
+            };
+            const titles = {
+                'receive': 'บันทึกการรับสินค้าเข้า',
+                'dispatch': 'บันทึกการเบิกสินค้าออก',
+                'transfer': 'บันทึกการโอนย้ายสินค้า'
+            };
+            
+            if (type && titles[type]) {
+                modalTitle.innerHTML = `<i class="${icons[type]}"></i> ${titles[type]}`;
+            } else {
+                modalTitle.innerHTML = '<i class="fas fa-plus-circle"></i> บันทึกการเคลื่อนไหวสต็อก';
+            }
+        }
+
+        // Set current date and time
+        function setCurrentDateTime() {
+            const now = new Date();
+            const datetime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+                .toISOString()
+                .slice(0, 16);
+            document.getElementById('movementDateTime').value = datetime;
+        }
+
+        // Handle product selection
+        document.getElementById('productSelect').addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption.value) {
+                document.getElementById('productLot').value = selectedOption.dataset.lot || '';
+                document.getElementById('currentStock').value = selectedOption.dataset.stock || 0;
+                calculateNewStock();
+            } else {
+                document.getElementById('productLot').value = '';
+                document.getElementById('currentStock').value = '';
+                document.getElementById('newStock').value = '';
+            }
+        });
+
+        // Calculate new stock after movement
+        function calculateNewStock() {
+            const currentStock = parseInt(document.getElementById('currentStock').value) || 0;
+            const quantity = parseInt(document.getElementById('quantity').value) || 0;
+            const type = document.getElementById('movementType').value;
+            
+            let newStock = currentStock;
+            
+            if (type === 'receive') {
+                newStock = currentStock + quantity;
+            } else if (type === 'dispatch') {
+                newStock = currentStock - quantity;
+            } else if (type === 'transfer') {
+                newStock = currentStock - quantity;
+            }
+            
+            document.getElementById('newStock').value = Math.max(0, newStock);
+        }
+
+        // Reset form
+        function resetForm() {
+            document.getElementById('movementForm').reset();
+            document.getElementById('productLot').value = '';
+            document.getElementById('currentStock').value = '';
+            document.getElementById('newStock').value = '';
+            document.getElementById('performedBy').value = 'Admin';
+        }
+
+        // Handle form submission
+        document.getElementById('movementForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                type: document.getElementById('movementType').value,
+                productCode: document.getElementById('productSelect').value,
+                productName: document.getElementById('productSelect').options[document.getElementById('productSelect').selectedIndex].text.split(' - ')[1],
+                lot: document.getElementById('productLot').value,
+                quantity: parseInt(document.getElementById('quantity').value),
+                stockAfter: parseInt(document.getElementById('newStock').value),
+                datetime: document.getElementById('movementDateTime').value.replace('T', ' ') + ':00',
+                performedBy: document.getElementById('performedBy').value,
+                notes: document.getElementById('notes').value || '-'
+            };
+            
+            // Adjust quantity sign based on movement type
+            if (formData.type === 'dispatch' || formData.type === 'transfer') {
+                formData.quantity = -Math.abs(formData.quantity);
+            } else {
+                formData.quantity = Math.abs(formData.quantity);
+            }
+            
+            // Add to movements array
+            formData.id = movements.length + 1;
+            movements.unshift(formData);
+            
+            // Update display
+            updateStats();
+            filterMovements();
+            closeModal();
+            
+            // Show success message
+            alert('บันทึกการเคลื่อนไหวสต็อกเรียบร้อยแล้ว');
+        });
+
+        // Reset all filters
+        function resetAllFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('movementTypeFilter').value = '';
+            document.getElementById('startDateFilter').value = '';
+            document.getElementById('endDateFilter').value = '';
+            document.getElementById('userFilter').value = '';
+            currentPage = 1;
+            filterMovements();
+        }
+
+        // Event listeners for filters
+        document.getElementById('searchInput').addEventListener('input', filterMovements);
+        document.getElementById('movementTypeFilter').addEventListener('change', () => {
+            currentPage = 1;
+            filterMovements();
+        });
+        document.getElementById('startDateFilter').addEventListener('change', () => {
+            currentPage = 1;
+            filterMovements();
+        });
+        document.getElementById('endDateFilter').addEventListener('change', () => {
+            currentPage = 1;
+            filterMovements();
+        });
+        document.getElementById('userFilter').addEventListener('input', () => {
+            currentPage = 1;
+            filterMovements();
+        });
+
+        // Handle quantity input changes
+        document.getElementById('quantity').addEventListener('input', calculateNewStock);
+        document.getElementById('movementType').addEventListener('change', calculateNewStock);
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('movementModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>พนักงานช้างเหล็กไทย - เข้าสู่ระบบ</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #1e3a5f, #2c5477);
+            font-family: 'Prompt', 'Inter', 'Sarabun', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .login-container {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #dc2626, #ef4444);
+        }
+
+        .logo {
+            width: 90px;
+            height: 90px;
+            margin: 0 auto 25px;
+            background: #f8fafc;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo img {
+            max-width: 70px;
+            max-height: 70px;
+            object-fit: contain;
+        }
+
+        .title {
+            color: #1f2937;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 30px;
+            letter-spacing: -0.5px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+            position: relative;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 15px;
+            background: #f9fafb;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-input.error {
+            border-color: #dc2626;
+            background: #fef2f2;
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            font-family: inherit;
+        }
+
+        .login-button:hover:not(:disabled) {
+            background: linear-gradient(135deg, #b91c1c, #991b1b);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(220, 38, 38, 0.3);
+        }
+
+        .login-button:active {
+            transform: translateY(0);
+        }
+
+        .login-button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .loading {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .loading::after {
+            content: '';
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .alert.success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .alert.error {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        .alert.info {
+            background: #e0f2fe;
+            color: #0277bd;
+            border: 1px solid #81d4fa;
+        }
+
+        .alert.hidden {
+            display: none;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 12px;
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                margin: 20px;
+                padding: 30px 20px;
+            }
+            
+            .logo {
+                width: 80px;
+                height: 80px;
+            }
+            
+            .title {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <img src="image/logo_cropped.png" alt="Logo">
+        </div>
+        <div class="title">เข้าสู่ระบบ</div>
+        
+        <div id="alert" class="alert hidden"></div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <input type="text" 
+                       id="username" 
+                       name="username"
+                       class="form-input" 
+                       placeholder="รหัสพนักงาน" 
+                       required 
+                       autocomplete="username">
+            </div>
+            
+            <div class="form-group">
+                <input type="password" 
+                       id="password" 
+                       name="password"
+                       class="form-input" 
+                       placeholder="รหัสผ่าน" 
+                       required 
+                       autocomplete="current-password">
+            </div>
+            
+            <button type="submit" class="login-button" id="loginBtn">
+                <span id="btnText">เข้าสู่ระบบ</span>
+                <div class="loading" id="loading"></div>
+            </button>
+        </form>
+        
+        <div class="footer">
+            © 2025 ช้างเหล็กไทย - ระบบจัดการพนักงาน
+        </div>
+    </div>
+
+    <script>
+        const loginForm = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const btnText = document.getElementById('btnText');
+        const loading = document.getElementById('loading');
+        const alert = document.getElementById('alert');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+
+        // Show alert function
+        function showAlert(message, type = 'error') {
+            alert.textContent = message;
+            alert.className = `alert ${type}`;
+            alert.classList.remove('hidden');
+            
+            // Auto hide after 5 seconds for success messages
+            if (type === 'success') {
+                setTimeout(() => {
+                    alert.classList.add('hidden');
+                }, 5000);
+            }
+        }
+
+        // Hide alert function
+        function hideAlert() {
+            alert.classList.add('hidden');
+        }
+
+        // Clear error states
+        function clearErrors() {
+            usernameInput.classList.remove('error');
+            passwordInput.classList.remove('error');
+            hideAlert();
+        }
+
+        // Set loading state
+        function setLoading(isLoading) {
+            loginBtn.disabled = isLoading;
+            if (isLoading) {
+                btnText.style.opacity = '0';
+                loading.style.display = 'block';
+            } else {
+                btnText.style.opacity = '1';
+                loading.style.display = 'none';
+            }
+        }
+
+        // Check for URL parameters on page load
+        function checkUrlParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            if (urlParams.get('logout') === 'success') {
+                showAlert('ออกจากระบบเรียบร้อยแล้ว', 'success');
+                // Clean up URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else if (urlParams.get('timeout') === '1') {
+                showAlert('เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่', 'info');
+                // Clean up URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else if (urlParams.get('access') === 'denied') {
+                showAlert('กรุณาเข้าสู่ระบบก่อนเข้าใช้งาน', 'info');
+                // Clean up URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
+
+        // Form submission handler
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            clearErrors();
+
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            // Client-side validation
+            if (!username) {
+                usernameInput.classList.add('error');
+                showAlert('กรุณากรอกรหัสพนักงาน');
+                usernameInput.focus();
+                return;
+            }
+
+            if (!password) {
+                passwordInput.classList.add('error');
+                showAlert('กรุณากรอกรหัสผ่าน');
+                passwordInput.focus();
+                return;
+            }
+
+            setLoading(true);
+
+            try {
+                const response = await fetch('login_process.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert(data.message, 'success');
+                    setTimeout(() => {
+                        window.location.href = data.redirect || 'dashboard_admin.php';
+                    }, 1500);
+                } else {
+                    showAlert(data.message);
+                    // Focus on appropriate field based on error
+                    if (data.message.includes('รหัสพนักงาน') || data.message.includes('ไม่พบ')) {
+                        usernameInput.classList.add('error');
+                        usernameInput.focus();
+                        usernameInput.select();
+                    } else if (data.message.includes('รหัสผ่าน')) {
+                        passwordInput.classList.add('error');
+                        passwordInput.focus();
+                        passwordInput.select();
+                    }
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showAlert('เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง');
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        // Enter key handling for inputs
+        [usernameInput, passwordInput].forEach(input => {
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    loginForm.dispatchEvent(new Event('submit'));
+                }
+            });
+
+            // Clear error state when user starts typing
+            input.addEventListener('input', function() {
+                this.classList.remove('error');
+                if (this.value.trim()) {
+                    hideAlert();
+                }
+            });
+
+            // Clear error state on focus
+            input.addEventListener('focus', function() {
+                this.classList.remove('error');
+            });
+        });
+
+        // Initialize page
+        window.addEventListener('load', function() {
+            checkUrlParams();
+            usernameInput.focus();
+        });
+
+        // Prevent going back to login page if already logged in
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                // Page was loaded from cache, check if user is logged in
+                fetch('check_session.php', {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.logged_in) {
+                        window.location.href = 'dashboard_admin.html';
+                    }
+                })
+                .catch(error => {
+                    // Ignore errors, user probably not logged in
+                });
+            }
+        });
+    </script>
+</body>
+</html>
