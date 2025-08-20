@@ -1,22 +1,3 @@
-<?php
-require_once 'controllers/config.php';
-require_once 'models/user.php';
-require_once 'controllers/auth.php';
-
-$auth = new AuthController();
-
-// ตรวจสอบว่าเข้าสู่ระบบแล้วหรือไม่
-if($auth->isLoggedIn()) {
-    header("Location: index.php");
-    exit();
-}
-
-// ประมวลผลการลงทะเบียน
-if($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $auth->register();
-    header("Location: login.php");
-}
-?>
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -121,6 +102,11 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
             background: white;
         }
 
+        .form-input.error {
+            border-color: #dc3545;
+            background: #fff5f5;
+        }
+
         .register-btn {
             width: 100%;
             padding: 12px;
@@ -143,6 +129,12 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
             transform: translateY(1px);
         }
 
+        .register-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .login-link {
             text-align: center;
             margin-top: 15px;
@@ -158,6 +150,48 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
         .login-link a:hover {
             color: #dc3545;
             text-decoration: underline;
+        }
+
+        /* Alert Messages */
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
         @media (max-width: 768px) {
@@ -191,29 +225,34 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
             <div class="form-header">
                 <h2 class="form-title">ลงทะเบียน</h2>
             </div>
+
+            <!-- Alert Message -->
+            <div id="alertMessage" class="alert"></div>
             
-            <form method="POST">
+            <form id="registerForm">
                 <div class="form-group">
-                    <input type="text" name="name" class="form-input" placeholder="ชื่อ-นามสกุล" required>
+                    <input type="text" name="name" id="name" class="form-input" placeholder="ชื่อ-นามสกุล" required>
                 </div>
                 
                 <div class="form-group">
-                    <input type="email" name="email" class="form-input" placeholder="อีเมล" required>
+                    <input type="email" name="email" id="email" class="form-input" placeholder="อีเมล" required>
                 </div>
                 
                 <div class="form-group">
-                    <input type="tel" name="phone" class="form-input" placeholder="เบอร์โทรศัพท์" required>
+                    <input type="tel" name="phone" id="phone" class="form-input" placeholder="เบอร์โทรศัพท์" required>
                 </div>
                 
                 <div class="form-group">
-                    <input type="password" name="password" class="form-input" placeholder="รหัสผ่าน" required>
+                    <input type="password" name="password" id="password" class="form-input" placeholder="รหัสผ่าน (อย่างน้อย 8 ตัวอักษร)" required>
                 </div>
                 
                 <div class="form-group">
-                    <input type="password" name="confirm_password" class="form-input" placeholder="ยืนยันรหัสผ่าน" required>
+                    <input type="password" name="confirmPassword" id="confirmPassword" class="form-input" placeholder="ยืนยันรหัสผ่าน" required>
                 </div>
                 
-                <button type="submit" class="register-btn">ลงทะเบียน</button>
+                <button type="submit" id="registerBtn" class="register-btn">
+                    <span id="btnText">ลงทะเบียน</span>
+                </button>
                 
                 <div class="login-link">
                     <a href="login.php">มีบัญชีอยู่แล้ว? เข้าสู่ระบบ</a>
@@ -221,5 +260,203 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
             </form>
         </div>
     </div>
+
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const form = e.target;
+            const formData = new FormData(form);
+            const registerBtn = document.getElementById('registerBtn');
+            const btnText = document.getElementById('btnText');
+            const alertMessage = document.getElementById('alertMessage');
+            
+            // Clear previous errors
+            clearFormErrors();
+            hideAlert();
+            
+            // Client-side validation
+            if (!validateForm(formData)) {
+                return;
+            }
+            
+            // Show loading state
+            registerBtn.disabled = true;
+            btnText.innerHTML = '<span class="loading"></span>กำลังลงทะเบียน...';
+            
+            try {
+                // Add action parameter
+                formData.append('action', 'signup');
+                
+                const response = await fetch('controllers/auth_api.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert('success', result.message);
+                    form.reset();
+                    
+                    // Redirect after success
+                    setTimeout(() => {
+                        if (result.redirect) {
+                            window.location.href = result.redirect;
+                        } else {
+                            window.location.href = 'login.php';
+                        }
+                    }, 2000);
+                } else {
+                    showAlert('error', result.message);
+                    handleFieldErrors(result.code);
+                }
+                
+            } catch (error) {
+                console.error('Fetch Error:', error);
+                console.log('Response URL:', error.response?.url);
+                showAlert('error', 'เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + error.message);
+            } finally {
+                // Reset button state
+                registerBtn.disabled = false;
+                btnText.textContent = 'ลงทะเบียน';
+            }
+        });
+        
+        function validateForm(formData) {
+            let isValid = true;
+            const password = formData.get('password');
+            const confirmPassword = formData.get('confirmPassword');
+            const email = formData.get('email');
+            const phone = formData.get('phone');
+            
+            // Validate required fields
+            const requiredFields = ['name', 'email', 'phone', 'password', 'confirmPassword'];
+            for (const field of requiredFields) {
+                const value = formData.get(field);
+                if (!value || value.trim() === '') {
+                    markFieldError(field);
+                    isValid = false;
+                }
+            }
+            
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (email && !emailRegex.test(email)) {
+                markFieldError('email');
+                showAlert('error', 'รูปแบบอีเมลไม่ถูกต้อง');
+                isValid = false;
+            }
+            
+            // Validate phone format
+            const phoneRegex = /^[0-9+\-\s()]{8,20}$/;
+            if (phone && !phoneRegex.test(phone)) {
+                markFieldError('phone');
+                showAlert('error', 'รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง');
+                isValid = false;
+            }
+            
+            // Validate password strength
+            if (password && password.length < 8) {
+                markFieldError('password');
+                showAlert('error', 'รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร');
+                isValid = false;
+            }
+            
+            if (password && !/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+                markFieldError('password');
+                showAlert('error', 'รหัสผ่านต้องประกอบด้วยตัวอักษรพิมพ์เล็ก พิมพ์ใหญ่ และตัวเลข');
+                isValid = false;
+            }
+            
+            // Validate password confirmation
+            if (password !== confirmPassword) {
+                markFieldError('confirmPassword');
+                showAlert('error', 'การยืนยันรหัสผ่านไม่ตรงกัน');
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+        
+        function showAlert(type, message) {
+            const alertMessage = document.getElementById('alertMessage');
+            alertMessage.className = `alert alert-${type}`;
+            alertMessage.textContent = message;
+            alertMessage.style.display = 'block';
+            
+            // Auto hide success messages
+            if (type === 'success') {
+                setTimeout(() => {
+                    hideAlert();
+                }, 5000);
+            }
+        }
+        
+        function hideAlert() {
+            const alertMessage = document.getElementById('alertMessage');
+            alertMessage.style.display = 'none';
+        }
+        
+        function markFieldError(fieldName) {
+            const field = document.getElementById(fieldName);
+            if (field) {
+                field.classList.add('error');
+                field.addEventListener('input', function() {
+                    this.classList.remove('error');
+                }, { once: true });
+            }
+        }
+        
+        function clearFormErrors() {
+            const errorFields = document.querySelectorAll('.form-input.error');
+            errorFields.forEach(field => {
+                field.classList.remove('error');
+            });
+        }
+        
+        function handleFieldErrors(errorCode) {
+            switch (errorCode) {
+                case 'INVALID_EMAIL':
+                    markFieldError('email');
+                    break;
+                case 'INVALID_PHONE':
+                    markFieldError('phone');
+                    break;
+                case 'WEAK_PASSWORD':
+                    markFieldError('password');
+                    break;
+                case 'PASSWORD_MISMATCH':
+                    markFieldError('confirmPassword');
+                    break;
+                case 'EMAIL_EXISTS':
+                    markFieldError('email');
+                    break;
+            }
+        }
+        
+        // Real-time password validation
+        document.getElementById('password').addEventListener('input', function() {
+            const password = this.value;
+            const confirmPassword = document.getElementById('confirmPassword');
+            
+            if (confirmPassword.value && password !== confirmPassword.value) {
+                confirmPassword.classList.add('error');
+            } else {
+                confirmPassword.classList.remove('error');
+            }
+        });
+        
+        document.getElementById('confirmPassword').addEventListener('input', function() {
+            const password = document.getElementById('password').value;
+            const confirmPassword = this.value;
+            
+            if (password && password !== confirmPassword) {
+                this.classList.add('error');
+            } else {
+                this.classList.remove('error');
+            }
+        });
+    </script>
 </body>
 </html>

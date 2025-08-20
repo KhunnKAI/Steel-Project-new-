@@ -1,26 +1,3 @@
-<?php
-require_once 'controllers/config.php';
-require_once 'models/user.php';
-require_once 'controllers/auth.php';
-
-$auth = new AuthController();
-
-// ตรวจสอบว่าเข้าสู่ระบบแล้วหรือไม่
-if($auth->isLoggedIn()) {
-    header("Location: index.php");
-    exit();
-}
-
-// ประมวลผลการเข้าสู่ระบบ
-if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['login'])) {
-    $auth->login();
-}
-
-// ประมวลผลการลืมรหัสผ่าน
-if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['forgot_password'])) {
-    $auth->forgotPassword();
-}
-?>
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -147,6 +124,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['forgot_password'])) {
             font-weight: 600;
             cursor: pointer;
             transition: background-color 0.3s ease;
+            position: relative;
         }
 
         .login-btn:hover {
@@ -155,6 +133,28 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['forgot_password'])) {
 
         .login-btn:active {
             transform: translateY(1px);
+        }
+
+        .login-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ffffff;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         .forgot-password {
@@ -190,6 +190,33 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['forgot_password'])) {
         .register-link:hover {
             color: #a3a3a3;
             text-decoration: underline;
+        }
+
+        /* Alert Messages */
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .alert-error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .alert-info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
         }
 
         /* Modal Styles */
@@ -320,7 +347,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['forgot_password'])) {
     <div class="container">
         <div class="left-section">
             <div class="logo">
-                <img src="image/logo.png" width="300px">
+                <img src="image/logo.png" width="300px" alt="Logo">
             </div>
             <h1 class="title">ช้างเหล็กไทย</h1>
             <p class="subtitle">เหล็กคุณภาพ แกร่งทุกงาน มั่นใจช้างเหล็กไทย</p>
@@ -332,16 +359,22 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['forgot_password'])) {
                 <h2 class="form-title">เข้าสู่ระบบ</h2>
             </div>
             
-            <form method="POST">
+            <!-- Alert Messages -->
+            <div id="alertMessage" class="alert"></div>
+            
+            <form id="loginForm">
                 <div class="form-group">
-                    <input type="email" name="email" class="form-input" placeholder="อีเมล" required>
+                    <input type="email" id="email" name="email" class="form-input" placeholder="อีเมล" required>
                 </div>
                 
                 <div class="form-group">
-                    <input type="password" name="password" class="form-input" placeholder="รหัสผ่าน" required>
+                    <input type="password" id="password" name="password" class="form-input" placeholder="รหัสผ่าน" required>
                 </div>
                 
-                <button type="submit" name="login" class="login-btn">เข้าสู่ระบบ</button>
+                <button type="submit" id="loginBtn" class="login-btn">
+                    <span class="loading-spinner" id="loadingSpinner"></span>
+                    <span id="loginBtnText">เข้าสู่ระบบ</span>
+                </button>
 
                 <div class="forgot-password">
                     <a href="#" class="forgot-link" onclick="openForgotPasswordModal()">ลืมรหัสผ่าน</a>
@@ -358,7 +391,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['forgot_password'])) {
                 <h3 class="modal-title">ลืมรหัสผ่าน?</h3>
             </div>
             <div class="modal-body">
-                <input type="email" class="modal-input" placeholder="กรอกอีเมลของคุณ">
+                <input type="email" id="forgotEmail" class="modal-input" placeholder="กรอกอีเมลของคุณ">
                 <div class="modal-buttons">
                     <button class="modal-btn modal-btn-primary" onclick="submitForgotPassword()">ส่ง</button>
                     <button class="modal-btn modal-btn-secondary" onclick="closeForgotPasswordModal()">ยกเลิก</button>
@@ -368,22 +401,130 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['forgot_password'])) {
     </div>
 
     <script>
+        // API Configuration
+        const API_BASE_URL = 'controllers/auth_api.php'; // เปลี่ยนเป็น URL ที่ถูกต้องของ API
+
+        // Login Form Handler
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            
+            // Validate inputs
+            if (!email || !password) {
+                showAlert('กรุณากรอกอีเมลและรหัสผ่าน', 'error');
+                return;
+            }
+            
+            // Validate email format
+            if (!isValidEmail(email)) {
+                showAlert('รูปแบบอีเมลไม่ถูกต้อง', 'error');
+                return;
+            }
+            
+            try {
+                setLoading(true);
+                hideAlert();
+                
+                // Call login API
+                const response = await fetch(API_BASE_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        action: 'login',
+                        email: email,
+                        password: password
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert(data.message, 'success');
+                    
+                    // Store user data in sessionStorage for this session
+                    if (data.data) {
+                        sessionStorage.setItem('user_data', JSON.stringify(data.data));
+                    }
+                    
+                    // Redirect after successful login
+                    setTimeout(() => {
+                        if (data.redirect) {
+                            window.location.href = data.redirect;
+                        } else {
+                            window.location.href = 'index.php';
+                        }
+                    }, 1500);
+                    
+                } else {
+                    showAlert(data.message || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ', 'error');
+                }
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                showAlert('เกิดข้อผิดพลาดในการติดต่อเซิร์ฟเวอร์', 'error');
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        // Forgot Password Modal Functions
         function openForgotPasswordModal() {
             document.getElementById('forgotPasswordModal').style.display = 'block';
         }
 
         function closeForgotPasswordModal() {
             document.getElementById('forgotPasswordModal').style.display = 'none';
+            document.getElementById('forgotEmail').value = '';
         }
 
-        function submitForgotPassword() {
-            const email = document.querySelector('.modal-input').value;
-            if (email) {
+        async function submitForgotPassword() {
+            const email = document.getElementById('forgotEmail').value.trim();
+            
+            if (!email) {
+                alert('กรุณากรอกอีเมลของคุณ');
+                return;
+            }
+            
+            if (!isValidEmail(email)) {
+                alert('รูปแบบอีเมลไม่ถูกต้อง');
+                return;
+            }
+            
+            try {
+                // In a real application, you would call your forgot password API here
+                // For now, just show a success message
                 alert('ส่งลิงก์รีเซ็ตรหัสผ่านไปยังอีเมลของคุณแล้ว');
                 closeForgotPasswordModal();
-                document.querySelector('.modal-input').value = '';
-            } else {
-                alert('กรุณากรอกอีเมลของคุณ');
+                
+                // You can implement the actual API call like this:
+                /*
+                const response = await fetch(API_BASE_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        action: 'forgot_password',
+                        email: email
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    alert(data.message);
+                    closeForgotPasswordModal();
+                } else {
+                    alert(data.message || 'เกิดข้อผิดพลาด');
+                }
+                */
+                
+            } catch (error) {
+                console.error('Forgot password error:', error);
+                alert('เกิดข้อผิดพลาดในการส่งอีเมล');
             }
         }
 
@@ -394,6 +535,97 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['forgot_password'])) {
                 closeForgotPasswordModal();
             }
         }
+
+        // Utility Functions
+        function setLoading(isLoading) {
+            const loginBtn = document.getElementById('loginBtn');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const loginBtnText = document.getElementById('loginBtnText');
+            
+            if (isLoading) {
+                loginBtn.disabled = true;
+                loadingSpinner.style.display = 'inline-block';
+                loginBtnText.textContent = 'กำลังเข้าสู่ระบบ...';
+            } else {
+                loginBtn.disabled = false;
+                loadingSpinner.style.display = 'none';
+                loginBtnText.textContent = 'เข้าสู่ระบบ';
+            }
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertElement = document.getElementById('alertMessage');
+            alertElement.className = `alert alert-${type}`;
+            alertElement.textContent = message;
+            alertElement.style.display = 'block';
+            
+            // Auto hide success messages after 3 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    hideAlert();
+                }, 3000);
+            }
+        }
+
+        function hideAlert() {
+            const alertElement = document.getElementById('alertMessage');
+            alertElement.style.display = 'none';
+        }
+
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        // Check if user is already logged in (optional)
+        function checkExistingLogin() {
+            // Check if user data exists in cookies or sessionStorage
+            const userData = sessionStorage.getItem('user_data');
+            if (userData) {
+                try {
+                    const user = JSON.parse(userData);
+                    if (user.user_id) {
+                        // User might already be logged in, you can redirect or show a message
+                        console.log('User might already be logged in:', user.name);
+                    }
+                } catch (error) {
+                    // Invalid session data, clear it
+                    sessionStorage.removeItem('user_data');
+                }
+            }
+        }
+
+        // Test API connection on page load
+        async function testApiConnection() {
+            try {
+                const response = await fetch(API_BASE_URL + '?action=test');
+                const data = await response.json();
+                
+                if (data.success) {
+                    console.log('API connection successful:', data.message);
+                    console.log('Database status:', data.data.database_connected ? 'Connected' : 'Disconnected');
+                } else {
+                    console.warn('API test failed:', data.message);
+                }
+            } catch (error) {
+                console.error('API connection test failed:', error);
+                // Optionally show a warning to the user
+                // showAlert('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ กรุณาลองใหม่อีกครั้ง', 'error');
+            }
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            checkExistingLogin();
+            testApiConnection();
+        });
+
+        // Handle Enter key in password field
+        document.getElementById('password').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+            }
+        });
     </script>
 </body>
 </html>
