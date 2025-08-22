@@ -1,3 +1,19 @@
+<?php
+// Remove session_start() from here since config.php handles it properly
+require_once 'controllers/config.php';
+
+// Require login to access this page
+requireLogin();
+
+// Get current admin information
+$current_admin = getCurrentAdmin();
+if (!$current_admin) {
+    // If admin not found in database, logout
+    header("Location: controllers/logout.php");
+    exit();
+}
+?>
+
 <!DOCTYPE html>
 <html lang="th">
 
@@ -89,6 +105,22 @@
             justify-content: center;
             color: white;
             font-weight: bold;
+        }
+
+        .logout-btn {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: #b91c1c;
+            transform: translateY(-1px);
         }
 
         .stats-grid {
@@ -360,6 +392,20 @@
             color: #721c24;
         }
 
+        /* Session timeout warning */
+        .session-warning {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #f59e0b;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            z-index: 1002;
+            display: none;
+        }
+
         /* Sidebar Styles */
         .sidebar {
             background: #940606;
@@ -478,6 +524,11 @@
 </head>
 
 <body>
+    <!-- Session timeout warning -->
+    <div id="sessionWarning" class="session-warning">
+        <i class="fas fa-clock"></i> เซสชันจะหมดอายุใน <span id="timeRemaining"></span> นาที
+    </div>
+
     <div class="navbar-toggle" onclick="toggleSidebar()">
         <i class="fas fa-bars"></i>
     </div>
@@ -495,33 +546,39 @@
             <nav>
                 <ul>
                     <li class="active">
-                        <a href="dashboard_admin.html" onclick="showSection('dashboard')">
+                        <a href="dashboard_admin.php" onclick="showSection('dashboard')">
                             <i class="fas fa-tachometer-alt"></i>
                             แดชบอร์ด
                         </a>
                     </li>
                     <li>
-                        <a href="products_admin.html" onclick="showSection('products')">
+                        <a href="products_admin.php" onclick="showSection('products')">
                             <i class="fas fa-box"></i>
                             จัดการสินค้า
                         </a>
                     </li>
                     <li>
-                        <a href="orders_admin.html" onclick="showSection('orders')">
+                        <a href="orders_admin.php" onclick="showSection('orders')">
                             <i class="fas fa-shopping-cart"></i>
                             จัดการคำสั่งซื้อ
                         </a>
                     </li>
                     <li>
-                        <a href="admins_admin.html" onclick="showSection('admins')">
+                        <a href="admins_admin.php" onclick="showSection('admins')">
                             <i class="fas fa-users-cog"></i>
                             จัดการผู้ดูแล
                         </a>
                     </li>
                     <li>
-                        <a href="reports_admin.html" onclick="showSection('reports')">
+                        <a href="reports_admin.php" onclick="showSection('reports')">
                             <i class="fas fa-chart-bar"></i>
                             รายงาน
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" onclick="handleLogout()">
+                            <i class="fas fa-sign-out-alt"></i>
+                            ออกจากระบบ
                         </a>
                     </li>
                 </ul>
@@ -533,10 +590,11 @@
                 <h1><i class="fas fa-tachometer-alt"></i> แดชบอร์ด</h1>
                 <div class="user-info">
                     <div>
-                        <div style="font-weight: 600;">สวัสดี, ผู้ดูแลระบบ</div>
+                        <div style="font-weight: 600;">สวัสดี, <?php echo htmlspecialchars($current_admin['fullname']); ?></div>
+                        <div style="font-size: 14px; color: #666;"><?php echo htmlspecialchars($current_admin['position']); ?> - <?php echo htmlspecialchars($current_admin['department']); ?></div>
                         <div style="font-size: 14px; color: #666;" id="current-time"></div>
                     </div>
-                    <div class="user-avatar">ผ</div>
+                    <div class="user-avatar"><?php echo mb_substr($current_admin['fullname'], 0, 1, 'UTF-8'); ?></div>
                 </div>
             </div>
 
@@ -724,6 +782,10 @@
     </div>
 
     <script>
+        // Session management
+        let sessionTimer;
+        let warningShown = false;
+        
         // Update current time
         function updateTime() {
             const now = new Date();
@@ -737,6 +799,136 @@
             };
             document.getElementById('current-time').textContent =
                 now.toLocaleDateString('th-TH', options);
+        }
+
+        // Check session status
+       async function checkSession() {
+            try {
+                const response = await fetch('controllers/check_session.php');
+                
+                if (!response.ok) {
+                    console.error('Session check failed with status:', response.status);
+                    return;
+                }
+                
+                const responseText = await response.text();
+                console.log('Session check raw response:', responseText); // Debug log
+                
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error('JSON parsing error:', parseError);
+                    console.error('Response was not valid JSON:', responseText);
+                    
+                    // If response contains HTML, it's likely a PHP error
+                    if (responseText.includes('<') || responseText.includes('<!DOCTYPE')) {
+                        console.error('Server returned HTML instead of JSON - likely a PHP error');
+                        showAlert('เกิดข้อผิดพลาดในระบบ กรุณาติดต่อผู้ดูแลระบบ', 'error');
+                    }
+                    return;
+                }
+                
+                if (!data.logged_in) {
+                    window.location.href = 'login_admin.html?timeout=1';
+                    return;
+                }
+                
+                // Show warning when 15 minutes left
+                const timeLeft = data.time_remaining;
+                if (timeLeft <= 900 && timeLeft > 0 && !warningShown) { // 15 minutes
+                    showSessionWarning(Math.ceil(timeLeft / 60));
+                    warningShown = true;
+                } else if (timeLeft > 900) {
+                    warningShown = false;
+                    hideSessionWarning();
+                }
+                
+            } catch (error) {
+                console.error('Error checking session:', error);
+                // Don't show alert for network errors as they're common
+                if (error.name !== 'TypeError' || !error.message.includes('fetch')) {
+                    console.error('Unexpected session check error:', error);
+                }
+            }
+        }
+
+        // Function to show alerts (add this if it doesn't exist)
+        function showAlert(message, type = 'error') {
+            // Create alert if it doesn't exist
+            let alertDiv = document.getElementById('sessionAlert');
+            if (!alertDiv) {
+                alertDiv = document.createElement('div');
+                alertDiv.id = 'sessionAlert';
+                alertDiv.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: #f59e0b;
+                    color: white;
+                    padding: 15px 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                    z-index: 1002;
+                    max-width: 300px;
+                `;
+                document.body.appendChild(alertDiv);
+            }
+            
+            if (type === 'error') {
+                alertDiv.style.background = '#dc2626';
+            } else if (type === 'success') {
+                alertDiv.style.background = '#059669';
+            }
+            
+            alertDiv.textContent = message;
+            alertDiv.style.display = 'block';
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                alertDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        // Show session warning
+        function showSessionWarning(minutes) {
+            const warning = document.getElementById('sessionWarning');
+            const timeSpan = document.getElementById('timeRemaining');
+            timeSpan.textContent = minutes;
+            warning.style.display = 'block';
+            
+            // Auto-hide after 10 seconds
+            setTimeout(() => {
+                hideSessionWarning();
+            }, 10000);
+        }
+
+        // Hide session warning
+        function hideSessionWarning() {
+            const warning = document.getElementById('sessionWarning');
+            warning.style.display = 'none';
+        }
+
+        // Handle logout
+        async function handleLogout() {
+            if (confirm('คุณต้องการออกจากระบบหรือไม่?')) {
+                try {
+                    const response = await fetch('controllers/logout.php', { // Fixed path
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    if (data.success) {
+                        window.location.href = data.redirect;
+                    }
+                } catch (error) {
+                    // Fallback to regular logout
+                    window.location.href = 'controllers/logout.php'; // Fixed path
+                }
+            }
         }
 
         // Toggle sidebar
@@ -753,13 +945,13 @@
         // Show different sections
         function showSection(section) {
             if (section === 'products') {
-                window.location.href = 'products_adminhtml';
+                window.location.href = 'products_admin.php';
             } else if (section === 'orders') {
-                window.location.href = 'orders_admin.html';
+                window.location.href = 'orders_admin.php';
             } else if (section === 'admins') {
-                window.location.href = 'admins_admin.html';
+                window.location.href = 'admins_admin.php';
             } else if (section === 'reports') {
-                window.location.href = 'reports_admin.html';
+                window.location.href = 'reports_admin.php';
             } else if (section === 'dashboard') {
                 if (window.innerWidth <= 768) {
                     const sidebar = document.getElementById("sidebar");
@@ -807,11 +999,6 @@
                 }
             };
             window.requestAnimationFrame(step);
-        }
-
-        // Format currency
-        function formatCurrency(amount) {
-            return new Intl.NumberFormat('th-TH').format(amount);
         }
 
         // Initialize chart
@@ -870,11 +1057,16 @@
         // Export functions for global access
         window.toggleSidebar = toggleSidebar;
         window.showSection = showSection;
+        window.handleLogout = handleLogout;
 
         // Initialize everything
         document.addEventListener('DOMContentLoaded', function () {
             updateTime();
             setInterval(updateTime, 60000); // Update every minute
+
+            // Check session every 30 seconds
+            checkSession();
+            setInterval(checkSession, 30000);
 
             // Animate stats on load
             setTimeout(() => {
@@ -886,6 +1078,14 @@
 
             // Initialize chart
             initChart();
+        });
+
+        // Handle page visibility change - pause session check when tab not active
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                // Tab became active, check session immediately
+                checkSession();
+            }
         });
     </script>
 </body>

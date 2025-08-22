@@ -1,0 +1,2 @@
+[2025-08-21 18:50:12] ERROR: Undefined array key "total" in C:\xampp\htdocs\steelproject\admin\controllers\get_admin.php on line 106
+[2025-08-21 18:50:12] EXCEPTION: Undefined array key "total" in C:\xampp\htdocs\steelproject\admin\controllers\get_admin.php line 106

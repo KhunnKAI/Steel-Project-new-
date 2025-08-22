@@ -290,8 +290,6 @@
         .role-shipping { background: #d4edda; color: #155724; }
         .role-accounting { background: #f8d7da; color: #721c24; }
         .role-super { background: #e7e3ff; color: #6f42c1; }
-        .role-admin { background: #cce5ff; color: #007bff; }
-        .role-moderator { background: #d4edda; color: #28a745; }
 
         .status-badge {
             padding: 6px 12px;
@@ -461,6 +459,7 @@
             border: 2px solid #e9ecef;
             border-radius: 8px;
             font-size: 14px;
+            font-family: 'Inter';
         }
 
         .form-group input:focus,
@@ -517,6 +516,7 @@
             border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
+            font-family: 'Inter';
         }
 
         .save-btn {
@@ -527,6 +527,153 @@
         .cancel-form-btn {
             background: #6c757d;
             color: white;
+        }
+
+        /* Auto-generated field styles */
+        .auto-generated {
+            background-color: #f8f9fa !important;
+            cursor: not-allowed;
+        }
+
+        .auto-generated-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #6c757d;
+        }
+
+        .auto-generated-label i {
+            color: #28a745;
+        }
+
+        /* Password field styles */
+        .password-field {
+            position: relative;
+        }
+
+        .password-controls {
+            display: flex;
+            gap: 8px;
+            align-items: stretch;
+        }
+
+        .password-input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .password-input-wrapper input {
+            padding-right: 45px;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .password-toggle:hover {
+            color: #333;
+            background: #f0f0f0;
+        }
+
+        .generate-password-btn {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .generate-password-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(40, 167, 69, 0.3);
+        }
+
+        .password-display {
+            background: #e8f5e8;
+            border: 2px solid #28a745;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 8px;
+            font-family: 'Inter';
+            font-size: 16px;
+            font-weight: bold;
+            color: #155724;
+            text-align: center;
+            letter-spacing: 2px;
+            position: relative;
+        }
+
+        .password-display .copy-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 6px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.2s ease;
+        }
+
+        .password-display .copy-btn:hover {
+            background: #20a047;
+        }
+
+        .password-strength {
+            margin-top: 8px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .password-strength.weak {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+
+        .password-strength.medium {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+
+        .password-strength.strong {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .password-info {
+            font-size: 11px;
+            color: #666;
+            margin-top: 8px;
+            background: #e8f5e8;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border-left: 3px solid #28a745;
         }
 
         /* Sidebar Styles */
@@ -647,6 +794,10 @@
             .form-row {
                 grid-template-columns: 1fr;
             }
+
+            .password-controls {
+                flex-direction: column;
+            }
         }
 
         @media screen and (max-width: 480px) {
@@ -659,6 +810,17 @@
                 width: 95%;
                 padding: 20px;
             }
+        }
+
+        /* Animation for generated password */
+        @keyframes passwordGenerated {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .password-generated {
+            animation: passwordGenerated 0.3s ease;
         }
     </style>
 </head>
@@ -763,8 +925,6 @@
                             <option value="shipping">พนักงานขนส่ง</option>
                             <option value="accounting">พนักงานบัญชี</option>
                             <option value="super">ผู้ดูแลระบบ</option>
-                            <option value="admin">ผู้ดูแล</option>
-                            <option value="moderator">ผู้ช่วยดูแล</option>
                         </select>
                     </div>
                     <div class="filter-group">
@@ -843,8 +1003,11 @@
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>รหัสพนักงาน</label>
-                        <input type="text" id="staffCode" placeholder="EMP001">
+                        <label class="auto-generated-label">
+                            รหัสพนักงาน *
+                            <i class="fas fa-magic" title="สร้างอัตโนมัติ"></i>
+                        </label>
+                        <input type="text" id="staffCode" readonly class="auto-generated" placeholder="สร้างอัตโนมัติ">
                     </div>
                     <div class="form-group">
                         <label>บทบาท *</label>
@@ -856,15 +1019,13 @@
                             <option value="shipping">พนักงานขนส่ง</option>
                             <option value="accounting">พนักงานบัญชี</option>
                             <option value="super">ผู้ดูแลระบบ (สิทธิ์เต็ม)</option>
-                            <option value="admin">ผู้ดูแล (สิทธิ์หลัก)</option>
-                            <option value="moderator">ผู้ช่วยดูแล (สิทธิ์จำกัด)</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label>แผนก *</label>
-                    <select id="staffDepartment" required>
+                    <select id="staffDepartment" required onchange="generateStaffCode()">
                         <option value="">เลือกแผนก</option>
                         <option value="management">บริหาร</option>
                         <option value="sales">ขาย</option>
@@ -875,14 +1036,38 @@
                     </select>
                 </div>
                 
-                <div class="form-group">
+                <div class="form-group password-field" id="passwordGroup">
                     <label>รหัสผ่าน *</label>
-                    <input type="password" id="staffPassword" required>
-                    <small style="color: #666; font-size: 12px;">รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร</small>
+                    <div class="password-controls">
+                        <div class="password-input-wrapper">
+                            <input type="password" id="staffPassword" required>
+                            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('staffPassword', this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <button type="button" class="generate-password-btn" onclick="generateRandomPassword()">
+                            <i class="fas fa-dice"></i> สุ่มรหัส
+                        </button>
+                    </div>
+                    <div id="generatedPasswordDisplay" style="display: none;">
+                        <div class="password-display">
+                            <span id="generatedPasswordText"></span>
+                            <button type="button" class="copy-btn" onclick="copyPassword()">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="passwordStrength" class="password-strength" style="display: none;"></div>
                 </div>
-                <div class="form-group">
+
+                <div class="form-group" id="passwordConfirmGroup">
                     <label>ยืนยันรหัสผ่าน *</label>
-                    <input type="password" id="staffPasswordConfirm" required>
+                    <div class="password-input-wrapper">
+                        <input type="password" id="staffPasswordConfirm" required>
+                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility('staffPasswordConfirm', this)">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -986,857 +1171,7 @@
         </div>
     </div>
 
-    <script>
-        // Sample staff data (simplified - removed email, salary, startDate)
-        let staff = [
-            // Manager (1 person)
-            {
-                id: 1,
-                name: "นายวิชา ผู้จัดการ",
-                phone: "089-123-4567",
-                code: "MGR001",
-                role: "manager",
-                department: "management",
-                status: "active",
-                permissions: ["dashboard", "products", "orders", "admins", "reports"],
-                notes: "ผู้จัดการฝ่ายขาย มีประสบการณ์ 10 ปี"
-            },
-            // Sales Staff (3 people)
-            {
-                id: 2,
-                name: "นางสาวสุดา นักขาย",
-                phone: "081-987-6543",
-                code: "SAL001",
-                role: "sales",
-                department: "sales",
-                status: "active",
-                permissions: ["dashboard", "products", "orders"],
-                notes: "พนักงานขายอาวุโส ดูแลลูกค้าใหญ่"
-            },
-            {
-                id: 3,
-                name: "นายอนุชา ขายดี",
-                phone: "088-555-7777",
-                code: "SAL002",
-                role: "sales",
-                department: "sales",
-                status: "active",
-                permissions: ["dashboard", "products", "orders"],
-                notes: "พนักงานขายรุ่นใหม่ มีศักยภาพ"
-            },
-            {
-                id: 4,
-                name: "นางมาลี ขายเก่ง",
-                phone: "082-111-2222",
-                code: "SAL003",
-                role: "sales",
-                department: "sales",
-                status: "active",
-                permissions: ["dashboard", "products", "orders"],
-                notes: "พนักงานขายที่มีประสบการณ์ในการดูแลลูกค้า"
-            },
-            // Warehouse Staff (3 people)
-            {
-                id: 5,
-                name: "นายสมชาย คลังสินค้า",
-                phone: "099-888-9999",
-                code: "WH001",
-                role: "warehouse",
-                department: "warehouse",
-                status: "active",
-                permissions: ["dashboard", "products"],
-                notes: "หัวหน้าคลังสินค้า มีความรับผิดชอบสูง"
-            },
-            {
-                id: 6,
-                name: "นายประยุทธ์ ดูแลสต็อก",
-                phone: "095-444-3333",
-                code: "WH002",
-                role: "warehouse",
-                department: "warehouse",
-                status: "active",
-                permissions: ["dashboard", "products"],
-                notes: "ผู้เชี่ยวชาญในการจัดการสินค้า"
-            },
-            {
-                id: 7,
-                name: "นายเสรี คลังใหญ่",
-                phone: "096-777-8888",
-                code: "WH003",
-                role: "warehouse",
-                department: "warehouse",
-                status: "active",
-                permissions: ["dashboard", "products"],
-                notes: "พนักงานคลังที่มีความแม่นยำในการนับสต็อก"
-            },
-            // Shipping Staff (2 people)
-            {
-                id: 8,
-                name: "นายสมศักดิ์ ขนส่ง",
-                phone: "087-123-9999",
-                code: "SH001",
-                role: "shipping",
-                department: "logistics",
-                status: "active",
-                permissions: ["dashboard", "orders"],
-                notes: "หัวหน้าทีมขนส่ง มีใบขับขี่ทุกประเภท"
-            },
-            {
-                id: 9,
-                name: "นายธนาคาร ส่งด่วน",
-                phone: "094-555-1111",
-                code: "SH002",
-                role: "shipping",
-                department: "logistics",
-                status: "active",
-                permissions: ["dashboard", "orders"],
-                notes: "คนขับรถบรรทุกมือขับขี่เก่ง"
-            },
-            // Accounting Staff (1 person)
-            {
-                id: 10,
-                name: "นางวิภา นักบัญชี",
-                phone: "089-777-6666",
-                code: "ACC001",
-                role: "accounting",
-                department: "accounting",
-                status: "active",
-                permissions: ["dashboard", "orders", "reports"],
-                notes: "นักบัญชีหัวหน้า ดูแลการเงินทั้งหมด"
-            },
-            // Admin (1 person)
-            {
-                id: 11,
-                name: "นายแอดมิน ระบบ",
-                phone: "080-000-1234",
-                code: "ADM001",
-                role: "admin",
-                department: "it",
-                status: "active",
-                permissions: ["dashboard", "products", "orders", "admins", "reports"],
-                notes: "ผู้ดูแลระบบหลัก"
-            }
-        ];
+    <script src="admins_admin.js"></script>
 
-        let currentPage = 1;
-        const itemsPerPage = 10;
-        let filteredStaff = [...staff];
-        let currentEditId = null;
-
-        // Role mapping
-        const roleMap = {
-            'manager': { class: 'role-manager', text: 'ผู้จัดการ', avatar: '#6f42c1' },
-            'sales': { class: 'role-sales', text: 'พนักงานขาย', avatar: '#fd7e14' },
-            'warehouse': { class: 'role-warehouse', text: 'พนักงานคลัง', avatar: '#007bff' },
-            'shipping': { class: 'role-shipping', text: 'พนักงานขนส่ง', avatar: '#28a745' },
-            'accounting': { class: 'role-accounting', text: 'พนักงานบัญชี', avatar: '#dc3545' },
-            'super': { class: 'role-super', text: 'ผู้ดูแลระบบ', avatar: '#6f42c1' },
-            'admin': { class: 'role-admin', text: 'ผู้ดูแล', avatar: '#007bff' },
-            'moderator': { class: 'role-moderator', text: 'ผู้ช่วยดูแล', avatar: '#28a745' }
-        };
-
-        // Department mapping
-        const departmentMap = {
-            'management': 'บริหาร',
-            'sales': 'ขาย',
-            'warehouse': 'คลังสินค้า',
-            'logistics': 'ขนส่ง',
-            'accounting': 'บัญชี',
-            'it': 'เทคโนโลยีสารสนเทศ'
-        };
-
-        // Get role info
-        function getRoleInfo(role) {
-            return roleMap[role] || { class: 'role-moderator', text: 'ไม่ทราบ', avatar: '#6c757d' };
-        }
-
-        // Get status info
-        function getStatusInfo(status) {
-            const statusMap = {
-                'active': { class: 'status-active', text: 'ใช้งานอยู่' },
-                'inactive': { class: 'status-inactive', text: 'ไม่ได้ใช้งาน' }
-            };
-            return statusMap[status] || { class: 'status-inactive', text: 'ไม่ทราบ' };
-        }
-
-        // Get staff initials for avatar
-        function getInitials(name) {
-            return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-        }
-
-        // Render staff table
-        function renderStaff() {
-            const tbody = document.getElementById('staffTableBody');
-            const startIndex = (currentPage - 1) * itemsPerPage;
-            const endIndex = startIndex + itemsPerPage;
-            const pageStaff = filteredStaff.slice(startIndex, endIndex);
-
-            tbody.innerHTML = pageStaff.map(person => {
-                const roleInfo = getRoleInfo(person.role);
-                const statusInfo = getStatusInfo(person.status);
-                const initials = getInitials(person.name);
-                const departmentName = departmentMap[person.department] || person.department;
-                
-                return `
-                    <tr>
-                        <td>
-                            <div class="staff-info">
-                                <div class="staff-avatar" style="background: linear-gradient(45deg, ${roleInfo.avatar}, ${roleInfo.avatar}90)">
-                                    ${initials}
-                                </div>
-                                <div class="staff-details">
-                                    <div class="staff-name">${person.name}</div>
-                                    <div class="staff-phone">${person.phone || 'ไม่ระบุ'}</div>
-                                    <div class="staff-department">${person.code}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="role-badge ${roleInfo.class}">${roleInfo.text}</span>
-                        </td>
-                        <td>
-                            <span style="color: #666; font-weight: 500;">${departmentName}</span>
-                        </td>
-                        <td>
-                            <span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>
-                        </td>
-                        <td class="actions">
-                            <button class="view-btn" onclick="viewStaffDetails(${person.id})" title="ดูรายละเอียด">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="edit-btn" onclick="editStaff(${person.id})" title="แก้ไข">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="toggle-btn" onclick="toggleStaffStatus(${person.id})" title="${person.status === 'active' ? 'ปิดใช้งาน' : 'เปิดใช้งาน'}">
-                                <i class="fas fa-${person.status === 'active' ? 'ban' : 'check'}"></i>
-                            </button>
-                            ${person.role !== 'manager' ? `
-                                <button class="delete-btn" onclick="deleteStaff(${person.id})" title="ลบ">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            ` : ''}
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-
-            renderPagination();
-            updateStats();
-        }
-
-        // Render pagination
-        function renderPagination() {
-            const totalPages = Math.ceil(filteredStaff.length / itemsPerPage);
-            const pagination = document.getElementById('pagination');
-            
-            if (totalPages <= 1) {
-                pagination.innerHTML = '';
-                return;
-            }
-
-            let buttons = [];
-            
-            // Previous button
-            buttons.push(`
-                <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-            `);
-
-            // Page numbers
-            for (let i = 1; i <= totalPages; i++) {
-                buttons.push(`
-                    <button onclick="changePage(${i})" ${i === currentPage ? 'class="active"' : ''}>
-                        ${i}
-                    </button>
-                `);
-            }
-
-            // Next button
-            buttons.push(`
-                <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
-                    <i class="fas fa-chevron-right"></i>
-                </button>
-            `);
-
-            pagination.innerHTML = buttons.join('');
-        }
-
-        // Change page
-        function changePage(page) {
-            const totalPages = Math.ceil(filteredStaff.length / itemsPerPage);
-            if (page >= 1 && page <= totalPages) {
-                currentPage = page;
-                renderStaff();
-            }
-        }
-
-        // Update statistics
-        function updateStats() {
-            const stats = {
-                total: filteredStaff.length,
-                active: filteredStaff.filter(s => s.status === 'active').length,
-                manager: filteredStaff.filter(s => s.role === 'manager').length,
-                sales: filteredStaff.filter(s => s.role === 'sales').length,
-                warehouse: filteredStaff.filter(s => s.role === 'warehouse').length
-            };
-
-            document.getElementById('totalStaff').textContent = stats.total;
-            document.getElementById('activeStaff').textContent = stats.active;
-            document.getElementById('managerCount').textContent = stats.manager;
-            document.getElementById('salesCount').textContent = stats.sales;
-            document.getElementById('warehouseCount').textContent = stats.warehouse;
-        }
-
-        // Filter and search functions
-        function applyFilters() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const roleFilter = document.getElementById('roleFilter').value;
-            const departmentFilter = document.getElementById('departmentFilter').value;
-            const statusFilter = document.getElementById('statusFilter').value;
-
-            filteredStaff = staff.filter(person => {
-                const matchesSearch = person.name.toLowerCase().includes(searchTerm) ||
-                                    getRoleInfo(person.role).text.toLowerCase().includes(searchTerm) ||
-                                    (person.code && person.code.toLowerCase().includes(searchTerm));
-                
-                const matchesRole = !roleFilter || person.role === roleFilter;
-                const matchesDepartment = !departmentFilter || person.department === departmentFilter;
-                const matchesStatus = !statusFilter || person.status === statusFilter;
-
-                return matchesSearch && matchesRole && matchesDepartment && matchesStatus;
-            });
-
-            applySorting();
-            currentPage = 1;
-            renderStaff();
-        }
-
-        // Sort staff function
-        function applySorting() {
-            const sortBy = document.getElementById('sortFilter').value;
-            
-            filteredStaff.sort((a, b) => {
-                switch (sortBy) {
-                    case 'name':
-                        return a.name.localeCompare(b.name, 'th');
-                    case 'role':
-                        return a.role.localeCompare(b.role);
-                    case 'department':
-                        return a.department.localeCompare(b.department);
-                    default:
-                        return 0;
-                }
-            });
-        }
-
-        // Update department and permissions based on role
-        function updateDepartmentAndPermissions() {
-            const role = document.getElementById('staffRole').value;
-            const departmentSelect = document.getElementById('staffDepartment');
-            const permissionCheckboxes = document.querySelectorAll('#permissionsGrid input[type="checkbox"]');
-            
-            // Clear all permissions first
-            permissionCheckboxes.forEach(checkbox => {
-                checkbox.checked = false;
-                checkbox.disabled = false;
-            });
-
-            // Set department and permissions based on role
-            switch (role) {
-                case 'manager':
-                    departmentSelect.value = 'management';
-                    // Manager gets all 5 permissions
-                    ['dashboard', 'products', 'orders', 'admins', 'reports'].forEach(perm => {
-                        const checkbox = document.getElementById(`perm-${perm}`);
-                        if (checkbox) checkbox.checked = true;
-                    });
-                    break;
-                case 'sales':
-                    departmentSelect.value = 'sales';
-                    // Sales gets dashboard, products, orders
-                    ['dashboard', 'products', 'orders'].forEach(perm => {
-                        const checkbox = document.getElementById(`perm-${perm}`);
-                        if (checkbox) checkbox.checked = true;
-                    });
-                    break;
-                case 'warehouse':
-                    departmentSelect.value = 'warehouse';
-                    // Warehouse gets dashboard, products
-                    ['dashboard', 'products'].forEach(perm => {
-                        const checkbox = document.getElementById(`perm-${perm}`);
-                        if (checkbox) checkbox.checked = true;
-                    });
-                    break;
-                case 'shipping':
-                    departmentSelect.value = 'logistics';
-                    // Shipping gets dashboard, orders
-                    ['dashboard', 'orders'].forEach(perm => {
-                        const checkbox = document.getElementById(`perm-${perm}`);
-                        if (checkbox) checkbox.checked = true;
-                    });
-                    break;
-                case 'accounting':
-                    departmentSelect.value = 'accounting';
-                    // Accounting gets dashboard, orders, reports
-                    ['dashboard', 'orders', 'reports'].forEach(perm => {
-                        const checkbox = document.getElementById(`perm-${perm}`);
-                        if (checkbox) checkbox.checked = true;
-                    });
-                    break;
-                case 'super':
-                    departmentSelect.value = 'it';
-                    // Super admin gets all permissions and they're locked
-                    permissionCheckboxes.forEach(checkbox => {
-                        checkbox.checked = true;
-                        checkbox.disabled = true;
-                    });
-                    break;
-                case 'admin':
-                    departmentSelect.value = 'it';
-                    // Admin gets all except admin management
-                    ['dashboard', 'products', 'orders', 'reports'].forEach(perm => {
-                        const checkbox = document.getElementById(`perm-${perm}`);
-                        if (checkbox) checkbox.checked = true;
-                    });
-                    break;
-                case 'moderator':
-                    departmentSelect.value = 'it';
-                    // Moderator gets basic permissions
-                    ['dashboard', 'products', 'orders'].forEach(perm => {
-                        const checkbox = document.getElementById(`perm-${perm}`);
-                        if (checkbox) checkbox.checked = true;
-                    });
-                    break;
-            }
-        }
-
-        // Modal functions
-        function openAddModal() {
-            document.getElementById('modalTitle').textContent = 'เพิ่มพนักงานใหม่';
-            document.getElementById('staffForm').reset();
-            document.getElementById('staffActive').checked = true;
-            currentEditId = null;
-            
-            // Show password fields for new staff
-            document.getElementById('staffPassword').closest('.form-group').style.display = 'block';
-            document.getElementById('staffPasswordConfirm').closest('.form-group').style.display = 'block';
-            document.getElementById('staffPassword').required = true;
-            document.getElementById('staffPasswordConfirm').required = true;
-            
-            updateDepartmentAndPermissions();
-            document.getElementById('staffModal').style.display = 'block';
-        }
-
-        function closeModal() {
-            document.getElementById('staffModal').style.display = 'none';
-            currentEditId = null;
-        }
-
-        function closeStaffDetailsModal() {
-            document.getElementById('staffDetailsModal').style.display = 'none';
-        }
-
-        // Staff CRUD operations
-        function viewStaffDetails(id) {
-            const person = staff.find(s => s.id === id);
-            if (!person) return;
-
-            const roleInfo = getRoleInfo(person.role);
-            const statusInfo = getStatusInfo(person.status);
-            const departmentName = departmentMap[person.department] || person.department;
-
-            // Populate staff details
-            document.getElementById('staffDetailsTitle').textContent = `รายละเอียดพนักงาน - ${person.name}`;
-            document.getElementById('detailName').textContent = person.name;
-            document.getElementById('detailPhone').textContent = person.phone || 'ไม่ระบุ';
-            document.getElementById('detailCode').textContent = person.code || 'ไม่ระบุ';
-            document.getElementById('detailRole').innerHTML = `<span class="role-badge ${roleInfo.class}">${roleInfo.text}</span>`;
-            document.getElementById('detailDepartment').textContent = departmentName;
-            document.getElementById('detailStatus').innerHTML = `<span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>`;
-            document.getElementById('detailNotes').textContent = person.notes || 'ไม่มีหมายเหตุ';
-
-            // Populate permissions
-            const permissionsContainer = document.getElementById('detailPermissions');
-            const permissionLabels = {
-                dashboard: 'แดชบอร์ด',
-                products: 'จัดการสินค้า',
-                orders: 'จัดการคำสั่งซื้อ',
-                admins: 'จัดการผู้ดูแล',
-                reports: 'รายงาน'
-            };
-
-            permissionsContainer.innerHTML = person.permissions.map(perm => `
-                <div style="padding: 8px; background: white; border-radius: 6px; display: flex; align-items: center; gap: 8px;">
-                    <i class="fas fa-check" style="color: #28a745;"></i>
-                    <span>${permissionLabels[perm] || perm}</span>
-                </div>
-            `).join('');
-
-            document.getElementById('staffDetailsModal').style.display = 'block';
-        }
-
-        function editStaff(id) {
-            const person = staff.find(s => s.id === id);
-            if (!person) return;
-
-            currentEditId = id;
-            document.getElementById('modalTitle').textContent = 'แก้ไขข้อมูลพนักงาน';
-            document.getElementById('staffName').value = person.name;
-            document.getElementById('staffPhone').value = person.phone || '';
-            document.getElementById('staffCode').value = person.code || '';
-            document.getElementById('staffRole').value = person.role;
-            document.getElementById('staffDepartment').value = person.department;
-            document.getElementById('staffActive').checked = person.status === 'active';
-            document.getElementById('staffNotes').value = person.notes || '';
-            
-            // Hide password fields for editing
-            document.getElementById('staffPassword').closest('.form-group').style.display = 'none';
-            document.getElementById('staffPasswordConfirm').closest('.form-group').style.display = 'none';
-            document.getElementById('staffPassword').required = false;
-            document.getElementById('staffPasswordConfirm').required = false;
-
-            // Set permissions
-            updateDepartmentAndPermissions();
-            person.permissions.forEach(perm => {
-                const checkbox = document.getElementById(`perm-${perm}`);
-                if (checkbox && !checkbox.disabled) {
-                    checkbox.checked = true;
-                }
-            });
-
-            document.getElementById('staffModal').style.display = 'block';
-        }
-
-        function toggleStaffStatus(id) {
-            const person = staff.find(s => s.id === id);
-            if (!person) return;
-
-            const newStatus = person.status === 'active' ? 'inactive' : 'active';
-            const statusText = newStatus === 'active' ? 'เปิดใช้งาน' : 'ปิดใช้งาน';
-            
-            if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการ${statusText} "${person.name}"?`)) {
-                person.status = newStatus;
-                applyFilters();
-                showNotification(`${statusText} "${person.name}" แล้ว`, 'success');
-            }
-        }
-
-        function deleteStaff(id) {
-            const person = staff.find(s => s.id === id);
-            if (!person) return;
-
-            if (person.role === 'manager') {
-                showNotification('ไม่สามารถลบผู้จัดการได้', 'error');
-                return;
-            }
-
-            if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบ "${person.name}"?\n\nการกระทำนี้ไม่สามารถย้อนกลับได้`)) {
-                staff = staff.filter(s => s.id !== id);
-                applyFilters();
-                showNotification(`ลบพนักงาน "${person.name}" แล้ว`, 'success');
-            }
-        }
-
-        // Validate form
-        function validateForm() {
-            const password = document.getElementById('staffPassword').value;
-            const passwordConfirm = document.getElementById('staffPasswordConfirm').value;
-            const code = document.getElementById('staffCode').value;
-
-            // Check if staff code already exists
-            if (code) {
-                const existingCode = staff.find(s => s.code === code && s.id !== currentEditId);
-                if (existingCode) {
-                    showNotification('รหัสพนักงานนี้มีผู้ใช้งานแล้ว', 'error');
-                    return false;
-                }
-            }
-
-            // Check password for new staff
-            if (!currentEditId) {
-                if (password.length < 8) {
-                    showNotification('รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร', 'error');
-                    return false;
-                }
-
-                if (password !== passwordConfirm) {
-                    showNotification('รหัสผ่านไม่ตรงกัน', 'error');
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        // Save staff form
-        document.getElementById('staffForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            if (!validateForm()) {
-                return;
-            }
-
-            // Get selected permissions
-            const selectedPermissions = [];
-            document.querySelectorAll('#permissionsGrid input[type="checkbox"]:checked').forEach(checkbox => {
-                selectedPermissions.push(checkbox.value);
-            });
-
-            const formData = {
-                name: document.getElementById('staffName').value,
-                phone: document.getElementById('staffPhone').value,
-                code: document.getElementById('staffCode').value,
-                role: document.getElementById('staffRole').value,
-                department: document.getElementById('staffDepartment').value,
-                status: document.getElementById('staffActive').checked ? 'active' : 'inactive',
-                permissions: selectedPermissions,
-                notes: document.getElementById('staffNotes').value
-            };
-
-            if (currentEditId) {
-                // Update existing staff
-                const staffIndex = staff.findIndex(s => s.id === currentEditId);
-                if (staffIndex !== -1) {
-                    staff[staffIndex] = { ...staff[staffIndex], ...formData };
-                    showNotification('แก้ไขข้อมูลพนักงานเรียบร้อยแล้ว', 'success');
-                }
-            } else {
-                // Add new staff
-                const newStaff = {
-                    id: Date.now(),
-                    ...formData
-                };
-                staff.push(newStaff);
-                showNotification('เพิ่มพนักงานเรียบร้อยแล้ว', 'success');
-            }
-
-            closeModal();
-            applyFilters();
-            
-            // Reset form visibility
-            document.getElementById('staffPassword').closest('.form-group').style.display = 'block';
-            document.getElementById('staffPasswordConfirm').closest('.form-group').style.display = 'block';
-            document.getElementById('staffPassword').required = true;
-            document.getElementById('staffPasswordConfirm').required = true;
-        });
-
-        // Show notification function
-        function showNotification(message, type = 'info') {
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 15px 20px;
-                border-radius: 8px;
-                color: white;
-                font-weight: 600;
-                z-index: 3000;
-                opacity: 0;
-                transform: translateX(100%);
-                transition: all 0.3s ease;
-                ${type === 'success' ? 'background: #28a745;' : ''}
-                ${type === 'error' ? 'background: #dc3545;' : ''}
-                ${type === 'info' ? 'background: #17a2b8;' : ''}
-            `;
-            notification.textContent = message;
-            
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.style.opacity = '1';
-                notification.style.transform = 'translateX(0)';
-            }, 100);
-            
-            setTimeout(() => {
-                notification.style.opacity = '0';
-                notification.style.transform = 'translateX(100%)';
-                setTimeout(() => {
-                    if (document.body.contains(notification)) {
-                        document.body.removeChild(notification);
-                    }
-                }, 300);
-            }, 3000);
-        }
-
-        // Advanced search with debounce
-        let searchTimeout;
-        function debounceSearch() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(applyFilters, 300);
-        }
-
-        // Sort staff when dropdown changes
-        function onSortChange() {
-            applySorting();
-            renderStaff();
-        }
-
-        // Toggle sidebar
-        function toggleSidebar() {
-            const sidebar = document.getElementById("sidebar");
-            const main = document.querySelector(".main-content");
-
-            if (sidebar) {
-                sidebar.classList.toggle("show");
-                main.classList.toggle("overlay");
-            }
-        }
-
-        // Show different sections
-        function showSection(section) {
-            if (section === 'dashboard') {
-                window.location.href = 'dashboard_admin.html';
-            } else if (section === 'products') {
-                window.location.href = 'products_admin.html';
-            } else if (section === 'orders') {
-                window.location.href = 'orders_admin.html';
-            } else if (section === 'reports') {
-                window.location.href = 'reports_admin.html';
-            } else if (section === 'admins') {
-                if (window.innerWidth <= 768) {
-                    const sidebar = document.getElementById("sidebar");
-                    const main = document.querySelector(".main-content");
-                    if (sidebar) {
-                        sidebar.classList.remove("show");
-                        main.classList.remove("overlay");
-                    }
-                }
-            }
-        }
-
-        // Close sidebar when clicking outside (mobile only)
-        document.addEventListener("click", function (e) {
-            const sidebar = document.getElementById("sidebar");
-            const toggle = document.querySelector(".navbar-toggle");
-            const main = document.querySelector(".main-content");
-
-            if (!sidebar) return;
-
-            const clickedOutside = !sidebar.contains(e.target) && !toggle.contains(e.target);
-
-            if (sidebar.classList.contains("show") && clickedOutside && window.innerWidth <= 768) {
-                sidebar.classList.remove("show");
-                main.classList.remove("overlay");
-            }
-        });
-
-        // Export functions for global access
-        window.viewStaffDetails = viewStaffDetails;
-        window.editStaff = editStaff;
-        window.deleteStaff = deleteStaff;
-        window.toggleStaffStatus = toggleStaffStatus;
-        window.openAddModal = openAddModal;
-        window.closeModal = closeModal;
-        window.closeStaffDetailsModal = closeStaffDetailsModal;
-        window.changePage = changePage;
-        window.toggleSidebar = toggleSidebar;
-        window.showSection = showSection;
-        window.updateDepartmentAndPermissions = updateDepartmentAndPermissions;
-
-        // Event listeners
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initial render
-            renderStaff();
-            
-            // Set up event listeners
-            document.getElementById('searchInput').addEventListener('input', debounceSearch);
-            document.getElementById('roleFilter').addEventListener('change', applyFilters);
-            document.getElementById('departmentFilter').addEventListener('change', applyFilters);
-            document.getElementById('statusFilter').addEventListener('change', applyFilters);
-            document.getElementById('sortFilter').addEventListener('change', onSortChange);
-            
-            // Close modals when clicking outside
-            document.getElementById('staffModal').addEventListener('click', function(e) {
-                if (e.target === this) {
-                    closeModal();
-                }
-            });
-            
-            document.getElementById('staffDetailsModal').addEventListener('click', function(e) {
-                if (e.target === this) {
-                    closeStaffDetailsModal();
-                }
-            });
-            
-            // Close modals with Escape key
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') {
-                    if (document.getElementById('staffModal').style.display === 'block') {
-                        closeModal();
-                    }
-                    if (document.getElementById('staffDetailsModal').style.display === 'block') {
-                        closeStaffDetailsModal();
-                    }
-                }
-            });
-        });
-
-        // Keyboard shortcuts
-        document.addEventListener('keydown', function(e) {
-            // Ctrl+N or Cmd+N for new staff
-            if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
-                e.preventDefault();
-                openAddModal();
-            }
-            
-            // Ctrl+F or Cmd+F for search focus
-            if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-                e.preventDefault();
-                document.getElementById('searchInput').focus();
-            }
-        });
-
-        // Generate staff report
-        function generateStaffReport() {
-            const reportData = {
-                totalStaff: staff.length,
-                byRole: {},
-                byDepartment: {},
-                byStatus: {}
-            };
-
-            // Count by role, department, and status
-            staff.forEach(person => {
-                reportData.byRole[person.role] = (reportData.byRole[person.role] || 0) + 1;
-                reportData.byDepartment[person.department] = (reportData.byDepartment[person.department] || 0) + 1;
-                reportData.byStatus[person.status] = (reportData.byStatus[person.status] || 0) + 1;
-            });
-
-            console.log('Staff Report:', reportData);
-            showNotification('รายงานถูกสร้างแล้ว (ดูใน Console)', 'success');
-        }
-
-        // Export staff data to CSV (basic implementation)
-        function exportStaffData() {
-            const csvContent = [
-                ['ชื่อ', 'รหัสพนักงาน', 'บทบาท', 'แผนก', 'สถานะ'],
-                ...staff.map(person => [
-                    person.name,
-                    person.code || '',
-                    getRoleInfo(person.role).text,
-                    departmentMap[person.department] || person.department,
-                    getStatusInfo(person.status).text
-                ])
-            ].map(row => row.join(',')).join('\n');
-
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', 'staff_data.csv');
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            showNotification('ข้อมูลพนักงานถูกส่งออกแล้ว', 'success');
-        }
-
-        // Add export buttons functionality (these would be added to the UI if needed)
-        window.generateStaffReport = generateStaffReport;
-        window.exportStaffData = exportStaffData;
-    </script>
 </body>
 </html>
