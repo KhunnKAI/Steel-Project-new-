@@ -285,6 +285,9 @@
             </div>
         </div>
     </div>
+    
+    <!-- Footer -->
+    <?php include("footer.php");?>
 
     <script>
         // Thumbnail click functionality
@@ -300,7 +303,5 @@
         });
     </script>
 
-    <!-- Footer -->
-    <?php include("footer.php");?>
 </body>
 </html>

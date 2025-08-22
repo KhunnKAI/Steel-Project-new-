@@ -35,7 +35,7 @@
 
         .payment-title {
             font-size: 24px;
-            margin-bottom: 30;
+            margin-bottom: 30px;
             color: #333;
         }
 
@@ -110,20 +110,7 @@
             background: white;
         }
 
-        .address-group {
-            margin-bottom: 20px;
-        }
-
-        .address-row {
-            display: flex;
-            gap: 20px;
-        }
-
-        .transfer-info {
-            margin-bottom: 30px;
-        }
-        
-.address-section {
+        .address-section {
             background-color: #f8f9fa;
             padding: 15px;
             border-radius: 8px;
@@ -179,6 +166,129 @@
             margin-top: -40px;
         }
 
+        .add-address-btn:hover {
+            background: #2c4e73;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            padding: 5px;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .modal-footer {
+            padding: 15px 25px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #1e3a5f;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2c4e73;
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #666;
+            border: 1px solid #dee2e6;
+        }
+
+        .btn-secondary:hover {
+            background: #e9ecef;
+            color: #333;
+        }
+
+        .full-width {
+            width: 100%;
+        }
 
         .bank-detail {
             margin-bottom: 8px;
@@ -206,77 +316,6 @@
             text-align: left;
             margin-bottom: 15px;
             font-weight: normal;
-        }
-
-        .qr-container {
-            background: #f0f0f0;
-            border: 2px dashed #ccc;
-            border-radius: 10px;
-            padding: 30px;
-            margin: 15px 0;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .qr-container:hover {
-            background: #e8e8e8;
-            border-color: #999;
-        }
-
-        .qr-code-display {
-            width: 150px;
-            height: 150px;
-            margin: 0 auto 15px;
-            background: white;
-            border: 2px solid #333;
-            border-radius: 8px;
-            display: none;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .qr-code-display.active {
-            display: block;
-        }
-
-        .qr-pattern {
-            width: 100%;
-            height: 100%;
-            background: 
-                /* Corner detection patterns */
-                radial-gradient(circle at 20% 20%, #000 15%, transparent 20%),
-                radial-gradient(circle at 80% 20%, #000 15%, transparent 20%),
-                radial-gradient(circle at 20% 80%, #000 15%, transparent 20%),
-                /* Data pattern */
-                repeating-linear-gradient(45deg, #000 0px, #000 2px, transparent 2px, transparent 6px),
-                repeating-linear-gradient(-45deg, #000 0px, #000 1px, transparent 1px, transparent 4px);
-            background-size: 
-                40px 40px,
-                40px 40px,
-                40px 40px,
-                8px 8px,
-                6px 6px;
-        }
-
-        .qr-placeholder {
-            color: #999;
-            font-size: 16px;
-        }
-
-        .generate-qr-btn {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 25px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .generate-qr-btn:hover {
-            background: #0056b3;
-            transform: translateY(-2px);
         }
 
         .order-summary {
@@ -362,28 +401,23 @@
             background: #b71c1c;
         }
 
-        .full-width {
-            width: 100%;
-        }
-
         @media (max-width: 768px) {
             .content {
                 padding: 20px;
             }
             
-            .form-row,
-            .address-row {
+            .form-row {
                 flex-direction: column;
                 gap: 15px;
             }
             
-            .payment-methods {
-                flex-direction: column;
+            .modal {
+                width: 95%;
+                margin: 10px;
             }
             
-            .payment-option label {
-                height: 80px;
-                padding: 15px;
+            .modal-body {
+                padding: 20px;
             }
         }
     </style>
@@ -434,91 +468,59 @@
 
                 <div class="section">
                     <div class="section-title">ที่อยู่จัดส่ง</div>
-                    <button class="add-address-btn">+ เพิ่มที่อยู่</button>
+                    <button type="button" class="add-address-btn" id="addAddressBtn">+ เพิ่มที่อยู่</button>
                     
-                    <!-- Address Section -->
-            <div class="address-section">
-                
-                <div class="address-item selected">
-                    <div class="address-name">บางลาง ปริญญา วันบาร</div>
-                    <div class="address-details">
-                        011-111-1111<br>
-                        155/88 หมู่ 5 ซอย สีกาน 29 ถนน สีกาน<br>
-                        แขวง คืนนักติ เขต คืนติดก กรุงเทพมหานคร 88888
-                    </div>
-                </div>
+                    <div class="address-section">
+                        <div class="address-item selected" data-id="1">
+                            <div class="address-name">บางลาง ปริญญา วันบาร</div>
+                            <div class="address-details">
+                                011-111-1111<br>
+                                155/88 หมู่ 5 ซอย สีกาน 29 ถนน สีกาน<br>
+                                แขวง คืนนักติ เขต คืนติดก กรุงเทพมหานคร 88888
+                            </div>
+                        </div>
 
-                <div class="address-item">
-                    <div class="address-name">บายนท์ บานา</div>
-                    <div class="address-details">
-                        022-222-2222<br>
-                        245/4 หมู่ 8 ซอย ซองสราร์ 3 ถนน สันท์<br>
-                        แขวง สสัน เขต คำอลีซอง กรุงเทพมหานคร 33333
-                    </div>
-                </div>
+                        <div class="address-item" data-id="2">
+                            <div class="address-name">บายนท์ บานา</div>
+                            <div class="address-details">
+                                022-222-2222<br>
+                                245/4 หมู่ 8 ซอย ซองสราร์ 3 ถนน สันท์<br>
+                                แขวง สสัน เขต คำอลีซอง กรุงเทพมหานคร 33333
+                            </div>
+                        </div>
 
-                <div class="address-item">
-                    <div class="address-name">บายปฏา กีน</div>
-                    <div class="address-details">
-                        033-333-3333<br>
-                        1 หมู่ 7 ซอย บานา 34 ถนน บานา<br>
-                        แขวง ยักลา เขต ยักกำ กรุงเทพมหานคร 55555
-                    </div>
-                </div>
-                    
-                    <!--
-                    <div class="form-row">
-                        <div class="form-group full-width">
-                            <label>ที่อยู่ <span class="required">*จำเป็น</span></label>
-                            <textarea id="address" name="address" required placeholder="บ้านเลขที่ ซอย ถนน"></textarea>
+                        <div class="address-item" data-id="3">
+                            <div class="address-name">บายปฏา กีน</div>
+                            <div class="address-details">
+                                033-333-3333<br>
+                                1 หมู่ 7 ซอย บานา 34 ถนน บานา<br>
+                                แขวง ยักลา เขต ยักกำ กรุงเทพมหานคร 55555
+                            </div>
                         </div>
                     </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>ตำบล/แขวง <span class="required">*จำเป็น</span></label>
-                            <input type="text" id="district" name="district" required>
-                        </div>
-                        <div class="form-group">
-                            <label>อำเภอ/เขต <span class="required">*จำเป็น</span></label>
-                            <input type="text" id="city" name="city" required>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>จังหวัด <span class="required">*จำเป็น</span></label>
-                            <input type="text" id="province" name="province" required>
-                        </div>
-                        <div class="form-group small">
-                            <label>รหัสไปรษณีย์ <span class="required">*จำเป็น</span></label>
-                            <input type="text" id="zipcode" name="zipcode" required maxlength="5">
-                        </div>
-                    </div>
-                    -->
                 </div>
 
                 <div class="section">
                     <div class="section-title">วิธีการชำระเงิน</div>
                     
-            <div class="bank-detail">
-                <strong>ธนาคาร:</strong>
-                <span class="bank-value">กรุงไทย</span>
-            </div>
-            <div class="bank-detail">
-                <strong>ชื่อบัญชี:</strong>
-                <span class="bank-value">ปวิชญา อุดมสิทธิพัฒนา</span>
-            </div>
-            <div class="bank-detail">
-                <strong>เลขที่บัญชี:</strong>
-                <span class="bank-value">111-1-11111-1</span>
-            </div>
-        </div>
+                    <div class="bank-detail">
+                        <strong>ธนาคาร:</strong>
+                        <span class="bank-value">กรุงไทย</span>
+                    </div>
+                    <div class="bank-detail">
+                        <strong>ชื่อบัญชี:</strong>
+                        <span class="bank-value">ปวิชญา อุดมสิทธิพัฒนา</span>
+                    </div>
+                    <div class="bank-detail">
+                        <strong>เลขที่บัญชี:</strong>
+                        <span class="bank-value">111-1-11111-1</span>
+                    </div>
+                </div>
 
-        <div class="qr-section">
-            <h3>หรือสแกนคิวอาร์โค้ด</h3>
-            <img src="image/qr.jpg" width="500px">
-        </div>
+                <div class="qr-section">
+                    <h3>หรือสแกนคิวอาร์โค้ด</h3>
+                    <img src="image/qr.jpg" width="500px">
+                </div>
 
                 <div class="order-summary">
                     <h3>สรุปคำสั่งซื้อ</h3>
@@ -567,25 +569,212 @@
                     </div>
                 </div>
 
-                <button type="submit" class="submit-btn" onclick="processPayment()">
+                <button type="submit" class="submit-btn">
                     ยืนยันการสั่งซื้อ
                 </button>
             </form>
         </div>
     </main>
 
+    <!-- Add Address Modal -->
+    <div class="modal-overlay" id="addressModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">เพิ่มที่อยู่ใหม่</h2>
+                <button type="button" class="close-btn" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addressForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>ชื่อ <span class="required">*จำเป็น</span></label>
+                            <input type="text" id="newFirstName" name="newFirstName" required>
+                        </div>
+                        <div class="form-group">
+                            <label>นามสกุล <span class="required">*จำเป็น</span></label>
+                            <input type="text" id="newLastName" name="newLastName" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label>เบอร์โทรศัพท์ <span class="required">*จำเป็น</span></label>
+                            <input type="tel" id="newPhone" name="newPhone" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label>ที่อยู่ <span class="required">*จำเป็น</span></label>
+                            <textarea id="newAddress" name="newAddress" required placeholder="บ้านเลขที่ ซอย ถนน"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>ตำบล/แขวง <span class="required">*จำเป็น</span></label>
+                            <input type="text" id="newDistrict" name="newDistrict" required>
+                        </div>
+                        <div class="form-group">
+                            <label>อำเภอ/เขต <span class="required">*จำเป็น</span></label>
+                            <input type="text" id="newCity" name="newCity" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>จังหวัด <span class="required">*จำเป็น</span></label>
+                            <input type="text" id="newProvince" name="newProvince" required>
+                        </div>
+                        <div class="form-group small">
+                            <label>รหัสไปรษณีย์ <span class="required">*จำเป็น</span></label>
+                            <input type="text" id="newZipcode" name="newZipcode" required maxlength="5">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelBtn">ยกเลิก</button>
+                <button type="button" class="btn btn-primary" id="saveAddressBtn">บันทึกที่อยู่</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <?php include("footer.php");?>
 
     <script>
-        function processPayment() {
-            event.preventDefault();
-            
-            const form = document.getElementById('paymentForm');
+        let addressCounter = 4; // เริ่มนับจาก 4 เพราะมี 3 ที่อยู่เดิมแล้ว
+
+        // Address selection functionality
+        document.querySelectorAll('.address-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.address-item').forEach(addr => {
+                    addr.classList.remove('selected');
+                });
+                this.classList.add('selected');
+            });
+        });
+
+        // Modal functionality
+        const modal = document.getElementById('addressModal');
+        const addAddressBtn = document.getElementById('addAddressBtn');
+        const closeModal = document.getElementById('closeModal');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const saveAddressBtn = document.getElementById('saveAddressBtn');
+
+        // Open modal
+        addAddressBtn.addEventListener('click', function() {
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+
+        // Close modal functions
+        function closeAddressModal() {
+            modal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+            document.getElementById('addressForm').reset();
+        }
+
+        closeModal.addEventListener('click', closeAddressModal);
+        cancelBtn.addEventListener('click', closeAddressModal);
+
+        // Close modal when clicking outside
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeAddressModal();
+            }
+        });
+
+        // Save new address
+        saveAddressBtn.addEventListener('click', function() {
+            const form = document.getElementById('addressForm');
             const formData = new FormData(form);
             
-            // ตรวจสอบว่ากรอกข้อมูลครบถ้วน
-            const requiredFields = ['firstName', 'lastName', 'email', 'phone', 'address', 'district', 'city', 'province', 'zipcode'];
+            // Check required fields
+            const requiredFields = ['newFirstName', 'newLastName', 'newPhone', 'newAddress', 'newDistrict', 'newCity', 'newProvince', 'newZipcode'];
+            let isValid = true;
+            
+            requiredFields.forEach(field => {
+                const input = document.getElementById(field);
+                if (!input.value.trim()) {
+                    input.style.borderColor = '#d32f2f';
+                    isValid = false;
+                } else {
+                    input.style.borderColor = '#d0d0d0';
+                }
+            });
+            
+            if (!isValid) {
+                alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+                return;
+            }
+
+            // Create new address item
+            const addressSection = document.querySelector('.address-section');
+            const newAddressItem = document.createElement('div');
+            newAddressItem.className = 'address-item';
+            newAddressItem.setAttribute('data-id', addressCounter);
+            
+            const fullName = `${formData.get('newFirstName')} ${formData.get('newLastName')}`;
+            const fullAddress = `${formData.get('newAddress')}<br>แขวง ${formData.get('newDistrict')} เขต ${formData.get('newCity')} ${formData.get('newProvince')} ${formData.get('newZipcode')}`;
+            
+            newAddressItem.innerHTML = `
+                <div class="address-name">${fullName}</div>
+                <div class="address-details">
+                    ${formData.get('newPhone')}<br>
+                    ${fullAddress}
+                </div>
+            `;
+            
+            // Add click event to new address item
+            newAddressItem.addEventListener('click', function() {
+                document.querySelectorAll('.address-item').forEach(addr => {
+                    addr.classList.remove('selected');
+                });
+                this.classList.add('selected');
+            });
+            
+            addressSection.appendChild(newAddressItem);
+            addressCounter++;
+            
+            // Close modal and show success message
+            closeAddressModal();
+            alert('เพิ่มที่อยู่เรียบร้อยแล้ว');
+        });
+
+        // Form validation for postal code
+        document.getElementById('newZipcode').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 5) {
+                value = value.substring(0, 5);
+            }
+            e.target.value = value;
+        });
+
+        // Form validation for phone number
+        document.getElementById('newPhone').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 10) {
+                value = value.substring(0, 10);
+            }
+            e.target.value = value;
+        });
+
+        // Main phone number validation
+        document.getElementById('phone').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 10) {
+                value = value.substring(0, 10);
+            }
+            e.target.value = value;
+        });
+
+        // Form submission
+        document.getElementById('paymentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const requiredFields = ['firstName', 'lastName', 'email', 'phone'];
             let isValid = true;
             
             requiredFields.forEach(field => {
@@ -603,165 +792,20 @@
                 return;
             }
             
-            // จำลองการประมวลผลการชำระเงิน
-            const paymentMethod = document.querySelector('input[name="payment"]:checked').value;
-            const paymentText = {
-                'bank-transfer': 'โอนเงิน',
-                'credit-card': 'บัตรเครดิต',
-                'cash': 'เงินสด'
-            };
-            
-            alert(`ขอบคุณสำหรับการสั่งซื้อ!\n\nข้อมูลการสั่งซื้อ:\nลูกค้า: ${formData.get('firstName')} ${formData.get('lastName')}\nยอดรวม: 11,770 บาท\nวิธีชำระเงิน: ${paymentText[paymentMethod]}\n\nเราจะติดต่อกลับภายใน 24 ชั่วโมง`);
-        }
-
-        // เพิ่มการตรวจสอบรหัสไปรษณีย์
-        document.getElementById('zipcode').addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value.length > 5) {
-                value = value.substring(0, 5);
+            const selectedAddress = document.querySelector('.address-item.selected');
+            if (!selectedAddress) {
+                alert('กรุณาเลือกที่อยู่จัดส่ง');
+                return;
             }
-            e.target.value = value;
-        });
-
-        // เพิ่มการตรวจสอบเบอร์โทรศัพท์
-        document.getElementById('phone').addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value.length > 10) {
-                value = value.substring(0, 10);
-            }
-            e.target.value = value;
-        });
-        </script>
-
-        </html>="address-item selected">
-                    <div class="address-name">บางลาง ปริญญา วันบาร</div>
-                    <div class="address-details">
-                        011-111-1111<br>
-                        155/88 หมู่ 5 ซอย สีกาน 29 ถนน สีกาน<br>
-                        แขวง คืนนักติ เขต คืนติดก กรุงเทพมหานคร 88888
-                    </div>
-                </div>
-
-                <div class="address-item">
-                    <div class="address-name">บายนท์ บานา</div>
-                    <div class="address-details">
-                        022-222-2222<br>
-                        245/4 หมู่ 8 ซอย ซองสราร์ 3 ถนน สันท์<br>
-                        แขวง สสัน เขต คำอลีซอง กรุงเทพมหานคร 33333
-                    </div>
-                </div>
-
-                <div class="address-item">
-                    <div class="address-name">บายปฏา กีน</div>
-                    <div class="address-details">
-                        033-333-3333<br>
-                        1 หมู่ 7 ซอย บานา 34 ถนน บานา<br>
-                        แขวง ยักลา เขต ยักกำ กรุงเทพมหานคร 55555
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Payment Details Section -->
-        <div class="form-section payment-section">
-            <h3 class="section-title">วิธีการชำระเงิน</h3>
             
-            <div class="form-group">
-                <label class="form-label">ธนาคาร</label>
-                <span>กรุงไทย</span>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">ชื่อบัญชี</label>
-                <span>ปริญญา สุดสิลาพีพัฒนา</span>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">เลขที่บัญชี</label>
-                <span>111-1-11111-1</span>
-            </div>
-
-            <div class="payment-method">
-                <div class="form-label">หรือสแกนเก็บข้อมูลได้ที่</div>
-                
-                <div class="elephant-icon">
-                    <div class="elephant"></div>
-                    <div class="gear gear1"></div>
-                    <div class="gear gear2"></div>
-                </div>
-            </div>
-
-            <!-- Services List -->
-            <div class="service-list">
-                <h4 class="service-title">สรุปค่าสำคัญ</h4>
-                
-                <div class="service-item">
-                    <div>
-                        <div class="service-name">เพนโดมิล D816</div>
-                        <div class="service-details">จำนวน: 50 ชิ้น × 100 บาท</div>
-                    </div>
-                    <div class="service-price">5,000 ฿</div>
-                </div>
-
-                <div class="service-item">
-                    <div>
-                        <div class="service-name">เพนโดมิน 3mm</div>
-                        <div class="service-details">จำนวน: 10 ชิ้น × 250 บาท</div>
-                    </div>
-                    <div class="service-price">2,500 ฿</div>
-                </div>
-
-                <div class="service-item">
-                    <div>
-                        <div class="service-name">ข้อมูลอีก 2 รัง</div>
-                        <div class="service-details">จำนวน: 20 ชิ้น × 150 บาท</div>
-                    </div>
-                    <div class="service-price">3,000 ฿</div>
-                </div>
-
-                <div class="total-section">
-                    <div class="total-item">
-                        <span>ราคาสินค้า</span>
-                        <span>10,500 ฿</span>
-                    </div>
-                    <div class="total-item">
-                        <span>ค่าจัดส่ง</span>
-                        <span>500 ฿</span>
-                    </div>
-                    <div class="total-item">
-                        <span>ภาษี (7%)</span>
-                        <span>770 ฿</span>
-                    </div>
-                    <div class="total-item total-final">
-                        <span>รวมทั้งสิน</span>
-                        <span>11,770 ฿</span>
-                    </div>
-                </div>
-            </div>
-
-            <button class="submit-btn">ยืนยันการสั่งซื้อ</button>
-        </div>
-    </div>
-
-    <script>
-        // Address selection functionality
-        document.querySelectorAll('.address-item').forEach(item => {
-            item.addEventListener('click', function() {
-                document.querySelectorAll('.address-item').forEach(addr => {
-                    addr.classList.remove('selected');
-                });
-                this.classList.add('selected');
-            });
+            alert('ขอบคุณสำหรับการสั่งซื้อ!\n\nเราจะติดต่อกลับภายใน 24 ชั่วโมง');
         });
 
-        // Form submission
-        document.querySelector('.submit-btn').addEventListener('click', function() {
-            alert('การสั่งซื้อเสร็จสมบูรณ์!');
-        });
-
-        // Add address button
-        document.querySelector('.add-address-btn').addEventListener('click', function() {
-            alert('เพิ่มที่อยู่ใหม่');
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal.classList.contains('active')) {
+                closeAddressModal();
+            }
         });
     </script>
 </body>
