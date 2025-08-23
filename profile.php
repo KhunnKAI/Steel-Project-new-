@@ -190,27 +190,150 @@
         font-size: 12px;
     }
 
+    /* address section*/
+    .section {
+        margin-bottom: 40px;
+        text-align: left;
+    }
+
+    .section-title {
+        font-size: 18px;
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 20px;
+    }
+
     .address-section {
-        margin-top: 30px;
-        padding-top: 30px;
-        border-top: 1px solid #eee;
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 20px 0;
     }
 
     .address-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 15px;
+        margin-bottom: 20px;
     }
 
     .address-title {
         font-weight: bold;
         color: #333;
+        font-size: 18px;
     }
 
-    .address-detail {
+    .address-item {
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+        background: #fafafa;
+        transition: all 0.3s ease;
+    }
+
+    .address-item:hover {
+        border-color: #d32f2f;
+        background: #fff;
+        box-shadow: 0 4px 12px rgba(211, 47, 47, 0.1);
+    }
+
+    .address-item.selected {
+        border-color: #d32f2f;
+        background: #fff5f5;
+        box-shadow: 0 4px 12px rgba(211, 47, 47, 0.1);
+    }
+
+    .address-content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .address-details {
+        color: #555;
+        line-height: 1.8;
+        font-size: 14px;
+        margin-bottom: 15px;
+    }
+
+    .address-name {
+        font-weight: bold;
+        margin-bottom: 5px;
+        color: #333;
+    }
+
+    .address-info {
         color: #666;
-        line-height: 1.6;
+    }
+
+    .address-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .btn-default {
+        background: #28a745;
+        color: white;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 20px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-default:hover {
+        background: #218838;
+        transform: translateY(-1px);
+    }
+
+    .btn-edit-address {
+        background: #ffc107;
+        color: #333;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 20px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-edit-address:hover {
+        background: #e0a800;
+        transform: translateY(-1px);
+    }
+
+    .btn-delete {
+        background: #dc3545;
+        color: white;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 20px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-delete:hover {
+        background: #c82333;
+        transform: translateY(-1px);
+    }
+
+    .add-address-btn {
+        background: #1e3a5f;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .add-address-btn:hover {
+        background: #2c4e73;
     }
 
     /* Modal Styles - Updated to match payment page */
@@ -596,105 +719,104 @@
         margin-top: 30px;
         padding-top: 30px;
         border-top: 1px solid #eee;
-    // ตรวจสอบรหัสผ่านแบบ Real-time
+        // ตรวจสอบรหัสผ่านแบบ Real-time
 
-    .address-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-    }
+        .address-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
 
-    .address-title {
-        font-weight: bold;
-        color: #333;
-        font-size: 18px;
-    }
+        .address-title {
+            font-weight: bold;
+            color: #333;
+            font-size: 18px;
+        }
 
-    .address-item {
-        border: 2px solid #e0e0e0;
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 15px;
-        background: #fafafa;
-        transition: all 0.3s ease;
-    }
+        .address-item {
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            background: #fafafa;
+            transition: all 0.3s ease;
+        }
 
-    .address-item:hover {
-        border-color: #d32f2f;
-        background: #fff;
-        box-shadow: 0 4px 12px rgba(211, 47, 47, 0.1);
-    }
+        .address-item:hover {
+            border-color: #d32f2f;
+            background: #fff;
+            box-shadow: 0 4px 12px rgba(211, 47, 47, 0.1);
+        }
 
-    .address-content {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-    }
+        .address-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
 
-    .address-detail {
-        color: #555;
-        line-height: 1.8;
-        font-size: 14px;
-        flex: 1;
-        margin-right: 20px;
-    }
+        .address-detail {
+            color: #555;
+            line-height: 1.8;
+            font-size: 14px;
+            flex: 1;
+            margin-right: 20px;
+        }
 
-    .address-actions {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-        flex-wrap: wrap;
-    }
+        .address-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
 
-    .btn-default {
-        background: #28a745;
-        color: white;
-        padding: 8px 16px;
-        border: none;
-        border-radius: 20px;
-        font-size: 12px;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
+        .btn-default {
+            background: #28a745;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
 
-    .btn-default:hover {
-        background: #218838;
-        transform: translateY(-1px);
-    }
+        .btn-default:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
 
-    .btn-edit-address {
-        background: #ffc107;
-        color: #333;
-        padding: 8px 16px;
-        border: none;
-        border-radius: 20px;
-        font-size: 12px;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
+        .btn-edit-address {
+            background: #ffc107;
+            color: #333;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
 
-    .btn-edit-address:hover {
-        background: #e0a800;
-        transform: translateY(-1px);
-    }
+        .btn-edit-address:hover {
+            background: #e0a800;
+            transform: translateY(-1px);
+        }
 
-    .btn-delete {
-        background: #dc3545;
-        color: white;
-        padding: 8px 16px;
-        border: none;
-        border-radius: 20px;
-        font-size: 12px;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
 
-    .btn-delete:hover {
-        background: #c82333;
-        transform: translateY(-1px);
-    }
-    
+        .btn-delete:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+        }
     </style>
 </head>
 
@@ -741,32 +863,65 @@
             </div>
 
             <!-- Address Section -->
-            <div class="address-section">
-                <div class="address-header">
-                    <div class="address-title">ที่อยู่</div>
-                    <a href="#" class="btn btn-address" onclick="openAddressModal()">+เพิ่มที่อยู่</a>
-                </div>
-                <div class="address-item">
-                    <div class="address-detail">
-                        ตำบลเดก อำเภอเดก จังหวัดเดก 62000<br>
-                        โทร: 0999999999
+            <div class="section">
+                <div class="address-section">
+                    <div class="address-header">
+                        <div class="address-title">ที่อยู่จัดส่ง</div>
+                        <button type="button" class="add-address-btn" id="addAddressBtn">+ เพิ่มที่อยู่</button>
                     </div>
-                    <div class="address-actions">
-                        <button class="btn btn-default" onclick="setDefaultAddress()">ตั้งเป็นหลัก</button>
-                        <button class="btn btn-edit-address" onclick="editAddress()">แก้ไข</button>
-                        <button class="btn btn-delete" onclick="deleteAddress()">ลบ</button>
-                    </div>
-                </div>
 
-                <div class="address-item">
-                    <div class="address-detail">
-                        ตำบลเดก อำเภอเดก จังหวัดเดก 62000<br>
-                        โทร: 0999999999
+                    <div class="address-item selected" data-id="1">
+                        <div class="address-content">
+                            <div class="address-details">
+                                <div class="address-name">บางลาง ปริญญา วันบาร</div>
+                                <div class="address-info">
+                                    011-111-1111<br>
+                                    155/88 หมู่ 5 ซอย สีกาน 29 ถนน สีกาน<br>
+                                    แขวง คืนนักติ เขต คืนติดก กรุงเทพมหานคร 88888
+                                </div>
+                            </div>
+                            <div class="address-actions">
+                                <button class="btn-default" onclick="setDefaultAddress(this)">เลือก</button>
+                                <button class="btn-edit-address" onclick="editAddress(this)">แก้ไข</button>
+                                <button class="btn-delete" onclick="deleteAddress(this)">ลบ</button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="address-actions">
-                        <button class="btn btn-default" onclick="setDefaultAddress()">ตั้งเป็นหลัก</button>
-                        <button class="btn btn-edit-address" onclick="editAddress()">แก้ไข</button>
-                        <button class="btn btn-delete" onclick="deleteAddress()">ลบ</button>
+
+                    <div class="address-item" data-id="2">
+                        <div class="address-content">
+                            <div class="address-details">
+                                <div class="address-name">บายนท์ บานา</div>
+                                <div class="address-info">
+                                    022-222-2222<br>
+                                    245/4 หมู่ 8 ซอย ซองสราร์ 3 ถนน สันท์<br>
+                                    แขวง สสัน เขต คำอลีซอง กรุงเทพมหานคร 33333
+                                </div>
+                            </div>
+                            <div class="address-actions">
+                                <button class="btn-default" onclick="setDefaultAddress(this)">เลือก</button>
+                                <button class="btn-edit-address" onclick="editAddress(this)">แก้ไข</button>
+                                <button class="btn-delete" onclick="deleteAddress(this)">ลบ</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="address-item" data-id="3">
+                        <div class="address-content">
+                            <div class="address-details">
+                                <div class="address-name">บายปฏา กีน</div>
+                                <div class="address-info">
+                                    033-333-3333<br>
+                                    1 หมู่ 7 ซอย บานา 34 ถนน บานา<br>
+                                    แขวง ยักลา เขต ยักกำ กรุงเทพมหานคร 55555
+                                </div>
+                            </div>
+                            <div class="address-actions">
+                                <button class="btn-default" onclick="setDefaultAddress(this)">เลือก</button>
+                                <button class="btn-edit-address" onclick="editAddress(this)">แก้ไข</button>
+                                <button class="btn-delete" onclick="deleteAddress(this)">ลบ</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -957,6 +1112,166 @@
         modal.classList.remove('active');
         document.body.style.overflow = 'auto';
         document.getElementById('addressForm').reset();
+    }
+
+    // ฟังก์ชันสำหรับการเลือกที่อยู่เป็นค่าเริ่มต้น
+    function setDefaultAddress(button) {
+        // ลบสถานะ selected จากที่อยู่ทั้งหมด
+        const allAddressItems = document.querySelectorAll('.address-item');
+        allAddressItems.forEach(item => {
+            item.classList.remove('selected');
+            // เปลี่ยนปุ่มทั้งหมดกลับเป็น "เลือก"
+            const selectBtn = item.querySelector('.btn-default');
+            if (selectBtn) {
+                selectBtn.textContent = 'เลือก';
+                selectBtn.style.background = '#28a745';
+            }
+        });
+
+        // เพิ่มสถานะ selected ให้กับที่อยู่ที่เลือก
+        const selectedAddressItem = button.closest('.address-item');
+        selectedAddressItem.classList.add('selected');
+
+        // เปลี่ยนปุ่มเป็น "เลือกแล้ว"
+        button.textContent = 'เลือกแล้ว';
+        button.style.background = '#6c757d'; // สีเทา
+
+        // แสดงข้อความยืนยัน
+        showSuccessMessage('✓ เลือกที่อยู่เรียบร้อยแล้ว');
+    }
+
+    // ฟังก์ชันสำหรับแก้ไขที่อยู่
+    function editAddress(button) {
+        const addressItem = button.closest('.address-item');
+        const addressDetails = addressItem.querySelector('.address-details');
+
+        // ดึงข้อมูลปัจจุบัน
+        const currentName = addressDetails.querySelector('.address-name').textContent;
+        const currentInfo = addressDetails.querySelector('.address-info').innerHTML;
+
+        // เปิด Modal สำหรับแก้ไข (คุณสามารถปรับแต่งได้ตามต้องการ)
+        alert(`แก้ไขที่อยู่: ${currentName}\n${currentInfo.replace(/<br>/g, '\n')}`);
+    }
+
+    // ฟังก์ชันสำหรับลบที่อยู่
+    function deleteAddress(button) {
+        const addressItem = button.closest('.address-item');
+        const addressName = addressItem.querySelector('.address-name').textContent;
+
+        if (confirm(`คุณต้องการลบที่อยู่ของ ${addressName} หรือไม่?`)) {
+            // ตรวจสอบว่าเป็นที่อยู่ที่เลือกอยู่หรือไม่
+            const isSelected = addressItem.classList.contains('selected');
+
+            // ลบที่อยู่
+            addressItem.remove();
+
+            // ถ้าที่อยู่ที่ลบเป็นที่อยู่ที่เลือกอยู่ ให้เลือกที่อยู่แรกเป็นค่าเริ่มต้น
+            if (isSelected) {
+                const remainingAddresses = document.querySelectorAll('.address-item');
+                if (remainingAddresses.length > 0) {
+                    const firstAddress = remainingAddresses[0];
+                    firstAddress.classList.add('selected');
+                    const firstSelectBtn = firstAddress.querySelector('.btn-default');
+                    if (firstSelectBtn) {
+                        firstSelectBtn.textContent = 'เลือกแล้ว';
+                        firstSelectBtn.style.background = '#6c757d';
+                    }
+                }
+            }
+
+            showSuccessMessage('✓ ลบที่อยู่เรียบร้อยแล้ว');
+        }
+    }
+
+    // ฟังก์ชันแสดงข้อความสำเร็จ
+    function showSuccessMessage(message) {
+        const successMessage = document.getElementById('successMessage');
+        successMessage.style.display = 'block';
+        successMessage.textContent = message;
+
+        // เลื่อนไปที่ข้อความสำเร็จ
+        successMessage.scrollIntoView({
+            behavior: 'smooth'
+        });
+
+        // ซ่อนข้อความสำเร็จหลังจาก 3 วินาที
+        setTimeout(() => {
+            successMessage.style.display = 'none';
+        }, 3000);
+    }
+
+    // เมื่อโหลดหน้าเสร็จ ให้กำหนดที่อยู่แรกเป็นค่าเริ่มต้น
+    document.addEventListener('DOMContentLoaded', function() {
+        // ตรวจสอบว่ามีที่อยู่ที่มีคลาส selected อยู่แล้วหรือไม่
+        const selectedAddress = document.querySelector('.address-item.selected');
+        if (selectedAddress) {
+            const selectBtn = selectedAddress.querySelector('.btn-default');
+            if (selectBtn && selectBtn.textContent === 'เลือก') {
+                selectBtn.textContent = 'เลือกแล้ว';
+                selectBtn.style.background = '#6c757d';
+            }
+        }
+
+        // เพิ่ม Event Listener สำหรับปุ่มเพิ่มที่อยู่
+        const addAddressBtn = document.getElementById('addAddressBtn');
+        if (addAddressBtn) {
+            addAddressBtn.addEventListener('click', openAddressModal);
+        }
+    });
+
+    // ปรับปรุงฟังก์ชัน confirmAddAddress เพื่อเพิ่มที่อยู่ใหม่
+    function confirmAddAddress() {
+        const form = document.getElementById('addressForm');
+        if (!form) return;
+
+        const newAddress = document.getElementById('newAddress').value.trim();
+        const newDistrict = document.getElementById('newDistrict').value.trim();
+        const newCity = document.getElementById('newCity').value.trim();
+        const newProvince = document.getElementById('newProvince').value.trim();
+        const newZipcode = document.getElementById('newZipcode').value.trim();
+
+        // ตรวจสอบข้อมูลที่จำเป็น
+        if (!newAddress || !newDistrict || !newCity || !newProvince || !newZipcode) {
+            alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+            return;
+        }
+
+        // สร้างที่อยู่ใหม่
+        const addressSection = document.querySelector('.address-section');
+        const addressContainer = addressSection.querySelector('.address-item').parentNode;
+
+        // สร้าง ID ใหม่
+        const existingAddresses = document.querySelectorAll('.address-item');
+        const newId = existingAddresses.length + 1;
+
+        // สร้าง HTML สำหรับที่อยู่ใหม่
+        const newAddressHTML = `
+        <div class="address-item" data-id="${newId}">
+            <div class="address-content">
+                <div class="address-details">
+                    <div class="address-name">ที่อยู่ใหม่</div>
+                    <div class="address-info">
+                        ${newAddress}<br>
+                        แขวง ${newDistrict} เขต ${newCity} ${newProvince} ${newZipcode}
+                    </div>
+                </div>
+                <div class="address-actions">
+                    <button class="btn-default" onclick="setDefaultAddress(this)">เลือก</button>
+                    <button class="btn-edit-address" onclick="editAddress(this)">แก้ไข</button>
+                    <button class="btn-delete" onclick="deleteAddress(this)">ลบ</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+        // เพิ่มที่อยู่ใหม่
+        addressContainer.insertAdjacentHTML('beforeend', newAddressHTML);
+
+        // แสดงข้อความสำเร็จ
+        showSuccessMessage('✓ เพิ่มที่อยู่เรียบร้อยแล้ว');
+
+        // ปิด Modal
+        closeAddressModal();
     }
 
     // แสดง/ซ่อนรหัสผ่าน
