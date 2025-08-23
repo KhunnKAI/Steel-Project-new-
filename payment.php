@@ -25,6 +25,7 @@
             background: white;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            text-align: left;
         }
 
         .payment-section {
@@ -45,6 +46,7 @@
 
         .section {
             margin-bottom: 40px;
+            text-align: left;
         }
 
         .section-title {
@@ -585,24 +587,6 @@
             </div>
             <div class="modal-body">
                 <form id="addressForm">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>ชื่อ <span class="required">*จำเป็น</span></label>
-                            <input type="text" id="newFirstName" name="newFirstName" required>
-                        </div>
-                        <div class="form-group">
-                            <label>นามสกุล <span class="required">*จำเป็น</span></label>
-                            <input type="text" id="newLastName" name="newLastName" required>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group full-width">
-                            <label>เบอร์โทรศัพท์ <span class="required">*จำเป็น</span></label>
-                            <input type="tel" id="newPhone" name="newPhone" required>
-                        </div>
-                    </div>
-
                     <div class="form-row">
                         <div class="form-group full-width">
                             <label>ที่อยู่ <span class="required">*จำเป็น</span></label>

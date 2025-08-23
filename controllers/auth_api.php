@@ -30,10 +30,10 @@ try {
     }
     require_once 'config.php';
     
-    if (!file_exists('UserController.php')) {
+    if (!file_exists('user_controller.php')) {
         throw new Exception('UserController file not found');
     }
-    require_once 'UserController.php';
+    require_once 'user_controller.php';
 
     // Test database connection first
     if (!isset($pdo) || !$pdo) {

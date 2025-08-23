@@ -79,7 +79,7 @@ if ($isLoggedIn) {
                 <a href="wishlist.php">รายการโปรด</a>
                 <a href="settings.php">การตั้งค่า</a>
                 <hr class="dropdown-divider">
-                <a href="#" onclick="handleLogout(); return false;">ออกจากระบบ</a>
+                <a href="logout.php">ออกจากระบบ</a>
                 <?php else: ?>
                 <!-- เมนูสำหรับผู้ใช้ที่ยังไม่ได้ล็อกอิน -->
                 <a href="register.php">ลงทะเบียน</a>
@@ -218,28 +218,15 @@ function handleLogout() {
         showToast('กำลังออกจากระบบ...', 'info');
 
         // ส่ง AJAX request ไปยัง auth_api.php
-        fetch('auth_api.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: 'action=logout'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showToast('ออกจากระบบสำเร็จ', 'success');
-                setTimeout(() => {
-                    window.location.href = data.redirect || 'login.php';
-                }, 1000);
-            } else {
-                showToast('เกิดข้อผิดพลาดในการออกจากระบบ', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Logout error:', error);
-            showToast('เกิดข้อผิดพลาดในการออกจากระบบ', 'error');
-        });
+        fetch('logout.php', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = data.redirect;
+                }
+            });
     }
 }
 
