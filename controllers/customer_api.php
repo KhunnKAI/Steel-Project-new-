@@ -67,13 +67,16 @@ try {
         case 'search':
             handleSearchCustomers($customerController);
             break;
+        case 'change_password':
+            handleChangePassword($customerController);
+            break;
         default:
             http_response_code(400);
             echo json_encode([
                 'success' => false, 
                 'message' => 'Invalid action: ' . $action,
                 'code' => 'INVALID_ACTION',
-                'available_actions' => ['test', 'list', 'get', 'create', 'update', 'delete', 'search']
+                'available_actions' => ['test', 'list', 'get', 'create', 'update', 'delete', 'search', 'change_password']
             ]);
             break;
     }
@@ -106,8 +109,8 @@ function handleTest($customerController, $pdo)
         $stmt = $pdo->query("SELECT 1");
         $db_test = $stmt ? true : false;
         
-        // Test if customers table exists (adjust table name as needed)
-        $stmt = $pdo->query("SHOW TABLES LIKE 'customers'");
+        // Test if Users table exists (ใช้ Users แทน customers)
+        $stmt = $pdo->query("SHOW TABLES LIKE 'Users'");
         $table_exists = $stmt->rowCount() > 0;
         
         $response = [
@@ -118,7 +121,7 @@ function handleTest($customerController, $pdo)
                 'table_exists' => $table_exists,
                 'server_time' => date('Y-m-d H:i:s'),
                 'php_version' => PHP_VERSION,
-                'available_actions' => ['test', 'list', 'get', 'create', 'update', 'delete', 'search']
+                'available_actions' => ['test', 'list', 'get', 'create', 'update', 'delete', 'search', 'change_password']
             ]
         ];
         
@@ -128,13 +131,13 @@ function handleTest($customerController, $pdo)
                 $customers_count = $customerController->getCount();
                 $response['data']['customers_count'] = $customers_count;
                 
-                // Get table structure
-                $stmt = $pdo->query("DESCRIBE customers");
+                // Get table structure for Users table
+                $stmt = $pdo->query("DESCRIBE Users");
                 $table_structure = $stmt->fetchAll();
                 $response['data']['table_structure'] = array_column($table_structure, 'Field');
                 
                 // Get sample customer (without password)
-                $stmt = $pdo->query("SELECT user_id, name, email, phone, created_at FROM customers LIMIT 1");
+                $stmt = $pdo->query("SELECT user_id, name, email, phone, created_at FROM Users LIMIT 1");
                 $sample_customer = $stmt->fetch();
                 $response['data']['sample_customer'] = $sample_customer;
             } catch (Exception $e) {
@@ -536,13 +539,145 @@ function handleDeleteCustomer($customerController)
 }
 
 /**
+ * Handle change password - แก้ไขวิธีรับพารามิเตอร์
+ */
+function handleChangePassword($customerController)
+{
+    try {
+        // แก้ไขการรับพารามิเตอร์ - ใช้ POST สำหรับ customer_id ด้วย
+        $customer_id = $_POST['customer_id'] ?? $_GET['customer_id'] ?? '';
+        $current_password = $_POST['current_password'] ?? '';
+        $new_password = $_POST['new_password'] ?? '';
+
+        // Log ข้อมูลที่ได้รับ (ไม่ log รหัสผ่าน)
+        error_log("Change password request - Customer ID: " . $customer_id);
+        error_log("POST data keys: " . implode(', ', array_keys($_POST)));
+        error_log("GET data keys: " . implode(', ', array_keys($_GET)));
+
+        // Validation
+        if (empty($customer_id)) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => 'กรุณาระบุรหัสลูกค้า',
+                'code' => 'MISSING_CUSTOMER_ID',
+                'debug' => [
+                    'post_customer_id' => $_POST['customer_id'] ?? 'not found',
+                    'get_customer_id' => $_GET['customer_id'] ?? 'not found'
+                ]
+            ]);
+            return;
+        }
+
+        if (empty($current_password) || empty($new_password)) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => 'กรุณากรอกรหัสผ่านเดิมและรหัสผ่านใหม่',
+                'code' => 'MISSING_PASSWORDS',
+                'debug' => [
+                    'has_current_password' => !empty($current_password),
+                    'has_new_password' => !empty($new_password)
+                ]
+            ]);
+            return;
+        }
+
+        // Validate new password strength
+        if (!validatePassword($new_password)) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => 'รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 8 ตัวอักษร ประกอบด้วยตัวอักษรพิมพ์เล็ก พิมพ์ใหญ่ และตัวเลข',
+                'code' => 'WEAK_PASSWORD'
+            ]);
+            return;
+        }
+
+        // Log password change attempt
+        error_log("Password change attempt for customer ID: " . $customer_id);
+
+        // Check if customer exists and verify current password
+        $customer = $customerController->getById($customer_id);
+        if (!$customer) {
+            http_response_code(404);
+            echo json_encode([
+                'success' => false,
+                'message' => 'ไม่พบลูกค้า',
+                'code' => 'CUSTOMER_NOT_FOUND'
+            ]);
+            return;
+        }
+
+        // Verify current password
+        if (!password_verify($current_password, $customer['password_hash'])) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => 'รหัสผ่านเดิมไม่ถูกต้อง',
+                'code' => 'INVALID_CURRENT_PASSWORD'
+            ]);
+            return;
+        }
+
+        // Check if new password is different from current
+        if (password_verify($new_password, $customer['password_hash'])) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => 'รหัสผ่านใหม่ต้องแตกต่างจากรหัสผ่านเดิม',
+                'code' => 'SAME_PASSWORD'
+            ]);
+            return;
+        }
+
+        // Update password
+        $result = $customerController->updatePassword($customer_id, $new_password);
+
+        if ($result) {
+            error_log("Password changed successfully for customer ID: " . $customer_id);
+            echo json_encode([
+                'success' => true,
+                'message' => 'เปลี่ยนรหัสผ่านเรียบร้อยแล้ว',
+                'data' => [
+                    'customer_id' => $customer_id,
+                    'changed_at' => date('Y-m-d H:i:s')
+                ]
+            ]);
+        } else {
+            error_log("Failed to change password for customer ID: " . $customer_id);
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'ไม่สามารถเปลี่ยนรหัสผ่านได้ กรุณาลองใหม่อีกครั้ง',
+                'code' => 'CHANGE_PASSWORD_FAILED'
+            ]);
+        }
+    } catch (Exception $e) {
+        error_log("Change password error: " . $e->getMessage());
+        error_log("Change password stack trace: " . $e->getTraceAsString());
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'message' => 'เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน',
+            'code' => 'SERVER_ERROR',
+            'debug' => [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]
+        ]);
+    }
+}
+
+/**
  * Handle search customers
  */
 function handleSearchCustomers($customerController)
 {
     try {
-        $query = trim($_GET['q'] ?? $_POST['q'] ?? '');
-        $field = $_GET['field'] ?? 'all'; // name, email, phone, or all
+        $query = trim($_GET['query'] ?? $_POST['query'] ?? '');
+        $field = $_GET['field'] ?? $_POST['field'] ?? 'all';
         $page = intval($_GET['page'] ?? 1);
         $limit = intval($_GET['limit'] ?? 20);
         $offset = ($page - 1) * $limit;
@@ -550,15 +685,12 @@ function handleSearchCustomers($customerController)
         if (empty($query)) {
             http_response_code(400);
             echo json_encode([
-                'success' => false, 
-                'message' => 'กรุณาระบุคำที่ต้องการค้นหา',
-                'code' => 'MISSING_SEARCH_QUERY'
+                'success' => false,
+                'message' => 'กรุณาระบุคำค้นหา',
+                'code' => 'MISSING_QUERY'
             ]);
             return;
         }
-
-        // Log search attempt
-        error_log("Searching customers - Query: $query, Field: $field");
 
         $customers = $customerController->search($query, $field, $limit, $offset);
         $totalCount = $customerController->getSearchCount($query, $field);
@@ -567,24 +699,23 @@ function handleSearchCustomers($customerController)
         echo json_encode([
             'success' => true,
             'data' => $customers,
-            'search_info' => [
-                'query' => $query,
-                'field' => $field,
-                'results_found' => count($customers)
-            ],
             'pagination' => [
                 'current_page' => $page,
                 'per_page' => $limit,
                 'total_records' => $totalCount,
                 'total_pages' => $totalPages,
                 'has_more' => $page < $totalPages
+            ],
+            'search' => [
+                'query' => $query,
+                'field' => $field
             ]
         ]);
     } catch (Exception $e) {
         error_log("Search customers error: " . $e->getMessage());
         http_response_code(500);
         echo json_encode([
-            'success' => false, 
+            'success' => false,
             'message' => 'ไม่สามารถค้นหาลูกค้าได้',
             'code' => 'SEARCH_ERROR'
         ]);
@@ -592,24 +723,19 @@ function handleSearchCustomers($customerController)
 }
 
 /**
- * Validate password strength
+ * Password validation function
  */
-function validatePassword($password)
+function validatePassword($password) 
 {
-    return strlen($password) >= 8 &&
-        preg_match('/[A-Z]/', $password) &&
-        preg_match('/[a-z]/', $password) &&
-        preg_match('/[0-9]/', $password);
+    // รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร และมีตัวพิมพ์เล็ก พิมพ์ใหญ่ และตัวเลข
+    if (strlen($password) < 8) return false;
+    if (!preg_match('/[a-z]/', $password)) return false;
+    if (!preg_match('/[A-Z]/', $password)) return false;
+    if (!preg_match('/[0-9]/', $password)) return false;
+    
+    return true;
 }
 
-/**
- * Check if user is authenticated (if needed for protected endpoints)
- */
-function isAuthenticated()
-{
-    return isset($_COOKIE['user_id']) && !empty($_COOKIE['user_id']);
-}
-
-// Flush output buffer and end
+// Flush output
 ob_end_flush();
 ?>
