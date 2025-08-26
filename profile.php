@@ -1494,40 +1494,51 @@
         try {
             showLoading();
 
-            const formData = new FormData();
-            formData.append('action', 'get');
-            formData.append('address_id', addressId);
-
-            const response = await fetch(API_ENDPOINTS.ADDRESS, {
-                method: 'POST',
-                body: formData
+            // ใช้ GET request สำหรับดึงข้อมูลที่อยู่
+            const response = await fetch(`${API_ENDPOINTS.ADDRESS}?action=get&address_id=${addressId}`, {
+                method: 'GET'
             });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
             const result = await response.json();
 
             if (result.success && result.data) {
                 const address = result.data;
 
+                // เปลี่ยนหัวข้อและปุ่มของ modal
                 document.getElementById('addressModalTitle').textContent = 'แก้ไขที่อยู่';
                 document.getElementById('saveAddressBtn').textContent = 'บันทึกการแก้ไข';
+                
+                // ใส่ข้อมูลเดิมในฟอร์ม
                 document.getElementById('addressId').value = address.address_id;
-                document.getElementById('recipientName').value = address.recipient_name;
-                document.getElementById('recipientPhone').value = address.phone;
-                document.getElementById('addressLine').value = address.address_line;
-                document.getElementById('subdistrict').value = address.subdistrict;
-                document.getElementById('district').value = address.district;
-                document.getElementById('province').value = address.province;
-                document.getElementById('postalCode').value = address.postal_code;
+                document.getElementById('recipientName').value = address.recipient_name || '';
+                document.getElementById('recipientPhone').value = address.phone || '';
+                document.getElementById('addressLine').value = address.address_line || '';
+                document.getElementById('subdistrict').value = address.subdistrict || '';
+                document.getElementById('district').value = address.district || '';
+                document.getElementById('province').value = address.province || '';
+                document.getElementById('postalCode').value = address.postal_code || '';
 
+                // เปิด modal
                 document.getElementById('addressModal').classList.add('active');
                 document.body.style.overflow = 'hidden';
                 isEditingAddress = true;
+                hideMessages();
+
+                // Focus ที่ช่องแรก
+                setTimeout(() => {
+                    document.getElementById('recipientName').focus();
+                }, 100);
+
             } else {
                 showError(result.message || 'ไม่สามารถโหลดข้อมูลที่อยู่ได้');
             }
         } catch (error) {
             console.error('Error loading address for edit:', error);
-            showError('เกิดข้อผิดพลาดในการโหลดข้อมูลที่อยู่');
+            showError('เกิดข้อผิดพลาดในการโหลดข้อมูลที่อยู่: ' + error.message);
         } finally {
             hideLoading();
         }
