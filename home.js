@@ -101,14 +101,8 @@ function displayProducts(productsToShow) {
         return;
     }
 
-    // สร้าง HTML โดยไม่ใส่ onclick ใน template string
     grid.innerHTML = productsToShow.map((product, index) => `
-        <div class="product-card" 
-             data-category="${product.category}" 
-             data-price="${product.price}" 
-             data-product-id="${product.id}" 
-             data-product-index="${index}"
-             style="cursor: pointer;">
+        <div class="product-card" data-category="${product.category}" data-price="${product.price}">
             <div class="product-image">
                 <span class="product-category">${product.category}</span>
                 ${product.image !== 'no-image.jpg' 
@@ -130,72 +124,16 @@ function displayProducts(productsToShow) {
         </div>
     `).join('');
 
-    // เพิ่ม event listeners หลังจากสร้าง HTML เสร็จ
-    addProductEventListeners(productsToShow);
-}
-
-function addProductEventListeners(productsToShow) {
-    const productCards = document.querySelectorAll('.product-card');
-    
-    productCards.forEach((card, index) => {
-        // Event listener สำหรับคลิกที่ card (ไปหน้าสินค้า)
-        card.addEventListener('click', function(event) {
-            // ถ้าคลิกที่ปุ่ม ให้หยุดการทำงาน
-            if (event.target.classList.contains('product-btn') || 
-                event.target.closest('.product-btn')) {
-                return;
-            }
-            
-            const productId = this.getAttribute('data-product-id');
-            console.log('Product card clicked, ID:', productId);
-            
-            if (productId) {
-                // ไม่ต้อง parseInt เพราะ productId ควรเป็น string
-                viewProduct(productId);
-            } else {
-                console.error('Product ID not found!');
+    // เพิ่ม event listeners สำหรับปุ่มเพิ่มในตะกร้า
+    grid.querySelectorAll('.product-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const productIndex = parseInt(this.dataset.productIndex);
+            const product = productsToShow[productIndex];
+            if (product) {
+                addToCart(product.name, product.id);
             }
         });
-        
-        // Event listener สำหรับปุ่มเพิ่มในตะกร้า
-        const addToCartBtn = card.querySelector('.product-btn');
-        if (addToCartBtn) {
-            addToCartBtn.addEventListener('click', function(event) {
-                event.stopPropagation(); // หยุดไม่ให้ event bubble up ไป card
-                
-                const productIndex = parseInt(this.getAttribute('data-product-index'));
-                const product = productsToShow[productIndex];
-                
-                if (product) {
-                    console.log('Add to cart clicked:', product.name);
-                    addToCart(product.name, product.id);
-                } else {
-                    console.error('Product not found for index:', productIndex);
-                }
-            });
-        }
     });
-    
-    console.log(`Added event listeners to ${productCards.length} product cards`);
-}
-
-// ฟังก์ชันสำหรับไปหน้าสินค้า
-function viewProduct(productId) {
-    console.log('viewProduct called with ID:', productId);
-    
-    // ไม่ต้อง parseInt เพราะ productId เป็น string อยู่แล้ว
-    if (!productId || productId === 'null' || productId === 'undefined') {
-        console.error('Product ID is null or undefined');
-        alert('ไม่พบรหัสสินค้า กรุณาลองใหม่อีกครั้ง');
-        return;
-    }
-    
-    // Debug: แสดง URL ที่จะไป
-    const targetUrl = `product.php?id=${productId}`;
-    console.log('Redirecting to:', targetUrl);
-    
-    // เปลี่ยนหน้า
-    window.location.href = targetUrl;
 }
 
 function showNoProductsMessage(message) {
@@ -349,11 +287,9 @@ function clearAllFilters() {
 }
 
 function addToCart(productName, productId) {
-    console.log(`Adding to cart: ${productName} (ID: ${productId})`);
+    // ส่งข้อมูลไปยัง API หรือ session สำหรับตะกร้าสินค้า
+    console.log(`Adding product to cart: ${productName} (ID: ${productId})`);
     alert(`เพิ่ม "${productName}" ลงในตะกร้าแล้ว`);
-    
-    // TODO: เรียก API เพื่อเพิ่มสินค้าในตะกร้าจริง
-    // fetch('/api/cart/add', { ... })
 }
 
 // รีเฟรชข้อมูลสินค้า

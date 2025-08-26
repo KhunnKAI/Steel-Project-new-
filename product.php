@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>สินค้า - ช่างเหล็กไทย</title>
+    <title>สินค้า</title>
     <link href="header.css" rel="stylesheet">
     <link href="footer.css" rel="stylesheet">
     <style>
@@ -28,17 +28,11 @@
             margin-bottom: 20px;
             font-size: 14px;
             color: #666;
-            padding: 10px 0;
         }
 
         .breadcrumb a {
-            color: #2c3e50;
+            color: #666;
             text-decoration: none;
-            font-weight: 500;
-        }
-
-        .breadcrumb a:hover {
-            text-decoration: underline;
         }
 
         .product-container {
@@ -59,27 +53,61 @@
 
         .main-image {
             width: 100%;
-            height: 400px;
+            height: 300px;
             border: 2px solid #ddd;
             border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             background-color: #f9f9f9;
+        }
+
+        .rebar-image {
+            width: 200px;
+            height: 150px;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%);
+            border-radius: 10px;
+            position: relative;
             overflow: hidden;
         }
 
-        .main-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 8px;
+        .rebar-image::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            bottom: 20px;
+            background: repeating-linear-gradient(
+                90deg,
+                #2c3e50 0px,
+                #2c3e50 8px,
+                #34495e 8px,
+                #34495e 12px
+            );
+            border-radius: 5px;
+        }
+
+        .rebar-image::after {
+            content: '';
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            right: 30px;
+            bottom: 30px;
+            background: repeating-linear-gradient(
+                0deg,
+                #2c3e50 0px,
+                #2c3e50 3px,
+                #34495e 3px,
+                #34495e 6px
+            );
+            border-radius: 3px;
         }
 
         .thumbnail-images {
             display: flex;
             gap: 10px;
-            flex-wrap: wrap;
         }
 
         .thumbnail {
@@ -91,24 +119,21 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.3s ease;
-            overflow: hidden;
+            transition: border-color 0.3s;
         }
 
         .thumbnail:hover {
-            border-color: #3498db;
-            transform: scale(1.05);
+            border-color: #c41e3a;
         }
 
         .thumbnail.active {
-            border-color: #2980b9;
-            box-shadow: 0 0 10px rgba(52, 152, 219, 0.3);
+            border-color: #c41e3a;
         }
 
-        .thumbnail img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        .thumbnail-rebar {
+            width: 50px;
+            height: 30px;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%);
             border-radius: 3px;
         }
 
@@ -123,30 +148,32 @@
             font-weight: bold;
             color: #2c3e50;
             margin-bottom: 10px;
-            line-height: 1.2;
         }
 
         .product-specs {
-            font-size: 16px;
+            font-size: 18px;
             color: #666;
+            margin-bottom: 10px;
         }
 
         .product-description {
-            font-size: 12px;
+            font-size: 16px;
             color: #666;
+            line-height: 1.6;
             margin-bottom: 20px;
         }
 
-        
-        .product-stock {
+        .product-code {
             font-size: 14px;
             color: #666;
+            margin-bottom: 10px;
         }
 
         .product-price {
             font-size: 28px;
             font-weight: bold;
             color: #c41e3a;
+            margin-bottom: 30px;
         }
 
         .action-buttons {
@@ -175,8 +202,6 @@
 
         .btn-primary:hover {
             background-color: #1a252f;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
 
         .btn-secondary {
@@ -186,87 +211,12 @@
 
         .btn-secondary:hover {
             background-color: #95a5a6;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-
-        .btn-contact {
-            background-color: #27ae60;
-            color: white;
-        }
-
-        .btn-contact:hover {
-            background-color: #229954;
-        }
-
-        /* Loading Animation */
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .loading-spinner {
-            display: inline-block;
-            width: 40px;
-            height: 40px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #2c3e50;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        /* Error/Success Messages */
-        .message {
-            padding: 20px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .message.error {
-            background-color: #fee;
-            color: #c33;
-            border: 1px solid #fcc;
-        }
-
-        .message.success {
-            background-color: #efe;
-            color: #363;
-            border: 1px solid #cfc;
-        }
-
-        /* Placeholder styles */
-        .product-image-placeholder, .thumbnail-placeholder {
-            background: #f5f5f5;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #999;
-            font-size: 14px;
-            text-align: center;
-        }
-
-        .product-image-placeholder {
-            width: 100%;
-            height: 100%;
-            min-height: 400px;
-            border-radius: 8px;
-            font-size: 18px;
-        }
-
-        .thumbnail-placeholder {
-            width: 100%;
-            height: 100%;
-            min-height: 80px;
-            border-radius: 3px;
-            font-size: 24px;
         }
 
         @media (max-width: 768px) {
             .product-container {
                 grid-template-columns: 1fr;
                 gap: 30px;
-                padding: 20px;
             }
             
             .product-title {
@@ -286,28 +236,6 @@
             }
             
             .main-image {
-                height: 300px;
-            }
-
-            .thumbnail-images {
-                justify-content: center;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .main-container {
-                padding: 0 10px;
-            }
-
-            .product-container {
-                padding: 15px;
-            }
-
-            .product-title {
-                font-size: 20px;
-            }
-
-            .main-image {
                 height: 250px;
             }
         }
@@ -319,25 +247,37 @@
 
     <div class="main-container">
         <div class="breadcrumb">
-            &lt; <a href="home.php">กลับไปหน้าสินค้า</a>
+            < <a href="allproduct.php">กลับไปหน้าสินค้า</a>
         </div>
 
         <div class="product-container">
             <div class="product-images">
                 <div class="main-image">
-                    <!-- JavaScript will populate this -->
+                    <div class="rebar-image"></div>
                 </div>
                 <div class="thumbnail-images">
-                    <!-- JavaScript will populate this -->
+                    <div class="thumbnail active">
+                        <div class="thumbnail-rebar"></div>
+                    </div>
+                    <div class="thumbnail">
+                        <div class="thumbnail-rebar"></div>
+                    </div>
+                    <div class="thumbnail">
+                        <div class="thumbnail-rebar"></div>
+                    </div>
                 </div>
             </div>
 
             <div class="product-info">
-                <h1 class="product-title">กำลังโหลด...</h1>
-                <div class="product-specs">กำลังโหลดข้อมูล...</div>
-                <div class="product-description">กำลังโหลดคำอธิบาย...</div>
-                <div class="product-stock"></div>
-                <div class="product-price">฿0.00 บาท/เส้น</div>
+                <h1 class="product-title">เหล็กเส้นกลม RBxx</h1>
+                <div class="product-specs">00 มม. x 00 ม. 0.00 กก.</div>
+                <div class="product-description">
+                    เหล็กเส้นกลมสมรรถนะสูง มอก. ทนทานต่อแรงดึงและแรงกดที่สูงใส่ไว้
+                </div>
+                <div class="product-code">
+                    <strong>รหัสสินค้า:</strong> 00
+                </div>
+                <div class="product-price">000.00 บาท/เส้น</div>
                 <div class="action-buttons">
                     <button class="btn btn-primary">ซื้อ</button>
                     <button class="btn btn-secondary">ใส่ในตะกร้า</button>
@@ -349,7 +289,19 @@
     <!-- Footer -->
     <?php include("footer.php");?>
 
-    <script src="product.js"></script>
+    <script>
+        // Thumbnail click functionality
+        const thumbnails = document.querySelectorAll('.thumbnail');
+        
+        thumbnails.forEach(thumbnail => {
+            thumbnail.addEventListener('click', function() {
+                // Remove active class from all thumbnails
+                thumbnails.forEach(t => t.classList.remove('active'));
+                // Add active class to clicked thumbnail
+                this.classList.add('active');
+            });
+        });
+    </script>
 
 </body>
 </html>
