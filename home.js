@@ -101,7 +101,7 @@ function displayProducts(productsToShow) {
         return;
     }
 
-    grid.innerHTML = productsToShow.map(product => `
+    grid.innerHTML = productsToShow.map((product, index) => `
         <div class="product-card" data-category="${product.category}" data-price="${product.price}">
             <div class="product-image">
                 <span class="product-category">${product.category}</span>
@@ -118,11 +118,22 @@ function displayProducts(productsToShow) {
             <div class="product-name">${product.name}</div>
             <div class="product-description">${product.description}</div>
             <div class="product-price">฿${product.price.toLocaleString()}</div>
-            <button class="product-btn" onclick="addToCart('${product.name}', ${product.id})">
+            <button class="product-btn" data-product-index="${index}">
                 เพิ่มในตะกร้า
             </button>
         </div>
     `).join('');
+
+    // เพิ่ม event listeners สำหรับปุ่มเพิ่มในตะกร้า
+    grid.querySelectorAll('.product-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const productIndex = parseInt(this.dataset.productIndex);
+            const product = productsToShow[productIndex];
+            if (product) {
+                addToCart(product.name, product.id);
+            }
+        });
+    });
 }
 
 function showNoProductsMessage(message) {
