@@ -93,7 +93,7 @@ if (empty($password)) {
 
 try {
     // Check if admin table exists and has records
-    $checkTable = $pdo->query("SELECT COUNT(*) as count FROM admin");
+    $checkTable = $pdo->query("SELECT COUNT(*) as count FROM Admin");
     $tableInfo = $checkTable->fetch();
     
     if ($tableInfo['count'] == 0) {
@@ -108,7 +108,7 @@ try {
     // Query admin
     $stmt = $pdo->prepare("
         SELECT admin_id, fullname, password, position, department, status 
-        FROM admin 
+        FROM Admin 
         WHERE admin_id = ? AND status = 'active'
     ");
     $stmt->execute([$username]);

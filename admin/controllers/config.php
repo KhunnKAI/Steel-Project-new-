@@ -9,6 +9,11 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // การตั้งค่าฐานข้อมูล
+// $host = '26.94.44.21:3307';
+// $username = 'user';
+// $password = '12345678';
+// $db_name = 'SteelShop';
+
 $host = 'localhost';
 $username = 'root';
 $password = '';
