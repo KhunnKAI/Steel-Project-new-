@@ -1,3 +1,19 @@
+<!-- <?php
+// Remove session_start() from here since config.php handles it properly
+require_once 'controllers/config.php';
+
+// Require login to access this page
+requireLogin();
+
+// Get current admin information
+$current_admin = getCurrentAdmin();
+if (!$current_admin) {
+    // If admin not found in database, logout
+    header("Location: controllers/logout.php");
+    exit();
+}
+?> -->
+
 <!DOCTYPE html>
 <html lang="th">
 
@@ -30,33 +46,39 @@
             <nav>
                 <ul>
                     <li>
-                        <a href="dashboard_admin.html" onclick="showSection('dashboard')">
+                        <a href="dashboard_admin.php" onclick="showSection('dashboard')">
                             <i class="fas fa-tachometer-alt"></i>
                             แดชบอร์ด
                         </a>
                     </li>
                     <li class="active">
-                        <a href="products_admin.html" onclick="showSection('products')">
+                        <a href="products_admin.php" onclick="showSection('products')">
                             <i class="fas fa-box"></i>
                             จัดการสินค้า
                         </a>
                     </li>
                     <li>
-                        <a href="orders_admin.html" onclick="showSection('orders')">
+                        <a href="orders_admin.php" onclick="showSection('orders')">
                             <i class="fas fa-shopping-cart"></i>
                             จัดการคำสั่งซื้อ
                         </a>
                     </li>
                     <li>
-                        <a href="admins_admin.html" onclick="showSection('admins')">
+                        <a href="admins_admin.php" onclick="showSection('admins')">
                             <i class="fas fa-users-cog"></i>
                             จัดการผู้ดูแล
                         </a>
                     </li>
                     <li>
-                        <a href="reports_admin.html" onclick="showSection('reports')">
+                        <a href="reports_admin.php" onclick="showSection('reports')">
                             <i class="fas fa-chart-bar"></i>
                             รายงาน
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" onclick="handleLogout()">
+                            <i class="fas fa-sign-out-alt"></i>
+                            ออกจากระบบ
                         </a>
                     </li>
                 </ul>

@@ -1,4 +1,6 @@
 <?php
+require_once 'config.php';
+
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
@@ -13,12 +15,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
-
-// Database configuration
-$DB_HOST = 'localhost';
-$DB_USER = 'root';
-$DB_PASS = '';
-$DB_NAME = 'teststeel';
 
 function send_json_error($message, $code = 500) {
     http_response_code($code);
@@ -51,7 +47,7 @@ $MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 $ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
 $ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
 
-// FIXED: Get the base URL for images
+// Get the base URL for images
 function getImageBaseURL() {
     $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
     $host = $_SERVER['HTTP_HOST'];
@@ -64,13 +60,6 @@ try {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         send_json_error('Only POST method is allowed', 405);
     }
-
-    // Database connection
-    $conn = new mysqli($DB_HOST, $DB_USER, $DB_PASS, $DB_NAME);
-    if ($conn->connect_error) {
-        send_json_error('Database connection failed: ' . $conn->connect_error);
-    }
-    $conn->set_charset('utf8mb4');
 
     // Create upload directory if not exists
     if (!file_exists($UPLOAD_DIR)) {
@@ -107,22 +96,12 @@ try {
     }
 
     // Check if product exists
-    $check_stmt = $conn->prepare("SELECT product_id, productimage_id FROM Product WHERE product_id = ?");
-    if (!$check_stmt) {
-        send_json_error('Database prepare failed: ' . $conn->error);
-    }
-    $check_stmt->bind_param('s', $product_id);
-    $check_stmt->execute();
-    $result = $check_stmt->get_result();
+    $check_stmt = $pdo->prepare("SELECT product_id FROM Product WHERE product_id = ?");
+    $check_stmt->execute([$product_id]);
 
-    if ($result->num_rows === 0) {
-        $check_stmt->close();
+    if ($check_stmt->rowCount() === 0) {
         send_json_error('Product not found', 404);
     }
-
-    $product_data = $result->fetch_assoc();
-    $current_productimage_id = $product_data['productimage_id'];
-    $check_stmt->close();
 
     // Validate file type
     $file_info = new finfo(FILEINFO_MIME_TYPE);
@@ -164,22 +143,27 @@ try {
         send_json_error('Failed to move uploaded file');
     }
 
-    // FIXED: Generate full URL for image access
+    // Generate full URL for image access
     $base_url = getImageBaseURL();
-    $image_url = $base_url . $file_path; // Full URL like: http://localhost/steelproject/admin/controllers/uploads/products/filename.jpg
+    $image_url = $base_url . $file_path;
 
     // Generate unique productimage_id
     $productimage_id = 'IMG' . date('YmdHis') . bin2hex(random_bytes(4));
 
     // Start transaction
-    $conn->begin_transaction();
+    $pdo->beginTransaction();
 
     try {
-        // If this is set as main image, or if product has no images yet
+        // If this is set as main image, check if product has no images yet
         $should_be_main = $is_main;
         
+        // Check if product has any images
+        $count_stmt = $pdo->prepare("SELECT COUNT(*) as total FROM ProductImage WHERE product_id = ?");
+        $count_stmt->execute([$product_id]);
+        $current_count = $count_stmt->fetch()['total'];
+        
         // If product has no images yet, make this the main image
-        if (empty($current_productimage_id)) {
+        if ($current_count == 0) {
             $should_be_main = true;
         }
         
@@ -187,67 +171,44 @@ try {
 
         // If setting as main, update existing main images
         if ($should_be_main) {
-            $update_main_stmt = $conn->prepare("
+            $update_main_stmt = $pdo->prepare("
                 UPDATE ProductImage 
                 SET is_main = 0, updated_at = NOW() 
                 WHERE product_id = ? AND is_main = 1
             ");
-            if ($update_main_stmt) {
-                $update_main_stmt->bind_param('s', $product_id);
-                $update_main_stmt->execute();
-                $update_main_stmt->close();
-            }
+            $update_main_stmt->execute([$product_id]);
         }
 
         // Insert new image record
-        $insert_stmt = $conn->prepare("
+        $insert_stmt = $pdo->prepare("
             INSERT INTO ProductImage (productimage_id, product_id, image_url, is_main, created_at, updated_at) 
             VALUES (?, ?, ?, ?, NOW(), NOW())
         ");
-        if (!$insert_stmt) {
-            throw new Exception('Failed to prepare insert statement: ' . $conn->error);
-        }
-
-        $insert_stmt->bind_param('sssi', $productimage_id, $product_id, $image_url, $is_main_int);
-        if (!$insert_stmt->execute()) {
-            throw new Exception('Failed to insert image record: ' . $insert_stmt->error);
-        }
-        $insert_stmt->close();
+        $insert_stmt->execute([$productimage_id, $product_id, $image_url, $is_main_int]);
 
         // Update product's main image reference if this is the main image
         if ($should_be_main) {
-            $update_product_stmt = $conn->prepare("
+            $update_product_stmt = $pdo->prepare("
                 UPDATE Product 
-                SET productimage_id = ?, updated_at = NOW() 
+                SET updated_at = NOW() 
                 WHERE product_id = ?
             ");
-            if ($update_product_stmt) {
-                $update_product_stmt->bind_param('ss', $productimage_id, $product_id);
-                $update_product_stmt->execute();
-                $update_product_stmt->close();
-            }
+            $update_product_stmt->execute([$product_id]);
         }
 
         // Get total image count for this product
-        $count_stmt = $conn->prepare("
-            SELECT COUNT(*) as total 
-            FROM ProductImage 
-            WHERE product_id = ?
-        ");
-        $count_stmt->bind_param('s', $product_id);
-        $count_stmt->execute();
-        $count_result = $count_stmt->get_result();
-        $total_images = $count_result->fetch_assoc()['total'];
-        $count_stmt->close();
+        $count_stmt = $pdo->prepare("SELECT COUNT(*) as total FROM ProductImage WHERE product_id = ?");
+        $count_stmt->execute([$product_id]);
+        $total_images = $count_stmt->fetch()['total'];
 
         // Commit transaction
-        $conn->commit();
+        $pdo->commit();
 
         // Response data
         $response_data = [
             'productimage_id' => $productimage_id,
             'product_id' => $product_id,
-            'image_url' => $image_url, // This now contains the full URL
+            'image_url' => $image_url,
             'filename' => $safe_filename,
             'is_main' => (bool)$should_be_main,
             'file_size' => $file['size'],
@@ -264,7 +225,7 @@ try {
 
     } catch (Exception $e) {
         // Rollback transaction
-        $conn->rollback();
+        $pdo->rollback();
         
         // Delete uploaded file if database operation failed
         if (file_exists($file_path)) {
@@ -273,8 +234,6 @@ try {
         
         throw $e;
     }
-
-    $conn->close();
 
 } catch (Exception $e) {
     error_log("Error in upload_image.php: " . $e->getMessage());

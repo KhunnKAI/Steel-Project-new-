@@ -1,4 +1,7 @@
 <?php
+// Include config file for database connection and session management
+require_once 'config.php';
+
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
@@ -10,16 +13,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-// Database configuration
-$host = 'localhost';
-$username = 'root';
-$password = '';
-$database = 'teststeel';
+// Check if user is logged in (optional - uncomment if needed)
+// requireLogin();
 
 try {
-    // Create database connection
-    $pdo = new PDO("mysql:host=$host;dbname=$database;charset=utf8mb4", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    // Use the PDO connection from config.php
+    // $pdo is already available from config.php
     
     // Check if request method is POST
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -34,7 +33,14 @@ try {
     $required_fields = ['fullname', 'password', 'position', 'department'];
     foreach ($required_fields as $field) {
         if (empty($input_data[$field])) {
-            throw new Exception("กรุณากรอก{$field}");
+            throw new Exception("กรุณากรอก $field");
+        }
+    }
+    
+    // Validate optional phone number
+    if (isset($input_data['phone']) && !empty($input_data['phone'])) {
+        if (!validatePhoneNumber($input_data['phone'])) {
+            throw new Exception('รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง');
         }
     }
     
@@ -45,7 +51,7 @@ try {
     $hashed_password = password_hash($input_data['password'], PASSWORD_DEFAULT);
     
     // Prepare insert statement
-    $sql = "INSERT INTO admin (admin_id, fullname, password, position, department, phone, status, created_at, updated_at) 
+    $sql = "INSERT INTO Admin (admin_id, fullname, password, position, department, phone, status, created_at, updated_at) 
             VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
     
     $stmt = $pdo->prepare($sql);
@@ -62,10 +68,46 @@ try {
     ]);
     
     if ($result) {
-        // Get the inserted admin data
-        $stmt = $pdo->prepare("SELECT admin_id, fullname, position, department, phone, status, created_at FROM admin WHERE admin_id = ?");
+        // Get the inserted admin data (excluding password)
+        $stmt = $pdo->prepare("SELECT admin_id, fullname, position, department, phone, status, created_at FROM Admin WHERE admin_id = ?");
         $stmt->execute([$admin_id]);
         $new_admin = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        // Format the response
+        if ($new_admin) {
+            $new_admin['created_at_formatted'] = date('d/m/Y H:i', strtotime($new_admin['created_at']));
+            
+            // Add Thai translations
+            $dept_thai = [
+                'management' => 'บริหาร',
+                'sales' => 'ขาย', 
+                'warehouse' => 'คลังสินค้า',
+                'logistics' => 'ขนส่ง',
+                'accounting' => 'บัญชี',
+                'it' => 'เทคโนโลยีสารสนเทศ'
+            ];
+            
+            $position_thai = [
+                'manager' => 'ผู้จัดการ',
+                'sales' => 'พนักงานขาย',
+                'warehouse' => 'พนักงานคลัง', 
+                'shipping' => 'พนักงานขนส่ง',
+                'accounting' => 'พนักงานบัญชี',
+                'super' => 'ผู้ดูแลระบบ'
+            ];
+            
+            $new_admin['department_thai'] = $dept_thai[$new_admin['department']] ?? $new_admin['department'];
+            $new_admin['position_thai'] = $position_thai[$new_admin['position']] ?? $new_admin['position'];
+            $new_admin['status_thai'] = $new_admin['status'] === 'active' ? 'ใช้งานอยู่' : 'ไม่ได้ใช้งาน';
+        }
+        
+        // Log the addition
+        logAdminChange($_SESSION['admin_id'] ?? 'SYSTEM', 'ADD', [
+            'new_admin_id' => $admin_id,
+            'fullname' => $input_data['fullname'],
+            'position' => $input_data['position'],
+            'department' => $input_data['department']
+        ], $pdo);
         
         echo json_encode([
             'success' => true,
@@ -107,7 +149,7 @@ function generateUniqueEmployeeCode($pdo) {
         $admin_id = 'EMP' . $random_number;
         
         // Check if this ID already exists
-        $stmt = $pdo->prepare("SELECT admin_id FROM admin WHERE admin_id = ?");
+        $stmt = $pdo->prepare("SELECT admin_id FROM Admin WHERE admin_id = ?");
         $stmt->execute([$admin_id]);
         $exists = $stmt->fetch();
         
@@ -125,6 +167,50 @@ function generateUniqueEmployeeCode($pdo) {
 }
 
 /**
+ * Log admin changes (for audit trail)
+ */
+function logAdminChange($admin_id, $action, $details, $pdo) {
+    try {
+        // Create admin_log table if it doesn't exist
+        $pdo->exec("CREATE TABLE IF NOT EXISTS admin_log (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            admin_id VARCHAR(20) NOT NULL,
+            action VARCHAR(50) NOT NULL,
+            details JSON,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )");
+        
+        $log_stmt = $pdo->prepare("INSERT INTO admin_log (admin_id, action, details, created_at) VALUES (?, ?, ?, NOW())");
+        $log_stmt->execute([$admin_id, $action, json_encode($details)]);
+    } catch (Exception $e) {
+        // Log silently fails - don't break main operation
+        error_log("Admin log error: " . $e->getMessage());
+    }
+}
+
+/**
+ * Validate phone number format (Thai format)
+ */
+function validatePhoneNumber($phone) {
+    if (empty($phone)) return true; // Phone is optional
+    
+    // Remove all non-digits
+    $clean_phone = preg_replace('/[^0-9]/', '', $phone);
+    
+    // Check if it's a valid Thai mobile number (06X, 08X, 09X)
+    if (preg_match('/^0[6-9][0-9]{8}$/', $clean_phone)) {
+        return true;
+    }
+    
+    // Check if it's a valid Thai landline (02X, 03X, 04X, 05X)
+    if (preg_match('/^0[2-5][0-9]{7}$/', $clean_phone)) {
+        return true;
+    }
+    
+    return false;
+}
+
+/**
  * Alternative function to generate employee code with timestamp fallback
  * This ensures uniqueness even if random generation fails
  * @param PDO $pdo Database connection
@@ -139,7 +225,7 @@ function generateUniqueEmployeeCodeWithFallback($pdo) {
         $random_number = str_pad(mt_rand(1000, 9999), 4, '0', STR_PAD_LEFT);
         $admin_id = 'EMP' . $random_number;
         
-        $stmt = $pdo->prepare("SELECT admin_id FROM admin WHERE admin_id = ?");
+        $stmt = $pdo->prepare("SELECT admin_id FROM Admin WHERE admin_id = ?");
         $stmt->execute([$admin_id]);
         $exists = $stmt->fetch();
         
@@ -156,7 +242,7 @@ function generateUniqueEmployeeCodeWithFallback($pdo) {
     $admin_id = 'EMP' . $last_four_digits;
     
     // Check if timestamp-based ID exists
-    $stmt = $pdo->prepare("SELECT admin_id FROM admin WHERE admin_id = ?");
+    $stmt = $pdo->prepare("SELECT admin_id FROM Admin WHERE admin_id = ?");
     $stmt->execute([$admin_id]);
     $exists = $stmt->fetch();
     

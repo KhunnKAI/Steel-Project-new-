@@ -1,4 +1,7 @@
 <?php
+// Include config file for database connection and session management
+require_once 'config.php';
+
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: PUT, DELETE, OPTIONS');
@@ -10,16 +13,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-// Database configuration
-$host = 'localhost';
-$username = 'root';
-$password = '';
-$database = 'teststeel';
+// Check if user is logged in (optional - uncomment if needed)
+// requireLogin();
 
 try {
-    // Create database connection
-    $pdo = new PDO("mysql:host=$host;dbname=$database;charset=utf8mb4", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    // Use the PDO connection from config.php
+    // $pdo is already available from config.php
     
     $method = $_SERVER['REQUEST_METHOD'];
     
@@ -35,10 +34,15 @@ try {
         $admin_id = $input_data['admin_id'];
         
         // Check if admin exists
-        $check_stmt = $pdo->prepare("SELECT admin_id FROM admin WHERE admin_id = ?");
+        $check_stmt = $pdo->prepare("SELECT admin_id FROM Admin WHERE admin_id = ?");
         $check_stmt->execute([$admin_id]);
         if (!$check_stmt->fetch()) {
             throw new Exception('ไม่พบผู้ดูแลรายการนี้');
+        }
+        
+        // Validate status change if status is being updated
+        if (isset($input_data['status'])) {
+            validateStatusChange($admin_id, $input_data['status'], $pdo);
         }
         
         // Build dynamic update query
@@ -68,14 +72,14 @@ try {
         $update_fields[] = "updated_at = NOW()";
         $update_params[] = $admin_id;
         
-        $sql = "UPDATE admin SET " . implode(', ', $update_fields) . " WHERE admin_id = ?";
+        $sql = "UPDATE Admin SET " . implode(', ', $update_fields) . " WHERE admin_id = ?";
         
         $stmt = $pdo->prepare($sql);
         $result = $stmt->execute($update_params);
         
         if ($result && $stmt->rowCount() > 0) {
             // Get updated admin data
-            $get_stmt = $pdo->prepare("SELECT admin_id, fullname, position, department, phone, status, created_at, updated_at FROM admin WHERE admin_id = ?");
+            $get_stmt = $pdo->prepare("SELECT admin_id, fullname, position, department, phone, status, created_at, updated_at FROM Admin WHERE admin_id = ?");
             $get_stmt->execute([$admin_id]);
             $updated_admin = $get_stmt->fetch(PDO::FETCH_ASSOC);
             
@@ -108,6 +112,12 @@ try {
                 $updated_admin['status_thai'] = $updated_admin['status'] === 'active' ? 'ใช้งานอยู่' : 'ไม่ได้ใช้งาน';
             }
             
+            // Log the change
+            logAdminChange($_SESSION['admin_id'] ?? 'SYSTEM', 'UPDATE', [
+                'target_admin_id' => $admin_id,
+                'changes' => array_intersect_key($input_data, array_flip($allowed_fields))
+            ], $pdo);
+            
             echo json_encode([
                 'success' => true,
                 'message' => 'อัพเดทข้อมูลผู้ดูแลเรียบร้อยแล้ว',
@@ -127,7 +137,7 @@ try {
         }
         
         // Check if admin exists and get info before deletion
-        $check_stmt = $pdo->prepare("SELECT admin_id, fullname, position FROM admin WHERE admin_id = ?");
+        $check_stmt = $pdo->prepare("SELECT admin_id, fullname, position FROM Admin WHERE admin_id = ?");
         $check_stmt->execute([$admin_id]);
         $admin_to_delete = $check_stmt->fetch(PDO::FETCH_ASSOC);
         
@@ -136,15 +146,27 @@ try {
         }
         
         // Prevent deletion of super admin or critical roles (optional security)
-        if ($admin_to_delete['position'] === 'super' || $admin_to_delete['admin_id'] === 'SYS001') {
-            throw new Exception('ไม่สามารถลบผู้ดูแลระบบหลักได้');
+        if ($admin_to_delete['position'] === 'super') {
+            // Count active super admins before deletion
+            $count_stmt = $pdo->prepare("SELECT COUNT(*) as count FROM Admin WHERE position = 'super' AND status = 'active'");
+            $count_stmt->execute();
+            $super_count = $count_stmt->fetch()['count'];
+            
+            if ($super_count <= 1) {
+                throw new Exception('ไม่สามารถลบผู้ดูแลระบบคนสุดท้ายได้');
+            }
         }
         
         // Delete admin
-        $delete_stmt = $pdo->prepare("DELETE FROM admin WHERE admin_id = ?");
+        $delete_stmt = $pdo->prepare("DELETE FROM Admin WHERE admin_id = ?");
         $result = $delete_stmt->execute([$admin_id]);
         
         if ($result && $delete_stmt->rowCount() > 0) {
+            // Log the deletion
+            logAdminChange($_SESSION['admin_id'] ?? 'SYSTEM', 'DELETE', [
+                'deleted_admin' => $admin_to_delete
+            ], $pdo);
+            
             echo json_encode([
                 'success' => true,
                 'message' => "ลบผู้ดูแล '{$admin_to_delete['fullname']}' เรียบร้อยแล้ว",
@@ -180,13 +202,13 @@ try {
  */
 function validateStatusChange($admin_id, $new_status, $pdo) {
     // Check if changing super admin status
-    $stmt = $pdo->prepare("SELECT position FROM admin WHERE admin_id = ?");
+    $stmt = $pdo->prepare("SELECT position FROM Admin WHERE admin_id = ?");
     $stmt->execute([$admin_id]);
     $admin = $stmt->fetch();
     
     if ($admin && $admin['position'] === 'super' && $new_status === 'inactive') {
         // Count active super admins
-        $count_stmt = $pdo->prepare("SELECT COUNT(*) as count FROM admin WHERE position = 'super' AND status = 'active' AND admin_id != ?");
+        $count_stmt = $pdo->prepare("SELECT COUNT(*) as count FROM Admin WHERE position = 'super' AND status = 'active' AND admin_id != ?");
         $count_stmt->execute([$admin_id]);
         $count = $count_stmt->fetch()['count'];
         
@@ -203,6 +225,15 @@ function validateStatusChange($admin_id, $new_status, $pdo) {
  */
 function logAdminChange($admin_id, $action, $details, $pdo) {
     try {
+        // Create admin_log table if it doesn't exist
+        $pdo->exec("CREATE TABLE IF NOT EXISTS admin_log (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            admin_id VARCHAR(20) NOT NULL,
+            action VARCHAR(50) NOT NULL,
+            details JSON,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )");
+        
         $log_stmt = $pdo->prepare("INSERT INTO admin_log (admin_id, action, details, created_at) VALUES (?, ?, ?, NOW())");
         $log_stmt->execute([$admin_id, $action, json_encode($details)]);
     } catch (Exception $e) {

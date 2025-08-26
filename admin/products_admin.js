@@ -35,19 +35,42 @@ async function loadInitialData() {
     }
 }
 
-// FIXED: Load products from API with improved data structure handling
+// FIXED: Enhanced loadProducts function with better error handling and debugging
 async function loadProducts() {
     try {
+        console.log('Fetching products from:', ENDPOINTS.products);
+
         const response = await fetch(ENDPOINTS.products);
+        console.log('Response status:', response.status);
+        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
-        const result = await response.json();
-        console.log('Products API Response:', result);
+        // Get the raw response text first to debug
+        const responseText = await response.text();
+        console.log('Raw response text:', responseText);
+
+        // Check if response is empty
+        if (!responseText.trim()) {
+            throw new Error('Server returned empty response');
+        }
+
+        // Try to parse as JSON
+        let result;
+        try {
+            result = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('JSON parse error:', parseError);
+            console.error('Response text that failed to parse:', responseText.substring(0, 500));
+            throw new Error(`Invalid JSON response from server: ${parseError.message}`);
+        }
+
+        console.log('Parsed API Response:', result);
 
         if (result.success && result.data) {
-            // กลุ่มสินค้าตาม product_id และรวมรูปภาพ
+            // Group products by product_id and include images
             const productMap = new Map();
 
             result.data.forEach(product => {
@@ -91,11 +114,10 @@ async function loadProducts() {
                     });
                 }
 
-                // FIXED: เพิ่มรูปภาพจาก product.images array
+                // Add images if they exist
                 if (product.images && Array.isArray(product.images)) {
                     const existingProduct = productMap.get(productId);
                     product.images.forEach(imgObj => {
-                        // imgObj มี structure: {productimage_id, image_url, is_main, created_at, updated_at}
                         if (imgObj.image_url && !existingProduct.images.includes(imgObj.image_url)) {
                             if (imgObj.is_main == 1 || imgObj.is_main === true) {
                                 existingProduct.images.unshift(imgObj.image_url);
@@ -109,16 +131,35 @@ async function loadProducts() {
 
             products = Array.from(productMap.values());
             filteredProducts = [...products];
-            console.log('Processed products:', products);
+            console.log('Successfully processed products:', products.length);
+            console.log('Sample product:', products[0]);
         } else {
-            console.warn('Invalid products response:', result);
+            console.warn('API returned success=false or no data:', result);
             products = [];
             filteredProducts = [];
+
+            // Show specific error message if available
+            const errorMessage = result.message || 'No products data received from server';
+            throw new Error(errorMessage);
         }
 
     } catch (error) {
         console.error('Error loading products:', error);
-        showNotification('เกิดข้อผิดพลาดในการโหลดข้อมูลสินค้า: ' + error.message, 'error');
+
+        // Provide more specific error messages
+        let userMessage = 'เกิดข้อผิดพลาดในการโหลดข้อมูลสินค้า: ';
+
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            userMessage += 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ โปรดตรวจสอบการเชื่อมต่ออินเทอร์เน็ต';
+        } else if (error.message.includes('JSON')) {
+            userMessage += 'เซิร์ฟเวอร์ส่งข้อมูลที่ไม่ถูกต้อง';
+        } else if (error.message.includes('HTTP')) {
+            userMessage += `เซิร์ฟเวอร์ตอบกลับด้วยสถานะ ${error.message}`;
+        } else {
+            userMessage += error.message;
+        }
+
+        showNotification(userMessage, 'error');
         throw error;
     }
 }
@@ -313,10 +354,10 @@ async function uploadImageFile(file, productId, isMain = false) {
         console.log('Upload parsed result:', result);
 
         if (result.status === 'success' && result.success === true) {
-            return { 
-                success: true, 
-                url: result.url || result.data?.image_url, 
-                message: result.message 
+            return {
+                success: true,
+                url: result.url || result.data?.image_url,
+                message: result.message
             };
         } else {
             throw new Error(result.message || 'อัปโหลดล้มเหลว');
@@ -1360,22 +1401,42 @@ function toggleSidebar() {
 // Show different sections
 function showSection(section) {
     if (section === 'dashboard') {
-        window.location.href = 'dashboard_admin.html';
+        window.location.href = 'dashboard_admin.php';
     } else if (section === 'orders') {
-        window.location.href = 'orders_admin.html';
+        window.location.href = 'orders_admin.php';
     } else if (section === 'admins') {
-        window.location.href = 'admins_admin.html';
+        window.location.href = 'admins_admin.php';
     } else if (section === 'reports') {
-        window.location.href = 'reports_admin.html';
+        window.location.href = 'reports_admin.php';
     } else if (section === 'products') {
-        // Close sidebar on mobile after selection
         if (window.innerWidth <= 768) {
             const sidebar = document.getElementById("sidebar");
             const main = document.querySelector(".main-content");
-            if (sidebar && main) {
+            if (sidebar) {
                 sidebar.classList.remove("show");
                 main.classList.remove("overlay");
             }
+        }
+    }
+}
+
+async function handleLogout() {
+    if (confirm('คุณต้องการออกจากระบบหรือไม่?')) {
+        try {
+            const response = await fetch('controllers/logout.php', { // Fixed path
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                window.location.href = data.redirect;
+            }
+        } catch (error) {
+            // Fallback to regular logout
+            window.location.href = 'controllers/logout.php'; // Fixed path
         }
     }
 }

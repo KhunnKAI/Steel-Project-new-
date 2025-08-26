@@ -1,4 +1,7 @@
 <?php
+// Include config file for database connection and session management
+require_once 'config.php';
+
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, OPTIONS');
@@ -35,18 +38,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-// ----------------------------------------
-// Database configuration
-// ----------------------------------------
-$host = 'localhost';
-$username = 'root';
-$password = '';
-$database = 'teststeel';
+// Check if user is logged in (optional - remove if not needed)
+// requireLogin();
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$database;charset=utf8mb4", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
+    // Use the PDO connection from config.php
+    // $pdo is already available from config.php
+    
     // --------------------------
     // Query Parameters
     // --------------------------
@@ -60,10 +58,10 @@ try {
     $offset     = ($page - 1) * $limit;
 
     // --------------------------
-    // Base SQL
+    // Base SQL - Updated table name to match your database
     // --------------------------
     $sql = "SELECT admin_id, fullname, position, department, phone, status, created_at, updated_at 
-            FROM admin WHERE 1=1";
+            FROM Admin WHERE 1=1";
     $params = [];
 
     if ($admin_id) {
@@ -91,8 +89,8 @@ try {
     // Count total
     // --------------------------
     $count_sql = str_replace(
-        "SELECT admin_id, fullname, position, department, phone, status, created_at, updated_at FROM admin",
-        "SELECT COUNT(*) as total FROM admin",
+        "SELECT admin_id, fullname, position, department, phone, status, created_at, updated_at FROM Admin",
+        "SELECT COUNT(*) as total FROM Admin",
         $sql
     );
     $count_stmt = $pdo->prepare($count_sql);
@@ -173,11 +171,11 @@ try {
         ]
     ];
 
-    // summary เฉพาะตอนที่ไม่มี filter
+    // Summary เฉพาะตอนที่ไม่มี filter
     if (!$admin_id && empty($search) && empty($status) && empty($department) && empty($position)) {
         $summary_stmt = $pdo->query("
             SELECT status, department, position, COUNT(*) as count
-            FROM admin 
+            FROM Admin 
             GROUP BY status, department, position
         ");
         $summary_data = $summary_stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -209,5 +207,4 @@ try {
         'message' => 'Database error: ' . $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
 }
-
 ?>

@@ -1,13 +1,10 @@
 <?php
+require_once 'config.php';
+
 header('Content-Type: application/json; charset=utf-8');
 
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
-
-$DB_HOST = 'localhost';
-$DB_USER = 'root';
-$DB_PASS = '';
-$DB_NAME = 'teststeel';
 
 function send_json_error($message, $code = 500) {
     http_response_code($code);
@@ -23,11 +20,7 @@ function send_json_success($message, $data = null) {
     echo json_encode($response, JSON_UNESCAPED_UNICODE);
 }
 
-$conn = new mysqli($DB_HOST, $DB_USER, $DB_PASS, $DB_NAME);
-if ($conn->connect_error) send_json_error('Connection failed: ' . $conn->connect_error);
-$conn->set_charset('utf8mb4');
-
-// FIXED: Handle input properly
+// Handle input properly
 $input = [];
 
 // Check for JSON input first
@@ -56,25 +49,23 @@ function getVal($arr, $key, $default = null) {
 }
 
 try {
-    $conn->begin_transaction();
+    $pdo->beginTransaction();
 
     // Generate product_id if not provided
     $product_id = getVal($input, 'product_id');
     if (!$product_id) {
         $prefix = 'S' . date('ym');
         $sql_last = "SELECT product_id FROM Product WHERE product_id LIKE ? ORDER BY product_id DESC LIMIT 1";
-        $stmt_last = $conn->prepare($sql_last);
-        if (!$stmt_last) throw new Exception('Prepare failed (get last id): ' . $conn->error);
+        $stmt_last = $pdo->prepare($sql_last);
         $like_prefix = $prefix . '%';
-        $stmt_last->bind_param('s', $like_prefix);
-        $stmt_last->execute();
-        $result_last = $stmt_last->get_result();
+        $stmt_last->execute([$like_prefix]);
+        $result_last = $stmt_last->fetch();
+        
         $next_number = 1;
-        if ($row_last = $result_last->fetch_assoc()) {
-            $last_num = (int)substr($row_last['product_id'], strlen($prefix));
+        if ($result_last) {
+            $last_num = (int)substr($result_last['product_id'], strlen($prefix));
             $next_number = $last_num + 1;
         }
-        $stmt_last->close();
         $product_id = $prefix . str_pad($next_number, 4, '0', STR_PAD_LEFT);
     }
 
@@ -116,7 +107,7 @@ try {
 
     $supplier_id = getVal($input, 'supplier_id');
 
-    // Insert Product (ไม่ต้องใส่ productimage_id ตอนสร้าง)
+    // Insert Product
     $sql = "INSERT INTO Product (
         product_id, name, description, width, length, height, weight,
         width_unit, length_unit, height_unit, weight_unit,
@@ -124,22 +115,18 @@ try {
         category_id, supplier_id, created_at, updated_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
 
-    $stmt = $conn->prepare($sql);
-    if (!$stmt) throw new Exception('Prepare failed: ' . $conn->error);
-    
-    $stmt->bind_param(
-        'sssddddsssssidsss',
+    $stmt = $pdo->prepare($sql);
+    $params = [
         $product_id, $name, $description,
         $width, $length, $height, $weight,
         $width_unit, $length_unit, $height_unit, $weight_unit,
         $lot, $stock, $price, $received_date,
         $category_id, $supplier_id
-    );
+    ];
     
-    if (!$stmt->execute()) {
-        throw new Exception('Execute failed: ' . $stmt->error);
+    if (!$stmt->execute($params)) {
+        throw new Exception('Execute failed');
     }
-    $stmt->close();
 
     // Handle ProductImage if provided
     $productimage_id = getVal($input, 'productimage_id');
@@ -149,30 +136,24 @@ try {
 
         $sql_img = "INSERT INTO ProductImage (productimage_id, product_id, image_url, is_main, created_at, updated_at)
                     VALUES (?, ?, ?, ?, NOW(), NOW())";
-        $stmt_img = $conn->prepare($sql_img);
-        if (!$stmt_img) throw new Exception('Prepare ProductImage failed: ' . $conn->error);
+        $stmt_img = $pdo->prepare($sql_img);
+        $img_params = [$productimage_id, $product_id, $image_url, $is_main];
         
-        $stmt_img->bind_param('sssi', $productimage_id, $product_id, $image_url, $is_main);
-        if (!$stmt_img->execute()) {
-            throw new Exception('Execute ProductImage failed: ' . $stmt_img->error);
+        if (!$stmt_img->execute($img_params)) {
+            throw new Exception('Execute ProductImage failed');
         }
-        $stmt_img->close();
 
         // Update Product to reference the main image
         if ($is_main) {
-            $sql_upd = "UPDATE Product SET productimage_id = ?, updated_at = NOW() WHERE product_id = ?";
-            $stmt_upd = $conn->prepare($sql_upd);
-            if (!$stmt_upd) throw new Exception('Prepare update Product failed: ' . $conn->error);
-            
-            $stmt_upd->bind_param('ss', $productimage_id, $product_id);
-            if (!$stmt_upd->execute()) {
-                throw new Exception('Execute update Product failed: ' . $stmt_upd->error);
+            $sql_upd = "UPDATE Product SET updated_at = NOW() WHERE product_id = ?";
+            $stmt_upd = $pdo->prepare($sql_upd);
+            if (!$stmt_upd->execute([$product_id])) {
+                throw new Exception('Execute update Product failed');
             }
-            $stmt_upd->close();
         }
     }
 
-    $conn->commit();
+    $pdo->commit();
 
     send_json_success('เพิ่มสินค้าสำเร็จ', [
         'product_id' => $product_id,
@@ -180,10 +161,8 @@ try {
     ]);
 
 } catch (Exception $e) {
-    $conn->rollback();
+    $pdo->rollback();
     error_log("Error in add_product.php: " . $e->getMessage());
     send_json_error($e->getMessage());
 }
-
-$conn->close();
 ?>
