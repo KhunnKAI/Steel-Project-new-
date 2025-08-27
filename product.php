@@ -319,7 +319,7 @@
 
     <div class="main-container">
         <div class="breadcrumb">
-            &lt; <a href="home.php">กลับไปหน้าสินค้า</a>
+            <a href="allproduct.php">กลับไปหน้าสินค้า</a>
         </div>
 
         <div class="product-container">

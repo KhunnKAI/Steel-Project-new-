@@ -392,7 +392,7 @@ function updateBreadcrumb(categoryName) {
     const breadcrumbElement = document.querySelector('.breadcrumb');
     if (breadcrumbElement && categoryName) {
         breadcrumbElement.innerHTML = `
-            < <a href="home.php">กลับไปหน้าสินค้า</a> | ${categoryName}
+            < <a href="allproduct.php">กลับไปหน้าสินค้า</a> | ${categoryName}
         `;
     }
 }
@@ -406,7 +406,7 @@ function showError(message) {
             <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
                 <h2 style="color: #e74c3c; margin-bottom: 20px;">เกิดข้อผิดพลาด</h2>
                 <p style="color: #666; margin-bottom: 20px;">${message}</p>
-                <a href="home.php" style="background: #2c3e50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+                <a href="allproduct.php" style="background: #2c3e50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
                     กลับไปหน้าหลัก
                 </a>
             </div>
