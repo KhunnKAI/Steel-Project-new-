@@ -7,6 +7,12 @@ class Database {
     private $password = "12345678";
     public $conn;
 
+    // private $host = "localhost";
+    // private $db_name = "teststeel";
+    // private $username = "root";
+    // private $password = "";
+    // public $conn;
+
     public function getConnection() {
         $this->conn = null;
         try {
