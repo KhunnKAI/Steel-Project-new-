@@ -411,19 +411,21 @@
     <!-- Footer -->
     <?php include("footer.php");?>
 
-    <script>
+   <script>
     // Global variables
     let allProducts = [];
     let filteredProducts = [];
     let currentSort = 'price_asc';
+    let currentLimit = 0;
+    let currentOffset = 0;
 
-    // API configuration
+    // API endpoint
+    const projectRoot = window.location.pathname.split('/')[1]; // newproject หรือ steelproject
     const API_ENDPOINTS = [
-        'admin/controllers/get_product.php',
-        '/admin/controllers/get_product.php',
-        './admin/controllers/get_product.php',
-        'http://localhost/newproject/admin/controllers/get_product.php'
+        `/${projectRoot}/controllers/product_home.php`
     ];
+
+
 
     // Initialize page
     document.addEventListener('DOMContentLoaded', function() {
@@ -446,17 +448,28 @@
 
         document.getElementById('min-price').addEventListener('change', applyFilters);
         document.getElementById('max-price').addEventListener('change', applyFilters);
+
+        const sortBtn = document.getElementById('sort-btn');
+        if (sortBtn) sortBtn.addEventListener('click', toggleSort);
     }
 
     // Load products with multiple endpoint attempts
-    async function loadProducts() {
+    async function loadProducts(limit = 0, offset = 0) {
         showLoading();
+
+        currentLimit = limit;
+        currentOffset = offset;
 
         for (let i = 0; i < API_ENDPOINTS.length; i++) {
             const endpoint = API_ENDPOINTS[i];
+            let url = endpoint;
+
+            if (limit > 0) {
+                url += `?limit=${limit}&offset=${offset}`;
+            }
 
             try {
-                const response = await fetch(endpoint, {
+                const response = await fetch(url, {
                     method: 'GET',
                     headers: {
                         'Accept': 'application/json',
@@ -470,18 +483,20 @@
 
                 const text = await response.text();
                 let result;
-                
+
                 try {
                     result = JSON.parse(text);
                 } catch (parseError) {
+                    console.error('JSON parse error:', parseError, 'from', text);
                     continue;
                 }
 
                 if (result && result.success) {
-                    allProducts = result.data || [];
+                    // รองรับ product_home.php ที่ส่ง data.products
+                    allProducts = result.data.products || result.data || [];
                     filteredProducts = [...allProducts];
                     displayProducts();
-                    return; // Success - exit the loop
+                    return; // Success
                 } else {
                     throw new Error(result.message || 'API returned success: false');
                 }
@@ -511,7 +526,7 @@
         grid.innerHTML = html;
     }
 
-    // Create product card HTML with navigation link
+    // Create product card HTML
     function createProductCard(product) {
         const imageUrl = getMainImageUrl(product);
         const dimensions = formatDimensions(product);
@@ -520,120 +535,107 @@
         const productDetailUrl = `product.php?id=${product.product_id}`;
 
         return `
-                <div class="product-card" onclick="navigateToProduct('${product.product_id}')" data-product-id="${product.product_id}">
-                    <div class="product-image">
-                        ${imageUrl ? 
-                            `<img src="${imageUrl}" alt="${product.name}" 
-                                  onerror="this.parentNode.innerHTML='<div class=\\'steel-bars\\'><div class=\\'steel-bar\\'></div><div class=\\'steel-bar\\'></div><div class=\\'steel-bar\\'></div><div class=\\'steel-bar\\'></div><div class=\\'steel-bar\\'></div></div>'">` :
-                            `<div class="steel-bars">
-                                <div class="steel-bar"></div>
-                                <div class="steel-bar"></div>
-                                <div class="steel-bar"></div>
-                                <div class="steel-bar"></div>
-                                <div class="steel-bar"></div>
-                            </div>`
-                        }
-                    </div>
-                    <div class="product-info">
-                        <div class="product-title">${product.name || 'ไม่ระบุชื่อ'}</div>
-                        <div class="product-specs">${dimensions}</div>
-                        ${product.lot ? `<div class="product-specs">Lot: ${product.lot}</div>` : ''}
-                        <div class="product-price">${price}</div>
-                        <div class="product-stock">${stockStatus}</div>
-                        <div class="action-buttons">
-                            <button class="add-to-cart-btn" 
-                                    ${(product.stock || 0) <= 0 ? 'disabled' : ''} 
-                                    onclick="event.stopPropagation(); addToCart('${product.product_id || ''}')">
-                                ${(product.stock || 0) <= 0 ? 'สินค้าหมด' : 'ใส่ตะกร้า'}
-                            </button>
-                            <a href="${productDetailUrl}" class="view-detail-btn" onclick="event.stopPropagation();">
-                                ดูรายละเอียด
-                            </a>
-                        </div>
+            <div class="product-card" onclick="navigateToProduct('${product.product_id}')">
+                <div class="product-image">
+                    ${imageUrl ? 
+                        `<img src="${imageUrl}" alt="${product.name}" 
+                              onerror="this.parentNode.innerHTML='<div class=\\'steel-bars\\'><div class=\\'steel-bar\\'></div><div class=\\'steel-bar\\'></div><div class=\\'steel-bar\\'></div><div class=\\'steel-bar\\'></div><div class=\\'steel-bar\\'></div></div>'">` :
+                        `<div class="steel-bars">
+                            <div class="steel-bar"></div>
+                            <div class="steel-bar"></div>
+                            <div class="steel-bar"></div>
+                            <div class="steel-bar"></div>
+                            <div class="steel-bar"></div>
+                        </div>`
+                    }
+                </div>
+                <div class="product-info">
+                    <div class="product-title">${product.name || 'ไม่ระบุชื่อ'}</div>
+                    <div class="product-specs">${dimensions}</div>
+                    ${product.lot ? `<div class="product-specs">Lot: ${product.lot}</div>` : ''}
+                    <div class="product-price">${price}</div>
+                    <div class="product-stock">${stockStatus}</div>
+                    <div class="action-buttons">
+                        <button class="add-to-cart-btn" 
+                                ${(product.stock || 0) <= 0 ? 'disabled' : ''} 
+                                onclick="event.stopPropagation(); addToCart('${product.product_id}', event)">
+                            ${(product.stock || 0) <= 0 ? 'สินค้าหมด' : 'ใส่ตะกร้า'}
+                        </button>
+                        <a href="${productDetailUrl}" class="view-detail-btn" onclick="event.stopPropagation();">
+                            ดูรายละเอียด
+                        </a>
                     </div>
                 </div>
-            `;
+            </div>
+        `;
     }
 
     // Navigate to product detail page
     function navigateToProduct(productId) {
         if (productId) {
-            const detailUrl = `product.php?id=${productId}`;
-            window.location.href = detailUrl;
+            window.location.href = `product.php?id=${productId}`;
         }
     }
 
-    // Get main image URL
     function getMainImageUrl(product) {
-        if (product.images && Array.isArray(product.images) && product.images.length > 0) {
-            const mainImage = product.images.find(img => img.is_main === 1 || img.is_main === '1');
-            let selectedImageUrl = mainImage ? mainImage.image_url : product.images[0].image_url;
+    if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+        const mainImage = product.images.find(img => img.is_main === 1 || img.is_main === '1');
+        let selectedImageUrl = mainImage ? mainImage.image_url : product.images[0].image_url;
 
-            if (selectedImageUrl) {
-                selectedImageUrl = selectedImageUrl.replace('/steelproject/', '/newproject/');
+        if (selectedImageUrl) {
+            // ถ้า path ไม่เริ่มด้วย http หรือ / ให้เติม root ของโปรเจกต์อัตโนมัติ
+            if (!selectedImageUrl.startsWith('http') && !selectedImageUrl.startsWith('/')) {
+                const projectRoot = window.location.pathname.split('/')[1]; // เช่น newproject หรือ steelproject
+                selectedImageUrl = `/${projectRoot}/admin/controllers/uploads/products/${selectedImageUrl}`;
             }
-
-            return selectedImageUrl;
         }
 
-        return null;
+        return selectedImageUrl;
     }
+    return null; // fallback steel-bars
+}
+
+
+
+
 
     // Format dimensions
     function formatDimensions(product) {
         let dimensions = [];
-
-        if (product.width) {
-            dimensions.push(`กว้าง ${product.width} ${product.width_unit || 'mm'}`);
-        }
-        if (product.length) {
-            dimensions.push(`ยาว ${product.length} ${product.length_unit || 'mm'}`);
-        }
-        if (product.height) {
-            dimensions.push(`สูง ${product.height} ${product.height_unit || 'mm'}`);
-        }
-        if (product.weight) {
-            dimensions.push(`หนัก ${product.weight} ${product.weight_unit || 'kg'}`);
-        }
-
+        if (product.width) dimensions.push(`กว้าง ${product.width} ${product.width_unit || 'mm'}`);
+        if (product.length) dimensions.push(`ยาว ${product.length} ${product.length_unit || 'mm'}`);
+        if (product.height) dimensions.push(`สูง ${product.height} ${product.height_unit || 'mm'}`);
+        if (product.weight) dimensions.push(`หนัก ${product.weight} ${product.weight_unit || 'kg'}`);
         return dimensions.length > 0 ? dimensions.join(', ') : 'ไม่ระบุขนาด';
     }
 
     // Format price
     function formatPrice(price) {
-        if (!price || price == 0) {
-            return 'ราคาสอบถาม';
-        }
+        if (!price || price == 0) return 'ราคาสอบถาม';
         return parseFloat(price).toLocaleString('th-TH', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
         }) + ' บาท';
     }
 
-    // Get stock status
+    // Stock status
     function getStockStatus(stock) {
-        if (!stock || stock <= 0) {
-            return 'สินค้าหมด';
-        }
-        return `คงเหลือ ${stock} ชิ้น`;
+        return (!stock || stock <= 0) ? 'สินค้าหมด' : `คงเหลือ ${stock} ชิ้น`;
     }
 
-    // Show loading
+    // Loading & error
     function showLoading() {
         document.getElementById('products-grid').innerHTML = '<div class="loading">กำลังโหลดข้อมูลสินค้า...</div>';
     }
-
-    // Show error
     function showError(message) {
         document.getElementById('products-grid').innerHTML = `<div class="error">${message}</div>`;
     }
 
-    // Perform search
+    // Search & filter
     function performSearch() {
         applyFilters();
     }
 
-    // Apply filters
     function applyFilters() {
         const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
         const minPrice = parseFloat(document.getElementById('min-price').value) || 0;
@@ -641,23 +643,15 @@
 
         const selectedCategories = [];
         const categoryCheckboxes = document.querySelectorAll('.category-item input[type="checkbox"]:checked');
-        categoryCheckboxes.forEach(checkbox => {
-            selectedCategories.push(checkbox.value);
-        });
+        categoryCheckboxes.forEach(checkbox => selectedCategories.push(checkbox.value));
 
         filteredProducts = allProducts.filter(product => {
-            if (searchTerm && !(product.name || '').toLowerCase().includes(searchTerm)) {
-                return false;
-            }
+            if (searchTerm && !(product.name || '').toLowerCase().includes(searchTerm)) return false;
 
             const productPrice = parseFloat(product.price) || 0;
-            if (productPrice < minPrice || productPrice > maxPrice) {
-                return false;
-            }
+            if (productPrice < minPrice || productPrice > maxPrice) return false;
 
-            if (selectedCategories.length > 0 && !selectedCategories.includes(product.category_id)) {
-                return false;
-            }
+            if (selectedCategories.length > 0 && !selectedCategories.includes(product.category_id)) return false;
 
             return true;
         });
@@ -670,8 +664,7 @@
     function toggleSort() {
         const sortOptions = ['price_asc', 'price_desc', 'name_asc', 'name_desc'];
         const currentIndex = sortOptions.indexOf(currentSort);
-        const nextIndex = (currentIndex + 1) % sortOptions.length;
-        currentSort = sortOptions[nextIndex];
+        currentSort = sortOptions[(currentIndex + 1) % sortOptions.length];
 
         const sortText = {
             'price_asc': 'ราคา: ต่ำ-สูง',
@@ -679,7 +672,8 @@
             'name_asc': 'ชื่อ: A-Z',
             'name_desc': 'ชื่อ: Z-A'
         };
-        document.getElementById('sort-text').textContent = sortText[currentSort];
+        const sortLabel = document.getElementById('sort-text');
+        if (sortLabel) sortLabel.textContent = sortText[currentSort];
 
         sortProducts();
         displayProducts();
@@ -689,22 +683,17 @@
     function sortProducts() {
         filteredProducts.sort((a, b) => {
             switch (currentSort) {
-                case 'price_asc':
-                    return (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0);
-                case 'price_desc':
-                    return (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0);
-                case 'name_asc':
-                    return (a.name || '').localeCompare(b.name || '', 'th');
-                case 'name_desc':
-                    return (b.name || '').localeCompare(a.name || '', 'th');
-                default:
-                    return 0;
+                case 'price_asc': return (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0);
+                case 'price_desc': return (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0);
+                case 'name_asc': return (a.name || '').localeCompare(b.name || '', 'th');
+                case 'name_desc': return (b.name || '').localeCompare(a.name || '', 'th');
+                default: return 0;
             }
         });
     }
 
-    // Add to cart function
-    function addToCart(productId) {
+    // Add to cart
+    function addToCart(productId, event) {
         const button = event.target;
         const originalText = button.textContent;
 
@@ -718,7 +707,8 @@
             button.disabled = false;
         }, 2000);
     }
-    </script>
+</script>
+
 </body>
 
 </html>
