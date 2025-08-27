@@ -1,6 +1,12 @@
 <?php
 // config.php - Database configuration
 class Database {
+    // private $host = "26.94.44.21:3307";
+    // private $db_name = "SteelShop";
+    // private $username = "user";
+    // private $password = "12345678";
+    // public $conn;
+
     private $host = "localhost";
     private $db_name = "teststeel";
     private $username = "root";
