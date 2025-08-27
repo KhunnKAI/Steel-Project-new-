@@ -9,10 +9,10 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // การตั้งค่าฐานข้อมูล
-$host = 'localhost';
-$username = 'root';
-$password = '';
-$db_name = 'teststeel';
+$host = '26.94.44.21:3307';
+$username = 'user';
+$password = '12345678';
+$db_name = 'SteelShop';
 
 
 try {

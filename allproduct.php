@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>รายการสินค้า</title>
-    <link href="header.css" rel="stylesheet">
-    <link href="footer.css" rel="stylesheet">
+    <title>รายการสินค้า - Debug Version</title>
     <style>
         * {
             margin: 0;
@@ -30,6 +28,27 @@
             font-size: 2.5rem;
             margin-bottom: 30px;
             color: #2c3e50;
+        }
+
+        .debug-panel {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .debug-panel h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .debug-panel pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
         }
 
         .main-content {
@@ -162,6 +181,13 @@
             align-items: center;
             justify-content: center;
             border-bottom: 1px solid #eee;
+            overflow: hidden;
+        }
+
+        .product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .steel-bars {
@@ -202,6 +228,12 @@
             margin-bottom: 10px;
         }
 
+        .product-stock {
+            font-size: 12px;
+            color: #777;
+            margin-bottom: 10px;
+        }
+
         .add-to-cart-btn {
             width: 100%;
             padding: 10px;
@@ -216,6 +248,35 @@
 
         .add-to-cart-btn:hover {
             background: #34495e;
+        }
+
+        .add-to-cart-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: #e74c3c;
+            background: #fff;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .no-products {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            background: #fff;
+            border-radius: 8px;
+            grid-column: 1 / -1;
         }
 
         @media (max-width: 768px) {
@@ -234,11 +295,24 @@
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <?php include("header.php");?>
-
     <div class="container">
-        <h1>สินค้า</h1>
+        <h1>สินค้า (Debug Version)</h1>
+        
+        <!-- Debug Panel -->
+        <div class="debug-panel">
+            <h3>🔍 Debug Information</h3>
+            <div>
+                <strong>API URL:</strong> <span id="api-url">-</span><br>
+                <strong>Request Status:</strong> <span id="request-status">-</span><br>
+                <strong>Response Status:</strong> <span id="response-status">-</span><br>
+                <strong>Products Count:</strong> <span id="products-count">-</span><br>
+                <strong>Filtered Count:</strong> <span id="filtered-count">-</span>
+            </div>
+            <details style="margin-top: 10px;">
+                <summary>Raw API Response</summary>
+                <pre id="raw-response">Loading...</pre>
+            </details>
+        </div>
         
         <div class="main-content">
             <div class="sidebar">
@@ -249,37 +323,37 @@
                 <div class="price-filter">
                     <div style="text-align: center; font-weight: bold; margin-bottom: 10px;">ราคา</div>
                     <div class="price-inputs">
-                        <input type="number" placeholder="0" min="0">
+                        <input type="number" id="min-price" placeholder="0" min="0">
                         <span>ถึง</span>
-                        <input type="number" placeholder="0" min="0">
+                        <input type="number" id="max-price" placeholder="0" min="0">
                     </div>
                 </div>
                 
                 <div class="category-filter">
                     <h3>ประเภท</h3>
                     <div class="category-item">
-                        <input type="checkbox" id="steel-round">
-                        <label for="steel-round">เหล็กเส้นกลม</label>
+                        <input type="checkbox" id="category-rd" value="rd">
+                        <label for="category-rd">เหล็กเส้นกลม</label>
                     </div>
                     <div class="category-item">
-                        <input type="checkbox" id="steel-square">
-                        <label for="steel-square">เหล็กเหนียมเหลี่ยม</label>
+                        <input type="checkbox" id="category-sq" value="sq">
+                        <label for="category-sq">เหล็กเหนียมเหลี่ยม</label>
                     </div>
                     <div class="category-item">
-                        <input type="checkbox" id="steel-deformed">
-                        <label for="steel-deformed">เหล็กรูปพรรณ</label>
+                        <input type="checkbox" id="category-df" value="df">
+                        <label for="category-df">เหล็กรูปพรรณ</label>
                     </div>
                     <div class="category-item">
-                        <input type="checkbox" id="steel-galvanized">
-                        <label for="steel-galvanized">เหล็กชุบแป้งค์ตาม่า</label>
+                        <input type="checkbox" id="category-gz" value="gz">
+                        <label for="category-gz">เหล็กชุบแป้งค์</label>
                     </div>
                     <div class="category-item">
-                        <input type="checkbox" id="other">
-                        <label for="other">อื่นๆ</label>
+                        <input type="checkbox" id="category-ot" value="ot">
+                        <label for="category-ot">อื่นๆ</label>
                     </div>
                 </div>
                 
-                <div style="background: #2c3e50; color: white; padding: 10px; text-align: center; font-weight: bold; border-radius: 0 0 8px 8px;">
+                <div style="background: #2c3e50; color: white; padding: 10px; text-align: center; font-weight: bold; border-radius: 0 0 8px 8px; cursor: pointer;" onclick="applyFilters()">
                     ค้นหา
                 </div>
             </div>
@@ -287,179 +361,366 @@
             <div style="flex: 1;">
                 <div class="search-sort-bar">
                     <div class="search-container">
-                        <input type="text" class="search-input" placeholder="ค้นหา...">
-                        <button class="search-btn">🔍</button>
+                        <input type="text" id="search-input" class="search-input" placeholder="ค้นหาชื่อสินค้า...">
+                        <button class="search-btn" onclick="performSearch()">🔍</button>
                     </div>
-                    <button class="sort-btn">
+                    <button class="sort-btn" onclick="toggleSort()">
+                        <span id="sort-text">ราคา: ต่ำ-สูง</span>
                         ⇅
                     </button>
                 </div>
                 
-                <div class="products-grid">
-                    <div class="product-card">
-                        <div class="product-image">
-                            <div class="steel-bars">
-                                <div class="steel-bar"></div>
-                                <div class="steel-bar"></div>
-                                <div class="steel-bar"></div>
-                                <div class="steel-bar"></div>
-                                <div class="steel-bar"></div>
-                            </div>
-                        </div>
-                        <div class="product-info">
-                            <div class="product-title">เหล็กเส้นกลม RBxx</div>
-                            <div class="product-specs">ขนาด: ø 10 น. x 00 ม. 0.00 กก.</div>
-                            <div class="product-price">000.00 บาท/เส้น</div>
-                            <button class="add-to-cart-btn">เพิ่มลงตะกร้า</button>
-                        </div>
-                    </div>
-                    
-                    <div class="product-card">
-                        <div class="product-image">
-                            <div class="steel-bars">
-                                <div class="steel-bar"></div>
-                                <div class="steel-bar"></div>
-                                <div class="steel-bar"></div>
-                                <div class="steel-bar"></div>
-                                <div class="steel-bar"></div>
-                            </div>
-                        </div>
-                        <div class="product-info">
-                            <div class="product-title">เหล็กเส้นกลม RBxx</div>
-                            <div class="product-specs">ขนาด: ø 10 น. x 00 ม. 0.00 กก.</div>
-                            <div class="product-price">000.00 บาท/เส้น</div>
-                            <button class="add-to-cart-btn">เพิ่มลงตะกร้า</button>
-                        </div>
-                    </div>
-                    
-                    <div class="product-card">
-                        <div class="product-image">
-                            <div class="steel-bars">
-                                <div class="steel-bar"></div>
-                                <div class="steel-bar"></div>
-                                <div class="steel-bar"></div>
-                                <div class="steel-bar"></div>
-                                <div class="steel-bar"></div>
-                            </div>
-                        </div>
-                        <div class="product-info">
-                            <div class="product-title">เหล็กเส้นกลม RBxx</div>
-                            <div class="product-specs">ขนาด: ø 10 น. x 00 ม. 0.00 กก.</div>
-                            <div class="product-price">000.00 บาท/เส้น</div>
-                            <button class="add-to-cart-btn">เพิ่มลงตะกร้า</button>
-                        </div>
-                    </div>
-                    
-                    <div class="product-card">
-                        <div class="product-image">
-                            <div class="steel-bars">
-                                <div class="steel-bar"></div>
-                                <div class="steel-bar"></div>
-                                <div class="steel-bar"></div>
-                                <div class="steel-bar"></div>
-                                <div class="steel-bar"></div>
-                            </div>
-                        </div>
-                        <div class="product-info">
-                            <div class="product-title">เหล็กเส้นกลม RBxx</div>
-                            <div class="product-specs">ขนาด: ø 10 น. x 00 ม. 0.00 กก.</div>
-                            <div class="product-price">000.00 บาท/เส้น</div>
-                            <button class="add-to-cart-btn">เพิ่มลงตะกร้า</button>
-                        </div>
-                    </div>
-                    
-                    <div class="product-card">
-                        <div class="product-image">
-                            <div class="steel-bars">
-                                <div class="steel-bar"></div>
-                                <div class="steel-bar"></div>
-                                <div class="steel-bar"></div>
-                                <div class="steel-bar"></div>
-                                <div class="steel-bar"></div>
-                            </div>
-                        </div>
-                        <div class="product-info">
-                            <div class="product-title">เหล็กเส้นกลม RBxx</div>
-                            <div class="product-specs">ขนาด: ø 10 น. x 00 ม. 0.00 กก.</div>
-                            <div class="product-price">000.00 บาท/เส้น</div>
-                            <button class="add-to-cart-btn">เพิ่มลงตะกร้า</button>
-                        </div>
-                    </div>
-                    
-                    <div class="product-card">
-                        <div class="product-image">
-                            <div class="steel-bars">
-                                <div class="steel-bar"></div>
-                                <div class="steel-bar"></div>
-                                <div class="steel-bar"></div>
-                                <div class="steel-bar"></div>
-                                <div class="steel-bar"></div>
-                            </div>
-                        </div>
-                        <div class="product-info">
-                            <div class="product-title">เหล็กเส้นกลม RBxx</div>
-                            <div class="product-specs">ขนาด: ø 10 น. x 00 ม. 0.00 กก.</div>
-                            <div class="product-price">000.00 บาท/เส้น</div>
-                            <button class="add-to-cart-btn">เพิ่มลงตะกร้า</button>
-                        </div>
-                    </div>
+                <div id="products-grid" class="products-grid">
+                    <div class="loading">กำลังโหลดข้อมูลสินค้า...</div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Add some basic interactivity
-        document.addEventListener('DOMContentLoaded', function() {
-            // Search functionality
-            const searchInput = document.querySelector('.search-input');
-            const searchBtn = document.querySelector('.search-btn');
-            
-            searchBtn.addEventListener('click', function() {
-                const searchTerm = searchInput.value.trim();
-                if (searchTerm) {
-                    alert('ค้นหา: ' + searchTerm);
-                }
-            });
-            
-            searchInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    searchBtn.click();
-                }
-            });
-            
-            // Add to cart functionality
-            const addToCartBtns = document.querySelectorAll('.add-to-cart-btn');
-            addToCartBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    btn.textContent = 'เพิ่มแล้ว ✓';
-                    btn.style.backgroundColor = '#27ae60';
-                    setTimeout(() => {
-                        btn.textContent = 'เพิ่มลงตะกร้า';
-                        btn.style.backgroundColor = '#2c3e50';
-                    }, 2000);
-                });
-            });
-            
-            // Filter functionality
-            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-            checkboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
-                    console.log('Filter changed:', this.id, this.checked);
-                });
-            });
-            
-            // Price filter
-            const priceInputs = document.querySelectorAll('.price-inputs input');
-            priceInputs.forEach(input => {
-                input.addEventListener('change', function() {
-                    console.log('Price filter changed:', this.value);
-                });
-            });
-        });
-    </script>
+        // Global variables
+        let allProducts = [];
+        let filteredProducts = [];
+        let currentSort = 'price_asc';
 
-    <!-- Footer -->
-    <?php include("footer.php");?>
+        // API configuration - ลองหลายแบบ
+        const API_ENDPOINTS = [
+            'admin/controllers/get_product.php',
+            '/admin/controllers/get_product.php', 
+            './admin/controllers/get_product.php',
+            'http://localhost/newproject/admin/controllers/get_product.php'
+        ];
+
+        // Debug functions
+        function updateDebugInfo(info) {
+            Object.keys(info).forEach(key => {
+                const element = document.getElementById(key);
+                if (element) {
+                    element.textContent = info[key];
+                }
+            });
+        }
+
+        function logDebug(message, data = null) {
+            console.log(`[DEBUG] ${message}`, data);
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProducts();
+            setupEventListeners();
+        });
+
+        // Setup event listeners
+        function setupEventListeners() {
+            document.getElementById('search-input').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+
+            const categoryCheckboxes = document.querySelectorAll('.category-item input[type="checkbox"]');
+            categoryCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', applyFilters);
+            });
+
+            document.getElementById('min-price').addEventListener('change', applyFilters);
+            document.getElementById('max-price').addEventListener('change', applyFilters);
+        }
+
+        // Load products with multiple endpoint attempts
+        async function loadProducts() {
+            showLoading();
+            
+            for (let i = 0; i < API_ENDPOINTS.length; i++) {
+                const endpoint = API_ENDPOINTS[i];
+                logDebug(`Trying endpoint ${i + 1}/${API_ENDPOINTS.length}:`, endpoint);
+                
+                updateDebugInfo({
+                    'api-url': endpoint,
+                    'request-status': 'กำลังเรียก API...'
+                });
+
+                try {
+                    const response = await fetch(endpoint, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    updateDebugInfo({
+                        'response-status': `${response.status} ${response.statusText}`
+                    });
+
+                    logDebug(`Response status:`, response.status);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const text = await response.text();
+                    logDebug('Raw response:', text);
+                    
+                    // Update debug panel with raw response
+                    document.getElementById('raw-response').textContent = text;
+
+                    let result;
+                    try {
+                        result = JSON.parse(text);
+                    } catch (parseError) {
+                        logDebug('JSON Parse Error:', parseError);
+                        updateDebugInfo({
+                            'request-status': 'ข้อผิดพลาด: Response ไม่ใช่ JSON ที่ถูกต้อง'
+                        });
+                        continue;
+                    }
+
+                    logDebug('Parsed result:', result);
+
+                    if (result && result.success) {
+                        allProducts = result.data || [];
+                        filteredProducts = [...allProducts];
+                        
+                        updateDebugInfo({
+                            'request-status': 'สำเร็จ',
+                            'products-count': allProducts.length,
+                            'filtered-count': filteredProducts.length
+                        });
+
+                        logDebug(`Successfully loaded ${allProducts.length} products`);
+                        displayProducts();
+                        return; // Success - exit the loop
+                    } else {
+                        throw new Error(result.message || 'API returned success: false');
+                    }
+
+                } catch (error) {
+                    logDebug(`Error with endpoint ${endpoint}:`, error);
+                    updateDebugInfo({
+                        'request-status': `ข้อผิดพลาด: ${error.message}`
+                    });
+                    
+                    // If this is the last endpoint, show error
+                    if (i === API_ENDPOINTS.length - 1) {
+                        showError(`ไม่สามารถเชื่อมต่อ API ได้จากทุก endpoint:<br>${error.message}`);
+                        document.getElementById('raw-response').textContent = `Error: ${error.message}`;
+                    }
+                }
+            }
+        }
+
+        // Display products
+        function displayProducts() {
+            const grid = document.getElementById('products-grid');
+            
+            logDebug(`Displaying ${filteredProducts.length} products`);
+            updateDebugInfo({ 'filtered-count': filteredProducts.length });
+            
+            if (filteredProducts.length === 0) {
+                grid.innerHTML = '<div class="no-products">ไม่พบสินค้าที่ตรงตามเงื่อนไข</div>';
+                return;
+            }
+
+            let html = '';
+            filteredProducts.forEach((product, index) => {
+                logDebug(`Creating card for product ${index}:`, product);
+                html += createProductCard(product);
+            });
+            
+            grid.innerHTML = html;
+            logDebug('Products displayed successfully');
+        }
+
+        // Create product card HTML
+        function createProductCard(product) {
+            const imageUrl = getMainImageUrl(product);
+            const dimensions = formatDimensions(product);
+            const price = formatPrice(product.price);
+            const stockStatus = getStockStatus(product.stock);
+            
+            return `
+                <div class="product-card">
+                    <div class="product-image">
+                        ${imageUrl ? 
+                            `<img src="${imageUrl}" alt="${product.name}" onerror="this.parentNode.innerHTML='<div class=steel-bars><div class=steel-bar></div><div class=steel-bar></div><div class=steel-bar></div><div class=steel-bar></div><div class=steel-bar></div></div>'">` :
+                            `<div class="steel-bars">
+                                <div class="steel-bar"></div>
+                                <div class="steel-bar"></div>
+                                <div class="steel-bar"></div>
+                                <div class="steel-bar"></div>
+                                <div class="steel-bar"></div>
+                            </div>`
+                        }
+                    </div>
+                    <div class="product-info">
+                        <div class="product-title">${product.name || 'ไม่ระบุชื่อ'}</div>
+                        <div class="product-specs">${dimensions}</div>
+                        ${product.lot ? `<div class="product-specs">Lot: ${product.lot}</div>` : ''}
+                        <div class="product-price">${price}</div>
+                        <div class="product-stock">${stockStatus}</div>
+                        <button class="add-to-cart-btn" 
+                                ${(product.stock || 0) <= 0 ? 'disabled' : ''} 
+                                onclick="addToCart('${product.product_id || ''}')">
+                            ${(product.stock || 0) <= 0 ? 'สินค้าหมด' : 'เพิ่มลงตะกร้า'}
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Get main image URL
+        function getMainImageUrl(product) {
+            if (product.images.image_url && Array.isArray(product.images.image_url) && product.images.image_url.length > 0) {
+                const mainImage = product.images.find(img => img.is_main === 1 || img.is_main === '1');
+                return mainImage ? mainImage.image_url : product.images[0].image_url;
+            }
+            return null;
+        }
+
+        // Format dimensions
+        function formatDimensions(product) {
+            let dimensions = [];
+            
+            if (product.width) {
+                dimensions.push(`กว้าง ${product.width} ${product.width_unit || 'mm'}`);
+            }
+            if (product.length) {
+                dimensions.push(`ยาว ${product.length} ${product.length_unit || 'mm'}`);
+            }
+            if (product.height) {
+                dimensions.push(`สูง ${product.height} ${product.height_unit || 'mm'}`);
+            }
+            if (product.weight) {
+                dimensions.push(`หนัก ${product.weight} ${product.weight_unit || 'kg'}`);
+            }
+            
+            return dimensions.length > 0 ? dimensions.join(', ') : 'ไม่ระบุขนาด';
+        }
+
+        // Format price
+        function formatPrice(price) {
+            if (!price || price == 0) {
+                return 'ราคาสอบถาม';
+            }
+            return parseFloat(price).toLocaleString('th-TH', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }) + ' บาท';
+        }
+
+        // Get stock status
+        function getStockStatus(stock) {
+            if (!stock || stock <= 0) {
+                return 'สินค้าหมด';
+            }
+            return `คงเหลือ ${stock} ชิ้น`;
+        }
+
+        // Show loading
+        function showLoading() {
+            document.getElementById('products-grid').innerHTML = '<div class="loading">กำลังโหลดข้อมูลสินค้า...</div>';
+        }
+
+        // Show error
+        function showError(message) {
+            document.getElementById('products-grid').innerHTML = `<div class="error">${message}</div>`;
+        }
+
+        // Perform search
+        function performSearch() {
+            applyFilters();
+        }
+
+        // Apply filters
+        function applyFilters() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
+            const minPrice = parseFloat(document.getElementById('min-price').value) || 0;
+            const maxPrice = parseFloat(document.getElementById('max-price').value) || Infinity;
+            
+            const selectedCategories = [];
+            const categoryCheckboxes = document.querySelectorAll('.category-item input[type="checkbox"]:checked');
+            categoryCheckboxes.forEach(checkbox => {
+                selectedCategories.push(checkbox.value);
+            });
+
+            filteredProducts = allProducts.filter(product => {
+                if (searchTerm && !(product.name || '').toLowerCase().includes(searchTerm)) {
+                    return false;
+                }
+                
+                const productPrice = parseFloat(product.price) || 0;
+                if (productPrice < minPrice || productPrice > maxPrice) {
+                    return false;
+                }
+                
+                if (selectedCategories.length > 0 && !selectedCategories.includes(product.category_id)) {
+                    return false;
+                }
+                
+                return true;
+            });
+
+            logDebug(`Filtered products: ${filteredProducts.length}/${allProducts.length}`);
+            sortProducts();
+            displayProducts();
+        }
+
+        // Toggle sort
+        function toggleSort() {
+            const sortOptions = ['price_asc', 'price_desc', 'name_asc', 'name_desc'];
+            const currentIndex = sortOptions.indexOf(currentSort);
+            const nextIndex = (currentIndex + 1) % sortOptions.length;
+            currentSort = sortOptions[nextIndex];
+            
+            const sortText = {
+                'price_asc': 'ราคา: ต่ำ-สูง',
+                'price_desc': 'ราคา: สูง-ต่ำ',
+                'name_asc': 'ชื่อ: A-Z',
+                'name_desc': 'ชื่อ: Z-A'
+            };
+            document.getElementById('sort-text').textContent = sortText[currentSort];
+            
+            sortProducts();
+            displayProducts();
+        }
+
+        // Sort products
+        function sortProducts() {
+            filteredProducts.sort((a, b) => {
+                switch (currentSort) {
+                    case 'price_asc':
+                        return (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0);
+                    case 'price_desc':
+                        return (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0);
+                    case 'name_asc':
+                        return (a.name || '').localeCompare(b.name || '', 'th');
+                    case 'name_desc':
+                        return (b.name || '').localeCompare(a.name || '', 'th');
+                    default:
+                        return 0;
+                }
+            });
+        }
+
+        // Add to cart function
+        function addToCart(productId) {
+            const button = event.target;
+            const originalText = button.textContent;
+            
+            button.textContent = 'เพิ่มแล้ว ✓';
+            button.style.backgroundColor = '#27ae60';
+            button.disabled = true;
+            
+            logDebug('Adding product to cart:', productId);
+            
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.style.backgroundColor = '#2c3e50';
+                button.disabled = false;
+            }, 2000);
+        }
+    </script>
 </body>
 </html>
