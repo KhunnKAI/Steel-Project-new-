@@ -14,6 +14,11 @@ $username = 'user';
 $password = '12345678';
 $db_name = 'SteelShop';
 
+// $host = 'localhost';
+// $username = 'root';
+// $password = '';
+// $db_name = 'teststeel';
+
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$db_name;charset=utf8mb4", $username, $password);

@@ -14,7 +14,7 @@
         }
 
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Inter';
             background-color: #f5f5f5;
         }
 
@@ -215,64 +215,9 @@
     <main class="main-content">
         <section class="cart-section">
             <h1 class="cart-title">ตะกร้าสินค้า</h1>
-            
-            <div class="cart-item">
-                <div class="item-image">ภาพสินค้า</div>
-                <div class="item-details">
-                    <div class="item-name">ยี่ห้องเก่า</div>
-                    <div class="item-desc">รายละเอียด</div>
-                    <div class="item-price">฿199</div>
-                </div>
-                <div class="quantity-controls">
-                    <button class="qty-btn" onclick="decreaseQty(1)">-</button>
-                    <input type="number" value="1" min="1" class="qty-input" id="qty1" onchange="updateTotal(1)">
-                    <button class="qty-btn" onclick="increaseQty(1)">+</button>
-                </div>
-                <div class="item-total" id="total1">฿199</div>
-                <button class="delete-btn" onclick="removeItem(this)">ลบ</button>
-            </div>
-
-            <div class="cart-item">
-                <div class="item-image">ภาพสินค้า</div>
-                <div class="item-details">
-                    <div class="item-name">ยี่ห้องเก่า</div>
-                    <div class="item-desc">รายละเอียด</div>
-                    <div class="item-price">฿199</div>
-                </div>
-                <div class="quantity-controls">
-                    <button class="qty-btn" onclick="decreaseQty(2)">-</button>
-                    <input type="number" value="2" min="1" class="qty-input" id="qty2" onchange="updateTotal(2)">
-                    <button class="qty-btn" onclick="increaseQty(2)">+</button>
-                </div>
-                <div class="item-total" id="total2">฿398</div>
-                <button class="delete-btn" onclick="removeItem(this)">ลบ</button>
-            </div>
         </section>
 
         <aside class="summary-section">
-            <h2 class="summary-title">สรุปยอด</h2>
-            
-            <div class="summary-row">
-                <span>3 รายการ</span>
-                <span id="subtotal">฿597</span>
-            </div>
-            
-            <div class="summary-row">
-                <span>ค่าจัดส่ง</span>
-                <span>฿40</span>
-            </div>
-            
-            <div class="summary-row discount">
-                <span>ยอดรวม</span>
-                <span id="discount-total">฿637</span>
-            </div>
-            
-            <div class="summary-row total">
-                <span>ชำระเงิน</span>
-                <span id="final-total">฿637</span>
-            </div>
-            
-            <button class="checkout-btn">ชำระเงิน</button>
         </aside>
     </main>
 
