@@ -296,52 +296,110 @@ class CartManager {
         }
     }
 
-    // ฟังก์ชันชำระเงิน - ลบ alert และไปหน้า payment ทันที
-    checkout() {
-        console.log('=== CHECKOUT DEBUG ===');
-        console.log('Checkout function called');
+    // ฟังก์ชันชำระเงิน
+    async checkout() {
+        console.log('=== CHECKOUT DEBUG START ===');
 
+        // ดึงสินค้าจาก cart
         const items = this.getCartItems();
-        console.log('Cart items:', items);
-
-        if (items.length === 0) {
-            console.log('Cart is empty - showing alert');
+        if (!items || items.length === 0) {
             alert('ตะกร้าสินค้าว่างเปล่า');
+            console.warn('Cart is empty');
             return;
         }
 
-        const totalAmount = this.getTotalPrice();
-        const totalWeight = this.getTotalWeight();
-
-        console.log('Total amount:', totalAmount);
-        console.log('Total weight:', totalWeight);
-
-        // เก็บข้อมูลการสั่งซื้อลง localStorage เพื่อใช้ในหน้า payment
-        const orderData = {
-            items: items,
-            totalItems: this.getTotalItems(),
-            totalAmount: totalAmount,
-            totalWeight: totalWeight,
+        // เตรียม request payload
+        const requestData = {
+            items: items.map(item => ({
+                product_id: item.id, // ใช้ key ที่ตรงกับ PHP
+                quantity: item.quantity
+            })),
+            total_amount: this.getTotalPrice(),
+            total_weight: this.getTotalWeight(),
             timestamp: new Date().toISOString()
         };
 
-        try {
-            console.log('Saving checkout data to localStorage...');
-            localStorage.setItem('checkout_data', JSON.stringify(orderData));
-            console.log('Checkout data saved successfully:', orderData);
+        console.log('Request payload:', requestData);
 
-            // เปลี่ยนเส้นทางไปยังหน้า payment ทันที (ไม่มี confirmation)
-            console.log('Redirecting to payment.php...');
-            window.location.href = 'payment.php';
-            console.log('Redirect command sent');
+        // path ของ checkout.php
+        const checkoutPath = './controllers/checkout.php';
 
-        } catch (error) {
-            console.error('Error saving checkout data:', error);
-            alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง');
+        const checkoutBtn = document.querySelector('.checkout-btn');
+        if (checkoutBtn) {
+            checkoutBtn.disabled = true;
+            checkoutBtn.textContent = 'กำลังประมวลผล...';
         }
 
-        console.log('=== END CHECKOUT DEBUG ===');
+        try {
+            const response = await fetch(checkoutPath, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin', // ส่ง session cookie
+                body: JSON.stringify(requestData)
+            });
+
+            console.log('Network request sent to:', checkoutPath);
+            console.log('Response status:', response.status, response.statusText);
+
+            // อ่าน response เป็น text ก่อน
+            const responseText = await response.text();
+            console.log('Raw response:', responseText);
+
+            // parse JSON อย่างปลอดภัย
+            let result;
+            try {
+                result = JSON.parse(responseText);
+                console.log('Parsed JSON response:', result);
+            } catch (jsonErr) {
+                console.error('Failed to parse JSON:', jsonErr);
+                throw new Error('Response is not valid JSON');
+            }
+
+            // ตรวจสอบ success / fail
+            if (result.success) {
+                console.log('Checkout success:', result);
+
+                // เก็บข้อมูล checkout ใน localStorage
+                localStorage.setItem('checkout_data', JSON.stringify({
+                    items: items,
+                    totalItems: this.getTotalItems(),
+                    totalAmount: requestData.total_amount,
+                    totalWeight: requestData.total_weight,
+                    insertedItems: result.inserted_items,
+                    serverResponse: result,
+                    timestamp: new Date().toISOString()
+                }));
+
+                // ล้าง cart และไปหน้า payment
+                this.clearCart();
+                window.location.href = 'payment.php';
+
+            } else if (result.redirect) {
+                console.warn('User needs to login:', result.message);
+                alert(result.message || 'กรุณาล็อกอินก่อนสั่งซื้อ');
+                window.location.href = result.redirect;
+
+            } else {
+                console.error('Checkout failed:', result.message, result.error || '');
+                throw new Error(result.message || 'เกิดข้อผิดพลาดในการสั่งซื้อ');
+            }
+
+        } catch (error) {
+            console.error('Checkout exception:', error);
+            alert('เกิดข้อผิดพลาดในการสั่งซื้อ: ' + error.message);
+
+        } finally {
+            if (checkoutBtn) {
+                checkoutBtn.disabled = false;
+                checkoutBtn.textContent = 'ดำเนินการสั่งซื้อ';
+            }
+            console.log('=== CHECKOUT DEBUG END ===');
+        }
     }
+
 
     getCheckoutData() {
         try {
