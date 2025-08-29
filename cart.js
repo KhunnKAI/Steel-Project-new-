@@ -25,15 +25,15 @@ class CartManager {
         }
     }
 
-    // เพิ่มสินค้าลงตะกร้า
-    addItem(productId, productName, price, quantity = 1, image = 'no-image.jpg') {
+    // เพิ่มสินค้าลงตะกร้า - เพิ่มพารามิเตอร์น้ำหนัก
+    addItem(productId, productName, price, quantity = 1, image = 'no-image.jpg', weight = 0) {
         if (!productId || !productName || !price) {
             console.error('Invalid product data');
             return false;
         }
 
         const itemKey = String(productId).trim();
-        
+
         if (this.cart[itemKey]) {
             // ถ้ามีสินค้านี้อยู่แล้ว ให้เพิ่มจำนวน
             this.cart[itemKey].quantity += quantity;
@@ -44,6 +44,7 @@ class CartManager {
                 name: productName,
                 price: parseFloat(price),
                 quantity: quantity,
+                weight: parseFloat(weight) || 0, // เพิ่มน้ำหนัก
                 image: image,
                 addedAt: new Date().toISOString()
             };
@@ -57,7 +58,7 @@ class CartManager {
     // อัพเดทจำนวนสินค้า
     updateQuantity(productId, newQuantity) {
         const itemKey = String(productId).trim();
-        
+
         if (this.cart[itemKey]) {
             if (newQuantity <= 0) {
                 this.removeItem(productId);
@@ -118,6 +119,11 @@ class CartManager {
         return Object.values(this.cart).reduce((total, item) => total + (item.price * item.quantity), 0);
     }
 
+    // คำนวณน้ำหนักรวม
+    getTotalWeight() {
+        return Object.values(this.cart).reduce((total, item) => total + ((item.weight || 0) * item.quantity), 0);
+    }
+
     // ดึงข้อมูลสินค้าในตะกร้า
     getCartItems() {
         return Object.values(this.cart);
@@ -126,7 +132,7 @@ class CartManager {
     // อัพเดทการแสดงผลตะกร้า
     updateCartDisplay() {
         const totalItems = this.getTotalItems();
-        
+
         // อัพเดท badge ในหน้า header
         const cartBadge = document.getElementById('cartBadge');
         if (cartBadge) {
@@ -141,12 +147,13 @@ class CartManager {
 
         // อัพเดทหน้าตะกร้าถ้าอยู่ในหน้านั้น
         this.updateCartPage();
-        
+
         // Dispatch event สำหรับให้ส่วนอื่นๆ รับรู้
         window.dispatchEvent(new CustomEvent('cartUpdated', {
             detail: {
                 totalItems: totalItems,
                 totalPrice: this.getTotalPrice(),
+                totalWeight: this.getTotalWeight(),
                 items: this.getCartItems()
             }
         }));
@@ -158,7 +165,7 @@ class CartManager {
         if (!cartContainer) return;
 
         const items = this.getCartItems();
-        
+
         if (items.length === 0) {
             cartContainer.innerHTML = `
                 <h1 class="cart-title">ตะกร้าสินค้า</h1>
@@ -180,7 +187,7 @@ class CartManager {
                     </div>
                 </div>
             `;
-            
+
             // ลบ summary section เมื่อตะกร้าว่าง
             const summarySection = document.querySelector('.summary-section');
             if (summarySection) {
@@ -196,21 +203,24 @@ class CartManager {
         }
 
         let cartHTML = '<h1 class="cart-title">ตะกร้าสินค้า</h1>';
-        
+
         items.forEach(item => {
             const itemTotal = item.price * item.quantity;
+            const itemWeight = (item.weight || 0) * item.quantity;
+
             cartHTML += `
                 <div class="cart-item" data-product-id="${item.id}">
                     <div class="item-image">
-                        ${item.image !== 'no-image.jpg' 
-                            ? `<img src="${item.image}" alt="${item.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">` 
-                            : `<span style="color: #888; font-size: 12px;">ภาพสินค้า</span>`
-                        }
+                        ${item.image !== 'no-image.jpg'
+                    ? `<img src="${item.image}" alt="${item.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">`
+                    : `<span style="color: #888; font-size: 12px;">ภาพสินค้า</span>`
+                }
                     </div>
                     <div class="item-details">
                         <div class="item-name">${item.name}</div>
                         <div class="item-desc">รายละเอียด</div>
                         <div class="item-price">฿${item.price.toLocaleString()}</div>
+                        ${item.weight > 0 ? `<div class="item-weight" style="color: #666; font-size: 14px;">น้ำหนัก: ${item.weight} กก./ชิ้น</div>` : ''}
                     </div>
                     <div class="quantity-controls">
                         <button class="qty-btn" onclick="cartManager.decreaseQuantity('${item.id}')">-</button>
@@ -218,14 +228,17 @@ class CartManager {
                                onchange="cartManager.updateQuantity('${item.id}', this.value)">
                         <button class="qty-btn" onclick="cartManager.increaseQuantity('${item.id}')">+</button>
                     </div>
-                    <div class="item-total">฿${itemTotal.toLocaleString()}</div>
+                    <div class="item-total">
+                        <div style="color: #27ae60; font-weight: bold; font-size: 18px;">฿${itemTotal.toLocaleString()}</div>
+                        ${itemWeight > 0 ? `<div style="color: #666; font-size: 14px;">${itemWeight.toFixed(2)} กก.</div>` : ''}
+                    </div>
                     <button class="delete-btn" onclick="cartManager.removeItem('${item.id}')">ลบ</button>
                 </div>
             `;
         });
 
         cartContainer.innerHTML = cartHTML;
-        
+
         // อัพเดทสรุปยอด
         this.updateSummary();
     }
@@ -234,8 +247,7 @@ class CartManager {
     updateSummary() {
         const totalItems = this.getTotalItems();
         const subtotal = this.getTotalPrice();
-        const shipping = subtotal > 0 ? 40 : 0;
-        const finalTotal = subtotal + shipping;
+        const totalWeight = this.getTotalWeight();
 
         const summarySection = document.querySelector('.summary-section');
         if (summarySection && totalItems > 0) {
@@ -243,26 +255,32 @@ class CartManager {
                 <h2 class="summary-title">สรุปยอด</h2>
                 
                 <div class="summary-row">
+                    <span>จำนวนสินค้า</span>
                     <span>${totalItems} รายการ</span>
-                    <span>฿${subtotal.toLocaleString()}</span>
                 </div>
                 
                 <div class="summary-row">
-                    <span>ค่าจัดส่ง</span>
-                    <span>฿${shipping}</span>
+                    <span>ราคาสินค้ารวม</span>
+                    <span>฿${subtotal.toLocaleString()}</span>
                 </div>
                 
-                <div class="summary-row discount">
-                    <span>ยอดรวม</span>
-                    <span>฿${finalTotal.toLocaleString()}</span>
+                ${totalWeight > 0 ? `
+                <div class="summary-row">
+                    <span>น้ำหนักรวม</span>
+                    <span>${totalWeight.toFixed(2)} กก.</span>
+                </div>
+                ` : ''}
+                
+                <div class="summary-row">
+                    <span style="color: #666; font-style: italic;">ดำเนินการต่อเพื่อคำนวณค่าจัดส่ง</span>
                 </div>
                 
-                <div class="summary-row total">
-                    <span>ชำระเงิน</span>
-                    <span>฿${finalTotal.toLocaleString()}</span>
+                <div class="summary-row total" style="border-top: 2px solid #eee; padding-top: 20px;">
+                    <span>ยอดรวม (ยังไม่รวมค่าจัดส่ง)</span>
+                    <span>฿${subtotal.toLocaleString()}</span>
                 </div>
                 
-                <button class="checkout-btn" onclick="cartManager.checkout()">ชำระเงิน</button>
+                <button class="checkout-btn" onclick="cartManager.checkout()">ดำเนินการสั่งซื้อ</button>
                 <button class="clear-cart-btn" onclick="cartManager.clearCart()" style="
                     width: 100%; 
                     background: #6c757d; 
@@ -278,49 +296,85 @@ class CartManager {
         }
     }
 
-    // ฟังก์ชันชำระเงิน
+    // ฟังก์ชันชำระเงิน - ลบ alert และไปหน้า payment ทันที
     checkout() {
+        console.log('=== CHECKOUT DEBUG ===');
+        console.log('Checkout function called');
+
         const items = this.getCartItems();
+        console.log('Cart items:', items);
+
         if (items.length === 0) {
+            console.log('Cart is empty - showing alert');
             alert('ตะกร้าสินค้าว่างเปล่า');
             return;
         }
 
-        const totalAmount = this.getTotalPrice() + 40; // รวมค่าส่ง
-        
-        if (confirm(`ยืนยันการชำระเงิน ฿${totalAmount.toLocaleString()} ?`)) {
-            // ในการใช้งานจริง ควรส่งข้อมูลไปยัง API
-            console.log('Checkout data:', {
-                items: items,
-                totalAmount: totalAmount,
-                timestamp: new Date().toISOString()
-            });
-            
-            alert('ขอบคุณสำหรับการสั่งซื้อ! ระบบจะประมวลผลคำสั่งซื้อของคุณ');
-            
-            // ล้างตะกร้าหลังจากสั่งซื้อ
-            this.clearCart();
-            
-            // ไปหน้าหลัก
-            setTimeout(() => {
-                window.location.href = 'home.php';
-            }, 2000);
+        const totalAmount = this.getTotalPrice();
+        const totalWeight = this.getTotalWeight();
+
+        console.log('Total amount:', totalAmount);
+        console.log('Total weight:', totalWeight);
+
+        // เก็บข้อมูลการสั่งซื้อลง localStorage เพื่อใช้ในหน้า payment
+        const orderData = {
+            items: items,
+            totalItems: this.getTotalItems(),
+            totalAmount: totalAmount,
+            totalWeight: totalWeight,
+            timestamp: new Date().toISOString()
+        };
+
+        try {
+            console.log('Saving checkout data to localStorage...');
+            localStorage.setItem('checkout_data', JSON.stringify(orderData));
+            console.log('Checkout data saved successfully:', orderData);
+
+            // เปลี่ยนเส้นทางไปยังหน้า payment ทันที (ไม่มี confirmation)
+            console.log('Redirecting to payment.php...');
+            window.location.href = 'payment.php';
+            console.log('Redirect command sent');
+
+        } catch (error) {
+            console.error('Error saving checkout data:', error);
+            alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง');
+        }
+
+        console.log('=== END CHECKOUT DEBUG ===');
+    }
+
+    getCheckoutData() {
+        try {
+            const saved = localStorage.getItem('checkout_data');
+            return saved ? JSON.parse(saved) : null;
+        } catch (error) {
+            console.error('Error loading checkout data:', error);
+            return null;
+        }
+    }
+
+    clearCheckoutData() {
+        try {
+            localStorage.removeItem('checkout_data');
+            console.log('Checkout data cleared');
+        } catch (error) {
+            console.error('Error clearing checkout data:', error);
         }
     }
 
     // เริ่มต้นระบบ
     init() {
         console.log('Cart Manager initialized');
-        
+
         // ตรวจสอบและซิงค์ข้อมูลกับ global cartCount
         const totalItems = this.getTotalItems();
         if (typeof window.cartCount !== 'undefined' && window.cartCount !== totalItems) {
             console.log('Syncing cart count:', window.cartCount, '->', totalItems);
             window.cartCount = totalItems;
         }
-        
+
         this.updateCartDisplay();
-        
+
         // Listen for storage changes (สำหรับ multiple tabs)
         window.addEventListener('storage', (e) => {
             if (e.key === 'shopping_cart') {
@@ -336,6 +390,7 @@ class CartManager {
         console.log('Cart data:', this.cart);
         console.log('Total items:', this.getTotalItems());
         console.log('Total price:', this.getTotalPrice());
+        console.log('Total weight:', this.getTotalWeight());
         console.log('Global cartCount:', typeof window.cartCount !== 'undefined' ? window.cartCount : 'undefined');
         console.log('localStorage:', localStorage.getItem('shopping_cart'));
         console.log('=====================');
@@ -343,27 +398,27 @@ class CartManager {
 }
 
 // สร้าง instance ของ CartManager
-const cartManager = new CartManager();
+window.cartManager = new CartManager();
 
-// ฟังก์ชันสำหรับใช้ในหน้าอื่นๆ
-window.addToCart = function(productName, productId, price = 199, image = 'no-image.jpg') {
+// ฟังก์ชันสำหรับใช้ในหน้าอื่นๆ - เพิ่มพารามิเตอร์น้ำหนัก
+window.addToCart = function (productName, productId, price = 199, image = 'no-image.jpg', weight = 0) {
     console.log(`Adding to cart: ${productName} (ID: ${productId})`);
-    
-    if (cartManager.addItem(productId, productName, price, 1, image)) {
+
+    if (cartManager.addItem(productId, productName, price, 1, image, weight)) {
         // แสดงการแจ้งเตือน
         if (typeof showToast === 'function') {
             showToast(`เพิ่ม "${productName}" ลงในตะกร้าแล้ว!`);
         } else {
             alert(`เพิ่ม "${productName}" ลงในตะกร้าแล้ว!`);
         }
-        
+
         // เอฟเฟกต์กับปุ่ม
         const button = event.target;
         if (button) {
             const originalText = button.textContent;
             button.textContent = 'เพิ่มแล้ว!';
             button.style.background = '#28a745';
-            
+
             setTimeout(() => {
                 button.textContent = originalText;
                 button.style.background = '';
@@ -373,25 +428,25 @@ window.addToCart = function(productName, productId, price = 199, image = 'no-ima
 };
 
 // ฟังก์ชันสำหรับ legacy code - ซิงค์กับ cartManager
-window.increaseQty = function(itemId) {
+window.increaseQty = function (itemId) {
     cartManager.increaseQuantity(itemId);
 };
 
-window.decreaseQty = function(itemId) {
+window.decreaseQty = function (itemId) {
     cartManager.decreaseQuantity(itemId);
 };
 
-window.updateTotal = function(itemId) {
+window.updateTotal = function (itemId) {
     // Legacy function - now handled automatically
     console.log('updateTotal called for item:', itemId);
     cartManager.updateCartDisplay();
 };
 
-window.updateSummary = function() {
+window.updateSummary = function () {
     cartManager.updateSummary();
 };
 
-window.removeItem = function(button) {
+window.removeItem = function (button) {
     const cartItem = button.closest('.cart-item');
     if (cartItem) {
         const productId = cartItem.dataset.productId;
@@ -402,7 +457,7 @@ window.removeItem = function(button) {
 };
 
 // ฟังก์ชันสำหรับล้างข้อมูลตะกร้า (สำหรับ debug)
-window.clearCartData = function() {
+window.clearCartData = function () {
     if (confirm('คุณต้องการล้างข้อมูลตะกร้าทั้งหมดหรือไม่?')) {
         cartManager.clearCart();
         console.log('Cart cleared!');
@@ -410,30 +465,30 @@ window.clearCartData = function() {
 };
 
 // ฟังก์ชันสำหรับ debug ตะกร้า
-window.debugCart = function() {
+window.debugCart = function () {
     cartManager.debugCart();
 };
 
 // Event listener สำหรับอัพเดทตะกร้า
-window.addEventListener('cartUpdated', function(e) {
-    const { totalItems, totalPrice } = e.detail;
-    
+window.addEventListener('cartUpdated', function (e) {
+    const { totalItems, totalPrice, totalWeight } = e.detail;
+
     // อัพเดท global cartCount ให้ตรงกัน
     if (typeof window.cartCount !== 'undefined') {
         window.cartCount = totalItems;
     }
-    
+
     // อัพเดท cart badge
     if (typeof updateCartBadge === 'function') {
         updateCartBadge();
     }
-    
+
 });
 
 // Initialize เมื่อ DOM โหลดเสร็จ
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     console.log('Cart system ready');
-    
+
     // ล้างข้อมูลเก่าในหน้า cart.php ที่เป็น hardcode
     const hardcodedItems = document.querySelectorAll('.cart-item[data-product-id]');
     if (hardcodedItems.length === 0) {
@@ -445,7 +500,7 @@ document.addEventListener('DOMContentLoaded', function() {
             cartManager.updateCartPage();
         }
     }
-    
+
     cartManager.updateCartDisplay();
 });
 

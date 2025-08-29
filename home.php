@@ -535,7 +535,8 @@
 
     <?php include("footer.php");?>
 
-    <script src="home.js"></script>
+    <script src="cart.js" defer></script>
+    <script src="home.js" defer></script>
     
 </body>
 </html>

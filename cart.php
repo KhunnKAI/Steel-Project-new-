@@ -106,7 +106,7 @@
         }
 
         .qty-btn:hover {
-            background: #2c3e50;
+            background: #34495e;
         }
 
         .qty-input {
@@ -127,14 +127,14 @@
         .delete-btn {
             background: none;
             border: none;
-            color: #2c3e50;
+            color: #e74c3c;
             cursor: pointer;
-            font-size: 20px;
+            font-size: 16px;
             padding: 10px;
         }
 
         .delete-btn:hover {
-            color: #2c3e50;
+            color: #c0392b;
         }
 
         .summary-section {
@@ -183,7 +183,29 @@
         }
 
         .checkout-btn:hover {
-            background: #c0392b;
+            background: #a93226;
+        }
+
+        /* Loading state */
+        .loading-cart {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         @media (max-width: 768px) {
@@ -208,6 +230,8 @@
         }
     </style>
 </head>
+<!-- ... HTML ก่อนหน้า ... -->
+
 <body>
     <!-- Header -->
     <?php include("header.php");?>
@@ -215,14 +239,25 @@
     <main class="main-content">
         <section class="cart-section">
             <h1 class="cart-title">ตะกร้าสินค้า</h1>
+            <!-- Loading state จนกว่า CartManager จะพร้อม -->
+            <div class="loading-cart" id="cartLoading">
+                <div class="spinner"></div>
+                <p>กำลังโหลดตะกร้าสินค้า...</p>
+            </div>
         </section>
 
-        <aside class="summary-section">
+        <aside class="summary-section" style="display: none;">
+            <!-- Summary content will be loaded by CartManager -->
         </aside>
     </main>
 
     <!-- Footer -->
     <?php include("footer.php");?>
+
+    <!-- ส่ง session user_id ไป JS -->
+    <script>
+        window.SESSION_USER_ID = '<?php echo $_SESSION["user_id"] ?? ""; ?>';
+    </script>
 
     <script src="cart.js"></script>
 </body>

@@ -43,7 +43,7 @@ async function fetchProducts() {
 
         if (result.success && result.data) {
             let products = result.data;
-            
+
             // ตรวจสอบว่า data เป็น array หรือไม่
             if (!Array.isArray(products)) {
                 console.error('Products data is not an array:', products);
@@ -55,12 +55,12 @@ async function fetchProducts() {
             // map product data
             allProducts = products.map((product, index) => {
                 console.log(`Processing product ${index}:`, product);
-                
+
                 const productId = String(product.product_id || product.id || '').trim();
                 if (!productId) {
                     console.warn('Product found with no ID:', product);
                 }
-                
+
                 return {
                     id: productId,
                     name: product.name || 'ไม่ระบุชื่อ',
@@ -81,7 +81,7 @@ async function fetchProducts() {
 
             // กรองสินค้าที่ไม่มี ID ออก
             allProducts = allProducts.filter(product => product.id && product.id !== '');
-            
+
             console.log(`Filtered products: ${allProducts.length} items`);
             console.log("Final products array:", allProducts);
 
@@ -90,21 +90,21 @@ async function fetchProducts() {
             updateCategoryFilter();
 
             console.log(`โหลดข้อมูลสินค้าสำเร็จ: ${allProducts.length} รายการ`);
-            
+
         } else {
             console.error('API returned error:', result);
             const errorMessage = result.message || 'Unknown error';
             showNoProductsMessage('ไม่สามารถโหลดข้อมูลสินค้าได้: ' + errorMessage);
         }
-        
+
     } catch (error) {
         console.error("=== Fetch Error ===");
         console.error("Error type:", error.constructor.name);
         console.error("Error message:", error.message);
         console.error("Stack trace:", error.stack);
-        
+
         let errorMessage = 'เกิดข้อผิดพลาดในการโหลดข้อมูล: ';
-        
+
         if (error.message.includes('404')) {
             errorMessage += 'ไม่พบไฟล์ API (404) - ตรวจสอบ path: controllers/product_home.php';
         } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
@@ -114,7 +114,7 @@ async function fetchProducts() {
         } else {
             errorMessage += error.message;
         }
-        
+
         showNoProductsMessage(errorMessage);
     }
 }
@@ -149,15 +149,15 @@ function displayProducts(productsToShow) {
              style="cursor: pointer;">
             <div class="product-image">
                 <span class="product-category">${product.category}</span>
-                ${product.image !== 'no-image.jpg' 
-                    ? `<img src="${product.image}" alt="${product.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                ${product.image !== 'no-image.jpg'
+                ? `<img src="${product.image}" alt="${product.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                        <div style="display:none; padding: 20px; background: #f5f5f5; text-align: center; color: #666;">
                            ${product.name}
                        </div>`
-                    : `<div style="padding: 20px; background: #f5f5f5; text-align: center; color: #666;">
+                : `<div style="padding: 20px; background: #f5f5f5; text-align: center; color: #666;">
                            ${product.name}
                        </div>`
-                }
+            }
             </div>
             <div class="product-name">${product.name}</div>
             <div class="product-description">${product.description}</div>
@@ -165,6 +165,7 @@ function displayProducts(productsToShow) {
             <button class="product-btn" data-product-index="${index}">
                 เพิ่มใส่ตะกร้า
             </button>
+
         </div>
     `;
     }).join('');
@@ -175,29 +176,35 @@ function displayProducts(productsToShow) {
         if (!card) return;
 
         const index = card.dataset.productIndex;
-        const product = productsToShow[index];
+        const product = filteredProducts[index];
 
         if (event.target.classList.contains('product-btn')) {
-            // ส่ง event object ไปด้วย
             handleAddToCart(product, event);
         } else {
             viewProduct(product.id);
         }
     };
+
 }
 
 // ฟังก์ชันจัดการการเพิ่มลงตะกร้า
 function handleAddToCart(product, event) {
     if (!product || !product.id) return;
-    
+
     console.log(`Adding to cart: ${product.name} (ID: ${product.id})`);
 
-    // ตรวจสอบว่ามี cartManager พร้อมใช้งาน
-    if (typeof window.cartManager !== 'undefined' && typeof window.cartManager.addItem === 'function') {
-        // เพิ่มสินค้า
-        window.cartManager.addItem(product.id, product.name, product.price, 1, product.image);
+    // ใช้ CartManager แทน localStorage แบบเดิม
+    if (typeof cartManager !== 'undefined' && cartManager.addItem) {
+        cartManager.addItem(
+            product.id,
+            product.name,
+            product.price,
+            1,
+            product.image,
+            product.weight || 0  // ถ้ามี weight
+        );
 
-        // แสดง Toast หรือ Alert
+        // แสดง Toast / Alert
         if (typeof showToast === 'function') {
             showToast(`เพิ่ม "${product.name}" ลงในตะกร้าแล้ว!`);
         } else {
@@ -220,30 +227,19 @@ function handleAddToCart(product, event) {
                 button.disabled = false;
             }, 1500);
         }
+
     } else {
-        // รอระบบตะกร้าโหลดเสร็จ แล้วลองใหม่
-        console.warn('Cart system not ready, waiting...');
-        
-        // รอ 500ms แล้วลองใหม่
-        setTimeout(() => {
-            if (typeof window.cartManager !== 'undefined') {
-                // ลองอีกครั้งเมื่อระบบพร้อม
-                handleAddToCart(product, event);
-            } else {
-                // ถ้ายังไม่พร้อม ให้ใช้ fallback method
-                console.error('Cart system failed to load, using fallback');
-                fallbackAddToCart(product, event);
-            }
-        }, 500);
+        console.error('CartManager ยังโหลดไม่เสร็จ');
     }
 }
+
 
 function fallbackAddToCart(product, event) {
     // เก็บข้อมูลใน localStorage โดยตรง
     try {
         let cart = JSON.parse(localStorage.getItem('shopping_cart') || '{}');
         const itemKey = String(product.id).trim();
-        
+
         if (cart[itemKey]) {
             cart[itemKey].quantity += 1;
         } else {
@@ -256,9 +252,9 @@ function fallbackAddToCart(product, event) {
                 addedAt: new Date().toISOString()
             };
         }
-        
+
         localStorage.setItem('shopping_cart', JSON.stringify(cart));
-        
+
         // อัพเดท badge
         const totalItems = Object.values(cart).reduce((total, item) => total + item.quantity, 0);
         const cartBadge = document.getElementById('cartBadge');
@@ -266,13 +262,13 @@ function fallbackAddToCart(product, event) {
             cartBadge.textContent = totalItems;
             cartBadge.style.display = totalItems > 0 ? 'flex' : 'none';
         }
-        
+
         if (typeof showToast === 'function') {
             showToast(`เพิ่ม "${product.name}" ลงในตะกร้าแล้ว!`);
         } else {
             alert(`เพิ่ม "${product.name}" ลงในตะกร้าแล้ว!`);
         }
-        
+
         // เอฟเฟกต์ปุ่ม
         if (event && event.target) {
             const button = event.target;
@@ -280,14 +276,14 @@ function fallbackAddToCart(product, event) {
             button.textContent = 'เพิ่มแล้ว!';
             button.style.background = '#28a745';
             button.disabled = true;
-            
+
             setTimeout(() => {
                 button.textContent = originalText;
                 button.style.background = '';
                 button.disabled = false;
             }, 1500);
         }
-        
+
     } catch (error) {
         console.error('Fallback add to cart failed:', error);
         alert('เกิดข้อผิดพลาดในการเพิ่มสินค้า กรุณาลองใหม่อีกครั้ง');
@@ -297,7 +293,7 @@ function fallbackAddToCart(product, event) {
 // เพิ่มฟังก์ชันตรวจสอบว่าระบบตะกร้าพร้อมใช้งาน
 function waitForCartSystem(callback, maxAttempts = 10) {
     let attempts = 0;
-    
+
     function check() {
         if (typeof window.cartManager !== 'undefined' && window.cartManager.addItem) {
             callback();
@@ -308,7 +304,7 @@ function waitForCartSystem(callback, maxAttempts = 10) {
             console.error('Cart system failed to load after maximum attempts');
         }
     }
-    
+
     check();
 }
 
@@ -341,7 +337,7 @@ function viewProduct(productId) {
 function updateCategoryFilter() {
     const categories = [...new Set(allProducts.map(product => product.category))];
     const categoryFilter = document.getElementById('categoryFilter');
-    
+
     if (categoryFilter && categories.length > 0) {
         const checkboxHtml = categories.map(category => `
             <label style="display: block; margin: 5px 0;">
@@ -430,7 +426,7 @@ function waitForDependencies(callback, attempts = 0, maxAttempts = 30) {
     console.log(`Waiting for dependencies... attempt ${attempts + 1}`);
     console.log('Cart Manager available:', typeof window.cartManager);
     console.log('Cart Manager object:', window.cartManager);
-    
+
     if (typeof window.cartManager !== 'undefined') {
         console.log("✅ Cart Manager loaded!");
         callback();
@@ -448,11 +444,11 @@ document.addEventListener('DOMContentLoaded', function () {
     console.log("=== DOM Content Loaded ===");
     console.log("Current URL:", window.location.href);
     console.log("Document ready state:", document.readyState);
-    
+
     // ลองโหลดสินค้าทันที (ไม่รอ cartManager)
     console.log("🔄 Starting immediate product fetch...");
     fetchProducts();
-    
+
     // และยังคงรอ cartManager ในพื้นหลัง
     waitForDependencies(() => {
         console.log("🔄 Dependencies loaded, fetching products again if needed...");
@@ -473,5 +469,24 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log("✅ Search input event listener added");
     } else {
         console.warn("⚠️ Search input element not found");
+    }
+
+    // 🟢 ตรวจสอบ logout success แล้วล้าง cart
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("logout") === "success") {
+        console.log("✅ Detected logout success, clearing cart...");
+
+        localStorage.removeItem("shopping_cart");
+        localStorage.removeItem("cart");
+
+        if (window.cartManager && typeof window.cartManager.clearCartData === "function") {
+            window.cartManager.clearCartData();
+        }
+
+        const cartBadge = document.getElementById('cartBadge');
+        if (cartBadge) {
+            cartBadge.textContent = "0";
+            cartBadge.style.display = "none";
+        }
     }
 });
