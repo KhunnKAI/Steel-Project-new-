@@ -1,4 +1,3 @@
-
 let allProducts = [];
 let filteredProducts = [];
 let currentSort = 'latest';
