@@ -1,19 +1,55 @@
 <?php
 class ShippingCalculator {
     private $pdo;
+    const MAX_WEIGHT_LIMIT = 1000; // 1000kg limit
     
     public function __construct($pdo) {
         $this->pdo = $pdo;
     }
     
     /**
-     * Calculate shipping cost based on total weight and destination province
+     * Validate weight limit before any calculations
      * @param float $totalWeight - Total weight in kg
-     * @param string $provinceId - Province ID (P01, P02, etc.)
-     * @return array - Contains shipping cost and zone info
+     * @return array - Validation result
+     */
+    public function validateWeightLimit($totalWeight) {
+        if ($totalWeight > self::MAX_WEIGHT_LIMIT) {
+            return [
+                'success' => false,
+                'error' => "น้ำหนักรวม {$totalWeight} กก. เกินขีดจำกัด " . self::MAX_WEIGHT_LIMIT . " กก. ไม่สามารถสั่งซื้อได้",
+                'weight' => $totalWeight,
+                'limit' => self::MAX_WEIGHT_LIMIT,
+                'code' => 'WEIGHT_LIMIT_EXCEEDED'
+            ];
+        }
+        
+        return [
+            'success' => true,
+            'weight' => $totalWeight,
+            'limit' => self::MAX_WEIGHT_LIMIT
+        ];
+    }
+    
+    /**
+     * Calculate shipping cost with weight validation
+     * @param float $totalWeight - Total weight in kg
+     * @param string $provinceId - Province ID
+     * @return array - Contains shipping cost and validation status
      */
     public function calculateShippingCost($totalWeight, $provinceId) {
         try {
+            // Check weight limit first
+            $weightValidation = $this->validateWeightLimit($totalWeight);
+            if (!$weightValidation['success']) {
+                return [
+                    'success' => false,
+                    'shipping_cost' => null,
+                    'weight_exceeded' => true,
+                    'weight_validation' => $weightValidation,
+                    'error' => 'ไม่สามารถคำนวดค่าส่งได้ เนื่องจากน้ำหนักเกินขีดจำกัด'
+                ];
+            }
+            
             // Debug logging
             error_log("Calculating shipping for Province: {$provinceId}, Weight: {$totalWeight}kg");
             
@@ -39,7 +75,7 @@ class ShippingCalculator {
                 throw new Exception("No shipping zone assigned for province: " . $provinceInfo['province_name']);
             }
             
-            // Get shipping rate for the zone and weight - fixed parameter binding
+            // Get shipping rate for the zone and weight
             $stmt = $this->pdo->prepare("
                 SELECT rate_id, zone_id, min_weight, max_weight, price
                 FROM ShippingRate
@@ -78,7 +114,8 @@ class ShippingCalculator {
                 'shipping_cost' => floatval($shippingRate['price']),
                 'province_info' => $provinceInfo,
                 'shipping_rate_info' => $shippingRate,
-                'total_weight' => $totalWeight
+                'total_weight' => $totalWeight,
+                'weight_validation' => $weightValidation
             ];
             
         } catch (PDOException $e) {
@@ -99,93 +136,14 @@ class ShippingCalculator {
     }
     
     /**
-     * Calculate total weight from cart items
-     * @param array $cartItems - Cart items with product_id and quantity
-     * @return float - Total weight in kg
-     */
-    public function calculateTotalWeight($cartItems) {
-        if (empty($cartItems)) {
-            return 0;
-        }
-        
-        $totalWeight = 0;
-        
-        // Check if cart items already have weight information
-        $firstItem = $cartItems[0];
-        if (isset($firstItem['weight']) && isset($firstItem['quantity'])) {
-            // Weight data is already in cart items (from get_cart.php query)
-            foreach ($cartItems as $item) {
-                $weight = floatval($item['weight'] ?? 0);
-                $quantity = intval($item['quantity'] ?? 0);
-                $unit = strtolower($item['weight_unit'] ?? 'kg');
-                
-                // Convert weight to kg if necessary
-                if ($unit === 'g' || $unit === 'gram' || $unit === 'grams') {
-                    $weight = $weight / 1000; // Convert grams to kg
-                } elseif ($unit === 'mg' || $unit === 'milligram' || $unit === 'milligrams') {
-                    $weight = $weight / 1000000; // Convert milligrams to kg
-                } elseif ($unit === 'lb' || $unit === 'pound' || $unit === 'pounds') {
-                    $weight = $weight * 0.453592; // Convert pounds to kg
-                }
-                
-                $totalWeight += $weight * $quantity;
-            }
-        } else {
-            // Need to fetch weight from database (for shipping_api.php)
-            $productIds = array_column($cartItems, 'product_id');
-            if (empty($productIds)) {
-                return 0;
-            }
-            
-            $placeholders = str_repeat('?,', count($productIds) - 1) . '?';
-            
-            $stmt = $this->pdo->prepare("
-                SELECT product_id, weight, weight_unit
-                FROM product
-                WHERE product_id IN ($placeholders)
-            ");
-            $stmt->execute($productIds);
-            $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
-            // Create lookup array for products
-            $productWeights = [];
-            foreach ($products as $product) {
-                $weight = floatval($product['weight'] ?? 0);
-                
-                // Convert weight to kg if necessary
-                $unit = strtolower($product['weight_unit'] ?? 'kg');
-                if ($unit === 'g' || $unit === 'gram' || $unit === 'grams') {
-                    $weight = $weight / 1000; // Convert grams to kg
-                } elseif ($unit === 'mg' || $unit === 'milligram' || $unit === 'milligrams') {
-                    $weight = $weight / 1000000; // Convert milligrams to kg
-                } elseif ($unit === 'lb' || $unit === 'pound' || $unit === 'pounds') {
-                    $weight = $weight * 0.453592; // Convert pounds to kg
-                }
-                
-                $productWeights[$product['product_id']] = $weight;
-            }
-            
-            foreach ($cartItems as $item) {
-                $productId = $item['product_id'];
-                $quantity = intval($item['quantity'] ?? 0);
-                $weight = $productWeights[$productId] ?? 0;
-                
-                $totalWeight += $weight * $quantity;
-            }
-        }
-        
-        return round($totalWeight, 2);
-    }
-    
-    /**
-     * Calculate complete order totals including shipping and tax
-     * @param array $cartItems - Cart items
+     * Calculate complete order totals with consistent weight validation
+     * @param array $cartItems - Cart items with weight data
      * @param string $provinceId - Destination province
-     * @return array - Complete order calculation
+     * @return array - Complete order calculation with validation
      */
     public function calculateOrderTotal($cartItems, $provinceId) {
         try {
-            // Calculate subtotal from cart items
+            // Calculate subtotal and total items
             $subtotal = 0;
             $totalItems = 0;
             
@@ -198,21 +156,54 @@ class ShippingCalculator {
                 }
             }
             
-            // Calculate total weight
+            // Calculate total weight consistently
             $totalWeight = $this->calculateTotalWeight($cartItems);
             
-            // Calculate shipping
+            // Validate weight limit BEFORE any shipping calculations
+            $weightValidation = $this->validateWeightLimit($totalWeight);
+            
+            // Calculate tax (7% on subtotal only)
+            $taxRate = 0.07;
+            $taxAmount = round($subtotal * $taxRate, 2);
+            
+            // If weight exceeds limit, return error response but include all calculations
+            if (!$weightValidation['success']) {
+                return [
+                    'success' => false,
+                    'subtotal' => round($subtotal, 2),
+                    'total_items' => $totalItems,
+                    'total_weight' => $totalWeight,
+                    'shipping' => [
+                        'cost' => null,
+                        'method' => 'weight_exceeded',
+                        'note' => 'ไม่สามารถคำนวดค่าส่งได้ เนื่องจากน้ำหนักเกินขีดจำกัด',
+                        'weight_exceeded' => true,
+                        'province_id' => $provinceId
+                    ],
+                    'tax' => [
+                        'rate' => $taxRate,
+                        'amount' => $taxAmount
+                    ],
+                    'grand_total' => round($subtotal + $taxAmount, 2), // No shipping cost
+                    'weight_validation' => $weightValidation,
+                    'can_order' => false,
+                    'message' => "น้ำหนักสินค้ารวม {$totalWeight} กก. เกินขีดจำกัดการจัดส่ง " . self::MAX_WEIGHT_LIMIT . " กก."
+                ];
+            }
+            
+            // Calculate shipping (weight is within limit)
             $shippingResult = $this->calculateShippingCost($totalWeight, $provinceId);
             
             if (!$shippingResult['success']) {
-                // Fallback shipping calculation
+                // Use fallback shipping for calculation errors (not weight exceeded)
                 $shippingCost = $this->getFallbackShipping($subtotal, $totalWeight);
-                error_log("Using fallback shipping: " . $shippingResult['error']);
+                error_log("Using fallback shipping: " . ($shippingResult['error'] ?? 'Unknown error'));
                 
                 $shippingInfo = [
                     'cost' => $shippingCost,
                     'method' => 'fallback',
-                    'note' => 'ใช้อัตราค่าส่งสำรอง เนื่องจาก: ' . $shippingResult['error']
+                    'note' => 'ใช้อัตราค่าส่งสำรอง เนื่องจาก: ' . ($shippingResult['error'] ?? 'ข้อผิดพลาดไม่ทราบสาเหตุ'),
+                    'province_id' => $provinceId
                 ];
             } else {
                 $shippingCost = $shippingResult['shipping_cost'];
@@ -220,13 +211,10 @@ class ShippingCalculator {
                     'cost' => $shippingCost,
                     'method' => 'calculated',
                     'province_info' => $shippingResult['province_info'],
-                    'rate_info' => $shippingResult['shipping_rate_info']
+                    'rate_info' => $shippingResult['shipping_rate_info'],
+                    'province_id' => $provinceId
                 ];
             }
-            
-            // Calculate tax (7% on subtotal only, not including shipping)
-            $taxRate = 0.07;
-            $taxAmount = round($subtotal * $taxRate, 2);
             
             // Calculate grand total
             $grandTotal = round($subtotal + $shippingCost + $taxAmount, 2);
@@ -241,7 +229,10 @@ class ShippingCalculator {
                     'rate' => $taxRate,
                     'amount' => $taxAmount
                 ],
-                'grand_total' => $grandTotal
+                'grand_total' => $grandTotal,
+                'weight_validation' => $weightValidation,
+                'can_order' => true,
+                'province_id' => $provinceId
             ];
             
         } catch (Exception $e) {
@@ -254,12 +245,111 @@ class ShippingCalculator {
     }
     
     /**
-     * Get fallback shipping cost
-     * @param float $subtotal
-     * @param float $totalWeight
-     * @return float
+     * Calculate total weight from cart items (improved and consistent)
+     */
+    public function calculateTotalWeight($cartItems) {
+        if (empty($cartItems)) {
+            return 0;
+        }
+        
+        $totalWeight = 0;
+        
+        // Check if cart items already have weight information
+        $firstItem = $cartItems[0];
+        if (isset($firstItem['weight']) && isset($firstItem['quantity'])) {
+            // Weight data is already in cart items - use it directly
+            foreach ($cartItems as $item) {
+                $weight = floatval($item['weight'] ?? 0);
+                $quantity = intval($item['quantity'] ?? 0);
+                $unit = strtolower($item['weight_unit'] ?? 'kg');
+                
+                // Convert weight to kg if necessary
+                $weight = $this->convertWeightToKg($weight, $unit);
+                $totalWeight += $weight * $quantity;
+            }
+        } else {
+            // Need to fetch weight from database
+            $productIds = array_column($cartItems, 'product_id');
+            if (empty($productIds)) {
+                return 0;
+            }
+            
+            $placeholders = str_repeat('?,', count($productIds) - 1) . '?';
+            
+            $stmt = $this->pdo->prepare("
+                SELECT product_id, 
+                       COALESCE(weight, 0) as weight, 
+                       COALESCE(weight_unit, 'kg') as weight_unit
+                FROM product
+                WHERE product_id IN ($placeholders)
+            ");
+            $stmt->execute($productIds);
+            $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Create lookup array for products
+            $productWeights = [];
+            foreach ($products as $product) {
+                $weight = floatval($product['weight'] ?? 0);
+                $unit = strtolower($product['weight_unit'] ?? 'kg');
+                $productWeights[$product['product_id']] = $this->convertWeightToKg($weight, $unit);
+            }
+            
+            // Calculate total weight from cart quantities
+            foreach ($cartItems as $item) {
+                $productId = $item['product_id'];
+                $quantity = intval($item['quantity'] ?? 0);
+                $weight = $productWeights[$productId] ?? 0;
+                
+                $totalWeight += $weight * $quantity;
+            }
+        }
+        
+        return round($totalWeight, 2);
+    }
+    
+    /**
+     * Convert weight to kg from various units
+     * @param float $weight
+     * @param string $unit
+     * @return float - Weight in kg
+     */
+    private function convertWeightToKg($weight, $unit) {
+        $unit = strtolower(trim($unit));
+        
+        switch ($unit) {
+            case 'g':
+            case 'gram':
+            case 'grams':
+                return $weight / 1000;
+            case 'mg':
+            case 'milligram':
+            case 'milligrams':
+                return $weight / 1000000;
+            case 'lb':
+            case 'pound':
+            case 'pounds':
+                return $weight * 0.453592;
+            case 'oz':
+            case 'ounce':
+            case 'ounces':
+                return $weight * 0.0283495;
+            case 'kg':
+            case 'kilogram':
+            case 'kilograms':
+            default:
+                return $weight;
+        }
+    }
+    
+    /**
+     * Get fallback shipping cost - only for weights within limit
      */
     private function getFallbackShipping($subtotal, $totalWeight) {
+        // Don't calculate fallback if weight exceeds limit
+        if ($totalWeight > self::MAX_WEIGHT_LIMIT) {
+            return 0;
+        }
+        
         // Free shipping for orders over 1000 THB
         if ($subtotal >= 1000) {
             return 0;
@@ -279,7 +369,6 @@ class ShippingCalculator {
     
     /**
      * Get all shipping zones
-     * @return array
      */
     public function getShippingZones() {
         try {
@@ -297,8 +386,6 @@ class ShippingCalculator {
     
     /**
      * Get shipping rates for a specific zone
-     * @param string $zoneId
-     * @return array
      */
     public function getShippingRatesByZone($zoneId) {
         try {
@@ -318,8 +405,6 @@ class ShippingCalculator {
     
     /**
      * Get provinces by zone
-     * @param string $zoneId
-     * @return array
      */
     public function getProvincesByZone($zoneId) {
         try {

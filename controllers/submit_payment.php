@@ -5,18 +5,19 @@ error_log("POST data: " . print_r($_POST, true));
 error_log("FILES data: " . print_r($_FILES, true));
 
 session_start();
-require_once './config.php'; // Adjust path as needed
+require_once './config.php';
+require_once './shipping_calculator.php'; // Include shipping calculator for validation
 
 header('Content-Type: application/json');
 
-// More detailed method checking
+// Method validation
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     error_log("Method not POST. Actual method: " . $_SERVER['REQUEST_METHOD']);
     http_response_code(405);
     echo json_encode([
         "success" => false, 
         "message" => "Method not allowed. Received: " . $_SERVER['REQUEST_METHOD']
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     exit();
 }
 
@@ -51,7 +52,7 @@ try {
         throw new Exception("ขนาดไฟล์ใหญ่เกินไป (สูงสุด 5MB)");
     }
 
-    // รับค่าจาก Form
+    // Get form data
     $fullName = trim($_POST['fullName']);
     $email = trim($_POST['email']);
     $phone = trim($_POST['phone']);
@@ -73,12 +74,36 @@ try {
         throw new Exception("ยอดรวมไม่ถูกต้อง");
     }
 
-    // Parse cart items
+    // Parse and validate cart items
     $cartItemsJson = $_POST['cartItemsJson'] ?? '[]';
     $cartItems = json_decode($cartItemsJson, true);
     
     if (empty($cartItems)) {
         throw new Exception("ไม่พบรายการสินค้าในตะกร้า");
+    }
+
+    // Initialize shipping calculator for validation
+    $shippingCalculator = new ShippingCalculator($pdo);
+    
+    // Validate weight before processing order
+    if ($weight > 0) {
+        $weightValidation = $shippingCalculator->validateWeightLimit($weight);
+        if (!$weightValidation['success']) {
+            throw new Exception("ไม่สามารถสั่งซื้อได้ เนื่องจากน้ำหนักเกินขีดจำกัด: " . $weightValidation['error']);
+        }
+    }
+
+    // Validate address exists and belongs to user
+    $stmtAddress = $pdo->prepare("
+        SELECT address_id, province_id 
+        FROM addresses 
+        WHERE address_id = ? AND user_id = ?
+    ");
+    $stmtAddress->execute([$addressId, $user_id]);
+    $addressData = $stmtAddress->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$addressData) {
+        throw new Exception("ไม่พบข้อมูลที่อยู่จัดส่ง");
     }
 
     // Start transaction
@@ -88,7 +113,7 @@ try {
         // Generate unique order ID
         $order_id = 'ORD' . date('Ymd') . strtoupper(uniqid());
 
-        // Insert Order - Use correct table name from your schema
+        // Fixed Insert Order - removed the extra parameter
         $stmt = $pdo->prepare("
             INSERT INTO `Orders` (
                 order_id, user_id, total_amount, total_novat, shipping_fee, 
@@ -105,31 +130,31 @@ try {
             $shipping, 
             $status, 
             $note
+            // Removed $addressId from here since it's not in the column list
         ]);
 
-        // Insert Order Items with improved unique ID generation and lot from Products table
+        // Insert Order Items with consistent ID generation
         $itemCounter = 1;
         foreach ($cartItems as $item) {
-            // Generate more unique ID with microseconds and counter
+            // Generate unique order item ID
             $microtime = microtime(true);
             $microseconds = sprintf("%06d", ($microtime - floor($microtime)) * 1000000);
             $order_item_id = 'ITM' . date('Ymd') . '_' . $microseconds . '_' . sprintf('%03d', $itemCounter);
             
-            // Get lot from cart item first, if empty then fetch from Products table
+            // Get lot from cart item or fetch from Product table
             $lot = $item['lot'] ?? null;
             if (empty($lot) && !empty($item['product_id'])) {
-                // Fetch lot from Products table
                 $lotStmt = $pdo->prepare("SELECT lot FROM Product WHERE product_id = ?");
                 $lotStmt->execute([$item['product_id']]);
                 $productData = $lotStmt->fetch(PDO::FETCH_ASSOC);
                 $lot = $productData['lot'] ?? null;
                 
-                // Log if no lot found in database
                 if (empty($lot)) {
                     error_log("No lot found for product_id: " . $item['product_id']);
                 }
             }
             
+            // Insert order item
             $stmt = $pdo->prepare("
                 INSERT INTO OrderItem (
                     order_item_id, order_id, product_id, quantity, 
@@ -144,19 +169,19 @@ try {
                 intval($item['quantity']),
                 floatval($item['price']),
                 floatval($item['weight'] ?? 0),
-                $lot  // Use lot from Products table
+                $lot
             ]);
             
             $itemCounter++;
         }
 
-        // Handle file upload
+        // Handle file upload with secure filename
         $uploadDir = __DIR__ . "/uploads/payment_slips/";
         if (!is_dir($uploadDir)) {
             mkdir($uploadDir, 0755, true);
         }
 
-        $fileExtension = pathinfo($_FILES['paymentSlip']['name'], PATHINFO_EXTENSION);
+        $fileExtension = strtolower(pathinfo($_FILES['paymentSlip']['name'], PATHINFO_EXTENSION));
         $filename = $order_id . "_" . time() . "." . $fileExtension;
         $uploadPath = $uploadDir . $filename;
 
@@ -164,7 +189,7 @@ try {
             throw new Exception("ไม่สามารถบันทึกไฟล์ได้");
         }
 
-        // Insert Payment record with improved unique ID
+        // Insert Payment record with consistent ID generation
         $microtime = microtime(true);
         $microseconds = sprintf("%06d", ($microtime - floor($microtime)) * 1000000);
         $payment_id = 'PAY' . date('Ymd') . '_' . $microseconds;
@@ -177,18 +202,23 @@ try {
         
         $stmt->execute([$payment_id, $order_id, $filename]);
 
-        // Update customer contact info (removed company field)
-        $stmt = $pdo->prepare("
-            UPDATE Users SET 
-                phone = COALESCE(NULLIF(?, ''), phone),
-                updated_at = NOW()
-            WHERE user_id = ?
-        ");
-        $stmt->execute([$phone, $user_id]);
+        // Update customer contact info if provided
+        if (!empty($phone)) {
+            $stmt = $pdo->prepare("
+                UPDATE Users SET 
+                    phone = ?,
+                    updated_at = NOW()
+                WHERE user_id = ?
+            ");
+            $stmt->execute([$phone, $user_id]);
+        }
 
         // Clear cart after successful order
         $stmt = $pdo->prepare("DELETE FROM Cart WHERE user_id = ?");
         $stmt->execute([$user_id]);
+
+        // Log successful order
+        error_log("Order created successfully: {$order_id} for user: {$user_id}, Total: {$total}, Weight: {$weight}kg");
 
         // Commit transaction
         $pdo->commit();
@@ -198,8 +228,9 @@ try {
             "success" => true, 
             "message" => "คำสั่งซื้อสำเร็จ",
             "order_id" => $order_id,
+            "payment_id" => $payment_id,
             "redirect" => "home.php"
-        ]);
+        ], JSON_UNESCAPED_UNICODE);
 
     } catch (Exception $e) {
         $pdo->rollBack();
@@ -213,10 +244,11 @@ try {
     }
 
 } catch (Exception $e) {
+    error_log("Submit payment error: " . $e->getMessage());
     http_response_code(400);
     echo json_encode([
         "success" => false, 
         "message" => $e->getMessage()
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
 }
 ?>

@@ -89,10 +89,7 @@ try {
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'เกิดข้อผิดพลาดของระบบ',
-        'debug' => [
-            'error' => $e->getMessage()
-        ]
+        'message' => 'เกิดข้อผิดพลาดของระบบ'
     ], JSON_UNESCAPED_UNICODE);
 }
 
@@ -124,6 +121,18 @@ function handleCalculateShipping($shippingCalculator, $pdo, $userId) {
 
         $result = $shippingCalculator->calculateShippingCost($weight, $provinceId);
 
+        // Handle weight exceeded case specifically
+        if (!$result['success'] && isset($result['weight_exceeded']) && $result['weight_exceeded']) {
+            http_response_code(422); // Unprocessable Entity
+            echo json_encode([
+                'success' => false,
+                'message' => $result['error'],
+                'weight_validation' => $result['weight_validation'],
+                'weight_exceeded' => true
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
         if ($result['success']) {
             echo json_encode([
                 'success' => true,
@@ -131,7 +140,8 @@ function handleCalculateShipping($shippingCalculator, $pdo, $userId) {
                     'shipping_cost' => $result['shipping_cost'],
                     'total_weight' => $result['total_weight'],
                     'province_info' => $result['province_info'],
-                    'shipping_rate_info' => $result['shipping_rate_info']
+                    'shipping_rate_info' => $result['shipping_rate_info'],
+                    'weight_validation' => $result['weight_validation']
                 ]
             ], JSON_UNESCAPED_UNICODE);
         } else {
@@ -146,7 +156,7 @@ function handleCalculateShipping($shippingCalculator, $pdo, $userId) {
         http_response_code(500);
         echo json_encode([
             'success' => false,
-            'message' => 'เกิดข้อผิดพลาดในการคำนวณค่าส่ง'
+            'message' => 'เกิดข้อผิดพลาดในการคำนวดค่าส่ง'
         ], JSON_UNESCAPED_UNICODE);
     }
 }
@@ -209,7 +219,7 @@ function handleGetRatesByZone($shippingCalculator) {
 }
 
 /**
- * Recalculate entire cart with new address
+ * Recalculate entire cart with consistent weight validation
  */
 function handleRecalculateCart($shippingCalculator, $pdo, $userId) {
     try {
@@ -224,14 +234,15 @@ function handleRecalculateCart($shippingCalculator, $pdo, $userId) {
             return;
         }
 
-        // Get current cart items
+        // Get current cart items with complete weight data
         $stmt = $pdo->prepare("
             SELECT 
                 c.product_id,
                 c.quantity,
                 p.price,
                 COALESCE(p.weight, 0) as weight,
-                COALESCE(p.weight_unit, 'kg') as weight_unit
+                COALESCE(p.weight_unit, 'kg') as weight_unit,
+                p.name as product_name
             FROM cart c
             INNER JOIN product p ON c.product_id = p.product_id
             WHERE c.user_id = :user_id
@@ -244,17 +255,43 @@ function handleRecalculateCart($shippingCalculator, $pdo, $userId) {
                 'success' => true,
                 'data' => [
                     'subtotal' => 0,
+                    'total_items' => 0,
                     'total_weight' => 0,
-                    'shipping_cost' => 0,
-                    'tax_amount' => 0,
-                    'grand_total' => 0
+                    'shipping' => ['cost' => 0],
+                    'tax' => ['amount' => 0],
+                    'grand_total' => 0,
+                    'weight_validation' => ['success' => true, 'weight' => 0, 'limit' => ShippingCalculator::MAX_WEIGHT_LIMIT],
+                    'can_order' => true
                 ]
             ], JSON_UNESCAPED_UNICODE);
             return;
         }
 
-        // Calculate order total with new province
+        // Use ShippingCalculator for consistent calculation
         $result = $shippingCalculator->calculateOrderTotal($cartItems, $provinceId);
+
+        // Handle weight exceeded case with proper error response
+        if (!$result['success'] && isset($result['weight_validation']) && !$result['weight_validation']['success']) {
+            http_response_code(422); // Unprocessable Entity
+            echo json_encode([
+                'success' => false,
+                'message' => $result['message'] ?? $result['weight_validation']['error'],
+                'data' => [
+                    'subtotal' => $result['subtotal'],
+                    'total_items' => $result['total_items'], 
+                    'total_weight' => $result['total_weight'],
+                    'shipping' => $result['shipping'],
+                    'tax' => $result['tax'],
+                    'grand_total' => $result['grand_total'],
+                    'weight_validation' => $result['weight_validation'],
+                    'can_order' => false,
+                    'province_id' => $provinceId
+                ],
+                'weight_validation' => $result['weight_validation'],
+                'weight_exceeded' => true
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
 
         if ($result['success']) {
             echo json_encode([
@@ -265,13 +302,17 @@ function handleRecalculateCart($shippingCalculator, $pdo, $userId) {
                     'total_weight' => $result['total_weight'],
                     'shipping' => $result['shipping'],
                     'tax' => $result['tax'],
-                    'grand_total' => $result['grand_total']
+                    'grand_total' => $result['grand_total'],
+                    'weight_validation' => $result['weight_validation'],
+                    'can_order' => $result['can_order'],
+                    'province_id' => $provinceId
                 ]
             ], JSON_UNESCAPED_UNICODE);
         } else {
+            http_response_code(400);
             echo json_encode([
                 'success' => false,
-                'message' => $result['error']
+                'message' => $result['error'] ?? 'ไม่สามารถคำนวดตะกร้าใหม่ได้'
             ], JSON_UNESCAPED_UNICODE);
         }
 
@@ -280,9 +321,8 @@ function handleRecalculateCart($shippingCalculator, $pdo, $userId) {
         http_response_code(500);
         echo json_encode([
             'success' => false,
-            'message' => 'เกิดข้อผิดพลาดในการคำนวณตะกร้าใหม่'
+            'message' => 'เกิดข้อผิดพลาดในการคำนวดตะกร้าใหม่'
         ], JSON_UNESCAPED_UNICODE);
     }
 }
-
 ?>

@@ -108,7 +108,7 @@ try {
     $defaultAddress = $stmtAddress->fetch(PDO::FETCH_ASSOC);
 
     // -------------------------
-    // Get cart items with product details and ALL images
+    // Get cart items with complete product details
     // -------------------------
     $cartItems = [];
     
@@ -123,7 +123,7 @@ try {
         $hasWeight = in_array('weight', $columns);
         $hasWeightUnit = in_array('weight_unit', $columns);
         
-        // Build cart query - แก้ไขการ JOIN รูปภาพ
+        // Build cart query with all necessary fields
         $cartQuery = "
             SELECT 
                 c.product_id,
@@ -131,26 +131,26 @@ try {
                 p.name,
                 p.price";
         
-        // Use correct stock column name based on your schema
+        // Include stock information
         if ($hasStock) {
-            $cartQuery .= ", p.stock as stock_quantity";
+            $cartQuery .= ", COALESCE(p.stock, 999) as stock_quantity";
         } else {
             $cartQuery .= ", 999 as stock_quantity";
         }
         
+        // Include weight information (critical for shipping calculations)
         if ($hasWeight) {
-            $cartQuery .= ", p.weight";
+            $cartQuery .= ", COALESCE(p.weight, 0) as weight";
         } else {
             $cartQuery .= ", 0 as weight";
         }
         
         if ($hasWeightUnit) {
-            $cartQuery .= ", p.weight_unit";
+            $cartQuery .= ", COALESCE(p.weight_unit, 'kg') as weight_unit";
         } else {
             $cartQuery .= ", 'kg' as weight_unit";
         }
         
-        // แก้ไข: ใช้ productimage_id จากตาราง product เพื่อ JOIN กับ ProductImage
         $cartQuery .= "
             FROM cart c
             INNER JOIN product p ON c.product_id = p.product_id
@@ -163,34 +163,33 @@ try {
             $stmt->execute();
             $cartItems = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            // ดึงรูปภาพแยกต่างหาก เพื่อให้ได้รูปภาพครบทุกรายการ
+            // Get product images separately
             if (!empty($cartItems)) {
                 $productIds = array_column($cartItems, 'product_id');
                 $placeholders = str_repeat('?,', count($productIds) - 1) . '?';
                 
-                // ดึงรูปภาพทั้งหมดของสินค้าในตะกร้า
-                $imageQuery = "
-                    SELECT DISTINCT
-                        p.product_id,
-                        CASE 
-                            WHEN pi.image_url IS NOT NULL AND pi.image_url != '' THEN pi.image_url
-                            ELSE 'admin/controllers/uploads/products/default-product.jpg'
-                        END as image_url,
-                        COALESCE(pi.is_main, 0) as is_main
-                    FROM product p
-                    LEFT JOIN productimage pi ON p.product_id = pi.product_id
-                    WHERE p.product_id IN ($placeholders)
-                ";
-                
-                // ตรวจสอบว่ามี ProductImage table หรือไม่
+                // Check if ProductImage table exists
                 $imageCheck = $pdo->query("SHOW TABLES LIKE 'productimage'");
                 if ($imageCheck && $imageCheck->rowCount() > 0) {
                     try {
+                        $imageQuery = "
+                            SELECT DISTINCT
+                                p.product_id,
+                                CASE 
+                                    WHEN pi.image_url IS NOT NULL AND pi.image_url != '' THEN pi.image_url
+                                    ELSE 'admin/controllers/uploads/products/default-product.jpg'
+                                END as image_url,
+                                COALESCE(pi.is_main, 0) as is_main
+                            FROM product p
+                            LEFT JOIN productimage pi ON p.product_id = pi.product_id
+                            WHERE p.product_id IN ($placeholders)
+                        ";
+                        
                         $imageStmt = $pdo->prepare($imageQuery);
                         $imageStmt->execute($productIds);
                         $productImages = $imageStmt->fetchAll(PDO::FETCH_ASSOC);
                         
-                        // สร้าง lookup array สำหรับรูปภาพ
+                        // Create image lookup array
                         $imageMap = [];
                         foreach ($productImages as $img) {
                             if (!isset($imageMap[$img['product_id']])) {
@@ -202,12 +201,12 @@ try {
                             ];
                         }
                         
-                        // เพิ่มรูปภาพให้กับรายการสินค้าในตะกร้า
+                        // Add images to cart items
                         foreach ($cartItems as &$item) {
                             $productId = $item['product_id'];
                             
                             if (isset($imageMap[$productId]) && !empty($imageMap[$productId])) {
-                                // หาภาพหลักก่อน
+                                // Find main image
                                 $mainImage = null;
                                 $allImages = $imageMap[$productId];
                                 
@@ -218,13 +217,13 @@ try {
                                     }
                                 }
                                 
-                                // ถ้าไม่มีภาพหลัก ใช้ภาพแรก
+                                // Use first image if no main image
                                 if (!$mainImage && !empty($allImages)) {
                                     $mainImage = $allImages[0]['url'];
                                 }
                                 
                                 $item['image'] = $mainImage ?: 'admin/controllers/uploads/products/default-product.jpg';
-                                $item['images'] = $allImages; // รูปภาพทั้งหมด
+                                $item['images'] = $allImages;
                             } else {
                                 $item['image'] = 'admin/controllers/uploads/products/default-product.jpg';
                                 $item['images'] = [[
@@ -236,7 +235,7 @@ try {
                         
                     } catch (PDOException $e) {
                         error_log("Image query failed: " . $e->getMessage());
-                        // ถ้าดึงรูปไม่ได้ ให้ใส่รูป default
+                        // Add default images if query fails
                         foreach ($cartItems as &$item) {
                             $item['image'] = 'admin/controllers/uploads/products/default-product.jpg';
                             $item['images'] = [[
@@ -246,7 +245,7 @@ try {
                         }
                     }
                 } else {
-                    // ไม่มี ProductImage table
+                    // No ProductImage table - use default images
                     foreach ($cartItems as &$item) {
                         $item['image'] = 'admin/controllers/uploads/products/default-product.jpg';
                         $item['images'] = [[
@@ -264,14 +263,14 @@ try {
     }
 
     // -------------------------
-    // Process cart items and calculate totals
+    // Process cart items and handle stock validation
     // -------------------------
     $totalAmount = 0;
     $totalItems = 0;
     $outOfStockItems = [];
 
-    // Process cart items first (handle stock adjustments)
     foreach ($cartItems as $index => &$item) {
+        // Ensure proper data types
         $item['price'] = floatval($item['price'] ?? 0);
         $item['quantity'] = intval($item['quantity'] ?? 0);
         $item['stock_quantity'] = intval($item['stock_quantity'] ?? 999);
@@ -318,32 +317,74 @@ try {
     $cartItems = array_values($cartItems);
 
     // -------------------------
-    // Calculate shipping and totals (SINGLE CALCULATION)
+    // Calculate shipping and totals using ShippingCalculator
     // -------------------------
     $shippingCost = 0;
     $shippingInfo = null;
     $totalWeight = 0;
+    $canOrder = true;
+    $weightValidation = null;
 
     if ($defaultAddress && !empty($defaultAddress['province_id']) && !empty($cartItems)) {
-        // Calculate order total with shipping using ShippingCalculator
+        // Use ShippingCalculator for consistent calculation
         $orderCalculation = $shippingCalculator->calculateOrderTotal($cartItems, $defaultAddress['province_id']);
         
         if ($orderCalculation['success']) {
             $shippingCost = $orderCalculation['shipping']['cost'];
             $shippingInfo = $orderCalculation['shipping'];
             $totalWeight = $orderCalculation['total_weight'];
+            $weightValidation = $orderCalculation['weight_validation'];
+            $canOrder = $orderCalculation['can_order'];
             
-            error_log("Shipping calculation successful: Cost={$shippingCost}, Weight={$totalWeight}kg");
+            error_log("Shipping calculation successful: Cost={$shippingCost}, Weight={$totalWeight}kg, CanOrder=" . ($canOrder ? 'true' : 'false'));
         } else {
-            error_log("Shipping calculation error: " . $orderCalculation['error']);
-            // Fallback to default shipping
+            // Handle weight exceeded or other calculation errors
             $totalWeight = $shippingCalculator->calculateTotalWeight($cartItems);
-            $shippingCost = $totalAmount >= 1000 ? 0 : 50;
+            $weightValidation = $shippingCalculator->validateWeightLimit($totalWeight);
+            
+            if (!$weightValidation['success']) {
+                // Weight exceeded - cannot order
+                $shippingCost = 0;
+                $canOrder = false;
+                $shippingInfo = [
+                    'cost' => 0,
+                    'method' => 'weight_exceeded',
+                    'note' => 'ไม่สามารถคำนวดค่าส่งได้ เนื่องจากน้ำหนักเกินขีดจำกัด',
+                    'weight_exceeded' => true
+                ];
+                error_log("Weight exceeded: {$totalWeight}kg > " . ShippingCalculator::MAX_WEIGHT_LIMIT . "kg");
+            } else {
+                // Other error - use fallback shipping
+                $shippingCost = $totalAmount >= 1000 ? 0 : 50;
+                $canOrder = true;
+                $shippingInfo = [
+                    'cost' => $shippingCost,
+                    'method' => 'fallback',
+                    'note' => 'ใช้อัตราค่าส่งสำรอง: ' . ($orderCalculation['error'] ?? 'ข้อผิดพลาดไม่ทราบสาเหตุ')
+                ];
+                error_log("Shipping calculation error, using fallback: " . ($orderCalculation['error'] ?? 'Unknown error'));
+            }
         }
     } else {
-        // No address or empty cart - use fallback
-        $totalWeight = !empty($cartItems) ? $shippingCalculator->calculateTotalWeight($cartItems) : 0;
-        $shippingCost = $totalAmount >= 1000 ? 0 : 50;
+        // No address or empty cart
+        if (!empty($cartItems)) {
+            $totalWeight = $shippingCalculator->calculateTotalWeight($cartItems);
+            $weightValidation = $shippingCalculator->validateWeightLimit($totalWeight);
+            
+            if (!$weightValidation['success']) {
+                $canOrder = false;
+                $shippingCost = 0;
+            } else {
+                $canOrder = true;
+                $shippingCost = $totalAmount >= 1000 ? 0 : 50;
+            }
+        } else {
+            $totalWeight = 0;
+            $canOrder = true;
+            $shippingCost = 0;
+            $weightValidation = ['success' => true, 'weight' => 0, 'limit' => ShippingCalculator::MAX_WEIGHT_LIMIT];
+        }
+        
         error_log("Using fallback shipping: No address or empty cart. Weight={$totalWeight}kg, Cost={$shippingCost}");
     }
 
@@ -355,7 +396,7 @@ try {
     $grandTotal = round($totalAmount + $shippingCost + $taxAmount, 2);
 
     // -------------------------
-    // Return response with complete image data
+    // Build complete response
     // -------------------------
     $response = [
         'success' => true,
@@ -372,13 +413,27 @@ try {
             ],
             'taxRate' => $taxRate,
             'taxAmount' => $taxAmount,
-            'grandTotal' => $grandTotal
+            'grandTotal' => $grandTotal,
+            'canOrder' => $canOrder
         ]
     ];
 
+    // Add weight validation info if available
+    if ($weightValidation) {
+        $response['cart']['weightValidation'] = $weightValidation;
+    }
+
+    // Add warnings for out of stock items
     if (!empty($outOfStockItems)) {
         $response['warnings'] = [
             'out_of_stock' => 'สินค้าบางรายการมี stock ไม่เพียงพอ: ' . implode(', ', $outOfStockItems)
+        ];
+    }
+
+    // Add weight exceeded warning
+    if (!$canOrder && $weightValidation && !$weightValidation['success']) {
+        $response['warnings'] = ($response['warnings'] ?? []) + [
+            'weight_exceeded' => $weightValidation['error']
         ];
     }
 

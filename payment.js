@@ -5,7 +5,28 @@ let uploadedFile = null;
 let provinces = [];
 let currentCart = null;
 
+// Flags to prevent duplicate loading
+let provincesLoaded = false;
+let cartLoaded = false;
+let addressesLoaded = false;
+
+// Debounce utility
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+    // Only initialize once
+    if (document.readyState === 'loading') return;
+    
     initializeEventListeners();
     loadProvinces();
     loadCart();
@@ -14,22 +35,25 @@ document.addEventListener("DOMContentLoaded", () => {
 // Initialize all event listeners
 function initializeEventListeners() {
     const paymentForm = document.getElementById("paymentForm");
-    if (paymentForm) {
+    if (paymentForm && !paymentForm.hasAttribute('data-initialized')) {
         paymentForm.addEventListener("submit", handleFormSubmit);
+        paymentForm.setAttribute('data-initialized', 'true');
     }
 
     const slipUpload = document.getElementById("slipUpload");
     const fileUploadSection = document.getElementById("fileUploadSection");
 
-    if (slipUpload) {
+    if (slipUpload && !slipUpload.hasAttribute('data-initialized')) {
         slipUpload.addEventListener("change", handleFileSelect);
         slipUpload.removeAttribute("multiple");
+        slipUpload.setAttribute('data-initialized', 'true');
     }
 
-    if (fileUploadSection) {
+    if (fileUploadSection && !fileUploadSection.hasAttribute('data-initialized')) {
         fileUploadSection.addEventListener("dragover", handleDragOver);
         fileUploadSection.addEventListener("dragleave", handleDragLeave);
         fileUploadSection.addEventListener("drop", handleFileDrop);
+        fileUploadSection.setAttribute('data-initialized', 'true');
     }
 
     const addAddressBtn = document.getElementById("addAddressBtn");
@@ -37,25 +61,38 @@ function initializeEventListeners() {
     const cancelBtn = document.getElementById("cancelBtn");
     const saveAddressBtn = document.getElementById("saveAddressBtn");
 
-    if (addAddressBtn) {
+    if (addAddressBtn && !addAddressBtn.hasAttribute('data-initialized')) {
         addAddressBtn.addEventListener("click", openAddressModal);
+        addAddressBtn.setAttribute('data-initialized', 'true');
     }
 
-    if (closeModal) {
+    if (closeModal && !closeModal.hasAttribute('data-initialized')) {
         closeModal.addEventListener("click", closeAddressModal);
+        closeModal.setAttribute('data-initialized', 'true');
     }
 
-    if (cancelBtn) {
+    if (cancelBtn && !cancelBtn.hasAttribute('data-initialized')) {
         cancelBtn.addEventListener("click", closeAddressModal);
+        cancelBtn.setAttribute('data-initialized', 'true');
     }
 
-    if (saveAddressBtn) {
+    if (saveAddressBtn && !saveAddressBtn.hasAttribute('data-initialized')) {
         saveAddressBtn.addEventListener("click", saveAddress);
+        saveAddressBtn.setAttribute('data-initialized', 'true');
+    }
+
+    // Add cancel button event listener
+    const cancelOrderBtn = document.querySelector('.btn-cancel');
+    if (cancelOrderBtn && !cancelOrderBtn.hasAttribute('data-initialized')) {
+        cancelOrderBtn.addEventListener('click', handleCancelClick);
+        cancelOrderBtn.setAttribute('data-initialized', 'true');
     }
 }
 
 function showToast(message, type = "success") {
     const container = document.getElementById("toastContainer");
+    if (!container) return;
+    
     const toast = document.createElement("div");
     toast.className = `toast toast-${type}`;
 
@@ -89,7 +126,6 @@ function formatCurrency(amount) {
 
 // Enhanced weight formatting with better fallback handling
 function formatWeight(weight, unit = 'kg') {
-    // Handle null, undefined, or zero weight
     if (!weight || weight === 0 || isNaN(weight)) {
         return '0 kg';
     }
@@ -105,8 +141,16 @@ function formatWeight(weight, unit = 'kg') {
     return `${numWeight.toFixed(2)} ${unit}`;
 }
 
+// Optimized province loading with duplicate prevention
 async function loadProvinces() {
+    if (provincesLoaded) {
+        console.log('Provinces already loaded, skipping...');
+        return;
+    }
+
     try {
+        provincesLoaded = true;
+        
         const response = await fetch('controllers/address_api.php?action=get_provinces', {
             method: 'GET',
             headers: {
@@ -123,22 +167,32 @@ async function loadProvinces() {
 
         if (data.success) {
             provinces = data.data || [];
-            console.log('Provinces loaded:', provinces.length);
+            console.log('Provinces loaded successfully:', provinces.length);
         } else {
-            console.error('Failed to load provinces:', data.message);
-            showToast("ไม่สามารถโหลดข้อมูลจังหวัดได้", "error");
+            throw new Error(data.message || 'Failed to load provinces');
         }
     } catch (error) {
+        provincesLoaded = false; // Reset flag on error
         console.error('Error loading provinces:', error);
-        showToast("เกิดข้อผิดพลาดในการโหลดจังหวัด", "error");
+        showToast("ไม่สามารถโหลดข้อมูลจังหวัดได้", "error");
     }
 }
 
+// Optimized cart loading with duplicate prevention
 async function loadCart() {
+    if (cartLoaded) {
+        console.log('Cart already loaded, skipping...');
+        return;
+    }
+
     const orderSummary = document.getElementById("orderSummary");
+    if (!orderSummary) return;
+    
     orderSummary.innerHTML = "<p style='text-align: center; color: #6c757d;'>กำลังโหลด...</p>";
 
     try {
+        cartLoaded = true;
+        
         const response = await fetch('controllers/get_cart.php', {
             method: 'GET',
             headers: {
@@ -155,28 +209,91 @@ async function loadCart() {
         }
 
         const data = await response.json();
-        console.log('Cart data loaded:', data);
+        console.log('Cart data loaded successfully');
 
         if (data.success) {
-            // Cache the cart data globally
             currentCart = data;
-            
-            // Render cart once with all data
             renderCart(data);
             populateCustomerData(data.customer);
             
-            // Load addresses and set default if needed
+            // Load addresses only once
             await loadUserAddresses();
             if (data.address) {
                 selectAddressByData(data.address);
             }
+
+            checkWeightValidation();
         } else {
             throw new Error(data.message);
         }
 
     } catch (error) {
+        cartLoaded = false; // Reset flag on error
         console.error('Error loading cart:', error);
         handleCartError(error, orderSummary);
+    }
+}
+
+// Centralized weight calculation with caching
+function calculateCurrentWeight() {
+    if (!currentCart?.cart?.items) return 0;
+    
+    // Use cached weight if available and reliable
+    if (currentCart.cart.totalWeight && currentCart.cart.totalWeight > 0) {
+        return currentCart.cart.totalWeight;
+    }
+    
+    // Calculate weight from items
+    let totalWeight = 0;
+    currentCart.cart.items.forEach(item => {
+        if (item.weight && !isNaN(item.weight) && item.weight > 0) {
+            let weight = parseFloat(item.weight);
+            const unit = (item.weight_unit || 'kg').toLowerCase();
+            
+            // Convert to kg
+            if (unit === 'g' || unit === 'gram') {
+                weight = weight / 1000;
+            }
+            
+            totalWeight += weight * item.quantity;
+        }
+    });
+    
+    // Cache the calculated weight
+    if (currentCart.cart) {
+        currentCart.cart.totalWeight = totalWeight;
+    }
+    
+    return totalWeight;
+}
+
+function checkWeightValidation() {
+    if (!currentCart || !currentCart.cart || !currentCart.cart.items) {
+        return;
+    }
+
+    const totalWeight = calculateCurrentWeight();
+    const submitBtn = document.querySelector("button[type=submit]");
+    const weightWarningContainer = document.getElementById("weightWarningContainer");
+    
+    // Remove existing weight warning if any
+    if (weightWarningContainer) {
+        weightWarningContainer.remove();
+    }
+
+    if (totalWeight > 1000) {
+        // Hide submit button and show weight warning
+        if (submitBtn) {
+            submitBtn.style.display = 'none';
+        }
+
+        showWeightExceededWarning(totalWeight, 1000, "น้ำหนักเกินขีดจำกัดที่กำหนด");
+
+    } else {
+        // Show submit button if weight is within limit
+        if (submitBtn) {
+            submitBtn.style.display = 'inline-block';
+        }
     }
 }
 
@@ -192,8 +309,16 @@ function handleCartError(error, orderSummary) {
     }
 }
 
+// Optimized address loading with duplicate prevention
 async function loadUserAddresses() {
+    if (addressesLoaded) {
+        console.log('Addresses already loaded, skipping...');
+        return;
+    }
+
     try {
+        addressesLoaded = true;
+        
         const response = await fetch('controllers/address_api.php?action=get_by_user', {
             method: 'GET',
             headers: {
@@ -232,10 +357,12 @@ async function loadUserAddresses() {
             }
 
             renderAddresses();
+            console.log('Addresses loaded successfully:', addresses.length);
         } else {
-            console.error('Failed to load addresses:', data.message);
+            throw new Error(data.message || 'Failed to load addresses');
         }
     } catch (error) {
+        addressesLoaded = false; // Reset flag on error
         console.error('Error loading addresses:', error);
     }
 }
@@ -250,8 +377,17 @@ function selectAddressByData(addressData) {
     }
 }
 
-// Fixed shipping recalculation with proper cart update
+// Debounced shipping recalculation
+const debouncedRecalculateShipping = debounce(async (provinceId) => {
+    return await performShippingRecalculation(provinceId);
+}, 300);
+
 async function recalculateShipping(provinceId) {
+    return await debouncedRecalculateShipping(provinceId);
+}
+
+// Core shipping recalculation logic
+async function performShippingRecalculation(provinceId) {
     if (!provinceId || !currentCart?.cart?.items?.length) {
         console.log('Missing data for shipping calculation');
         return false;
@@ -277,28 +413,43 @@ async function recalculateShipping(provinceId) {
             credentials: 'same-origin'
         });
 
+        // Handle weight exceeded case (422 status)
+        if (response.status === 422) {
+            const result = await response.json();
+            if (result.weight_validation && !result.weight_validation.success) {
+                // Update cart with partial data (subtotal + tax only)
+                if (result.data) {
+                    updateCartTotals(result.data);
+                    updateCartSummary();
+                }
+                
+                // Show weight warning and hide submit button
+                handleWeightValidationError(result.weight_validation);
+                checkWeightValidation();
+                
+                return false; // Cannot proceed with order
+            }
+        }
+
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: เกิดข้อผิดพลาดในการคำนวณค่าส่ง`);
+            throw new Error(`HTTP ${response.status}: เกิดข้อผิดพลาดในการคํานวณค่าส่ง`);
         }
 
         const result = await response.json();
-        console.log('Shipping recalculation result:', result);
+        console.log('Shipping recalculation completed successfully');
 
         if (result.success && result.data) {
-            // Update only the changed values
             updateCartTotals(result.data);
-            
-            // Re-render only the summary section (more efficient)
             updateCartSummary();
-            
+            checkWeightValidation();
             return true;
         } else {
-            throw new Error(result.message || 'ไม่สามารถคำนวณค่าส่งได้');
+            throw new Error(result.message || 'ไม่สามารถคํานวณค่าส่งได้');
         }
 
     } catch (error) {
         console.error('Error recalculating shipping:', error);
-        showToast(error.message || "เกิดข้อผิดพลาดในการคำนวณค่าส่ง", "error");
+        showToast(error.message || "เกิดข้อผิดพลาดในการคํานวณค่าส่ง", "error");
         return false;
     }
 }
@@ -327,9 +478,19 @@ function updateCartTotals(newData) {
     cart.subTotal = newData.subtotal || cart.subTotal;
     cart.totalItems = newData.total_items || cart.totalItems;
     
-    // Add province tracking to avoid unnecessary recalculations
+    // Add province tracking and weight validation status
     if (cart.shipping && newData.province_id) {
         cart.shipping.province_id = newData.province_id;
+    }
+    
+    // Store weight validation status
+    if (newData.weight_validation) {
+        cart.weight_validation = newData.weight_validation;
+    }
+    
+    // Store order capability status
+    if (typeof newData.can_order !== 'undefined') {
+        cart.can_order = newData.can_order;
     }
 }
 
@@ -358,7 +519,6 @@ function renderCartItems(items) {
     
     items.forEach((item, index) => {
         const imageUrl = item.image || getDefaultImage();
-        const weightDisplay = calculateItemWeightDisplay(item);
         
         html += `
             <div class="cart-item">
@@ -413,21 +573,33 @@ function renderCartSummary(cart) {
             <span>${formatCurrency(subTotal)}</span>
         </div>`;
     
-    // Weight
+    // Weight with warning if over limit
     const weightDisplay = formatWeight(totalWeight, 'kg');
+    const weightClass = totalWeight > 1000 ? 'weight-warning' : '';
     html += `
-        <div class="summary-row">
+        <div class="summary-row ${weightClass}">
             <span>น้ำหนักรวม:</span> 
-            <span>${weightDisplay}</span>
+            <span style="${totalWeight > 1000 ? 'color: #dc3545; font-weight: bold;' : ''}">${weightDisplay}</span>
         </div>`;
     
-    // Shipping
-    const shippingCost = extractShippingCost(shipping);
-    html += `
-        <div class="summary-row">
-            <span>ค่าจัดส่ง:</span> 
-            <span>${shippingCost === 0 ? "ฟรี" : formatCurrency(shippingCost)}</span>
-        </div>`;
+    // Shipping - handle weight exceeded case
+    let shippingCost = extractShippingCost(shipping);
+    let shippingDisplay = '';
+    
+    if (totalWeight > 1000) {
+        shippingDisplay = `
+            <div class="summary-row">
+                <span>ค่าจัดส่ง:</span> 
+                <span style="font-weight: bold; color: #dc3545;">ไม่สามารถคํานวณได้</span>
+            </div>`;
+    } else {
+        shippingDisplay = `
+            <div class="summary-row">
+                <span>ค่าจัดส่ง:</span> 
+                <span>${shippingCost === 0 ? "ฟรี" : formatCurrency(shippingCost)}</span>
+            </div>`;
+    }
+    html += shippingDisplay;
     
     // Tax
     html += `
@@ -436,19 +608,32 @@ function renderCartSummary(cart) {
             <span>${formatCurrency(taxAmount)}</span>
         </div>`;
     
-    // Grand total
-    html += `
-        <div class="summary-row total">
-            <span>รวมทั้งหมด:</span> 
-            <span>${formatCurrency(grandTotal)}</span>
-        </div>
-    </div>`;
+    // Grand total with conditional note
+    if (totalWeight > 1000) {
+        html += `
+            <div class="summary-row total" style="border-top: 2px solid #dee2e6; padding-top: 10px;">
+                <span>รวมทั้งหมด (ไม่รวมค่าส่ง):</span> 
+                <span>${formatCurrency(grandTotal)}</span>
+            </div>`;
+    } else {
+        html += `
+            <div class="summary-row total" style="border-top: 2px solid #dee2e6; padding-top: 10px;">
+                <span>รวมทั้งหมด:</span> 
+                <span>${formatCurrency(grandTotal)}</span>
+            </div>`;
+    }
     
+    html += `</div>`;
     return html;
 }
 
 function extractShippingCost(shipping) {
     if (!shipping) return 0;
+    
+    // Handle weight exceeded case where shipping cost is null
+    if (shipping.weight_exceeded || shipping.cost === null) {
+        return null;
+    }
     
     if (typeof shipping === 'object') {
         return shipping.cost || 0;
@@ -463,13 +648,22 @@ function getDefaultImage() {
 
 function populateCustomerData(customer) {
     if (customer.name) {
-        document.getElementById("fullName").value = customer.name;
+        const nameField = document.getElementById("fullName");
+        if (nameField && !nameField.value) {
+            nameField.value = customer.name;
+        }
     }
     if (customer.email) {
-        document.getElementById("email").value = customer.email;
+        const emailField = document.getElementById("email");
+        if (emailField && !emailField.value) {
+            emailField.value = customer.email;
+        }
     }
     if (customer.phone) {
-        document.getElementById("phone").value = customer.phone;
+        const phoneField = document.getElementById("phone");
+        if (phoneField && !phoneField.value) {
+            phoneField.value = customer.phone;
+        }
     }
 }
 
@@ -502,6 +696,7 @@ function handleFileDrop(e) {
 
 function processFile(file) {
     const uploadedFilesContainer = document.getElementById("uploadedFiles");
+    if (!uploadedFilesContainer) return;
 
     if (!validateFile(file)) return;
 
@@ -568,7 +763,9 @@ function formatFileSize(bytes) {
 function removeFile(fileId) {
     uploadedFile = null;
     const uploadedFilesContainer = document.getElementById("uploadedFiles");
-    uploadedFilesContainer.innerHTML = '';
+    if (uploadedFilesContainer) {
+        uploadedFilesContainer.innerHTML = '';
+    }
 }
 
 function previewFile(fileId) {
@@ -594,6 +791,8 @@ function previewFile(fileId) {
 function openAddressModal() {
     const modal = document.getElementById("addressModal");
     const form = document.getElementById("addressForm");
+
+    if (!modal || !form) return;
 
     form.reset();
 
@@ -625,12 +824,17 @@ function openAddressModal() {
 }
 
 function closeAddressModal() {
-    document.getElementById("addressModal").classList.remove("active");
-    document.getElementById("addressForm").reset();
+    const modal = document.getElementById("addressModal");
+    const form = document.getElementById("addressForm");
+    
+    if (modal) modal.classList.remove("active");
+    if (form) form.reset();
 }
 
 async function saveAddress() {
     const form = document.getElementById("addressForm");
+    if (!form) return;
+    
     const formData = new FormData(form);
 
     const requiredFields = [
@@ -687,6 +891,8 @@ async function saveAddress() {
         const result = await response.json();
 
         if (result.success) {
+            // Reset addresses loaded flag to force reload
+            addressesLoaded = false;
             await loadUserAddresses();
             closeAddressModal();
             showToast("เพิ่มที่อยู่สำเร็จ", "success");
@@ -702,6 +908,7 @@ async function saveAddress() {
 
 function renderAddresses() {
     const addressList = document.getElementById("addressList");
+    if (!addressList) return;
 
     if (addresses.length === 0) {
         addressList.innerHTML = `
@@ -782,7 +989,7 @@ async function selectAddress(addressId) {
                     if (success) {
                         showToast("เลือกที่อยู่สำเร็จ", "success");
                     } else {
-                        showToast("เลือกที่อยู่สำเร็จ แต่ไม่สามารถคำนวณค่าส่งได้", "warning");
+                        showToast("เลือกที่อยู่สำเร็จ", "success");
                     }
                 } else {
                     showToast("เลือกที่อยู่สำเร็จ", "success");
@@ -806,51 +1013,153 @@ async function selectAddress(addressId) {
 }
 
 async function deleteAddress(addressId) {
-    if (confirm("คุณต้องการลบที่อยู่นี้หรือไม่?")) {
-        try {
-            const response = await fetch(`controllers/address_api.php?action=delete&address_id=${addressId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'same-origin'
-            });
+    if (!confirm("คุณต้องการลบที่อยู่นี้หรือไม่?")) return;
+    
+    try {
+        const response = await fetch(`controllers/address_api.php?action=delete&address_id=${addressId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'same-origin'
+        });
 
-            if (!response.ok) {
-                throw new Error('เกิดข้อผิดพลาดในการลบ');
+        if (!response.ok) {
+            throw new Error('เกิดข้อผิดพลาดในการลบ');
+        }
+
+        const result = await response.json();
+
+        if (result.success) {
+            addresses = addresses.filter(addr => addr.id != addressId);
+            if (selectedAddressId == addressId) {
+                selectedAddressId = null;
             }
-
-            const result = await response.json();
-
-            if (result.success) {
-                addresses = addresses.filter(addr => addr.id != addressId);
-                if (selectedAddressId == addressId) {
-                    selectedAddressId = null;
+            renderAddresses();
+            
+            // Recalculate shipping if needed
+            if (addresses.length > 0) {
+                const mainAddress = addresses.find(addr => addr.is_main == 1);
+                if (mainAddress) {
+                    await recalculateShipping(mainAddress.province_id);
                 }
-                renderAddresses();
-                
-                // Recalculate shipping if needed
-                if (addresses.length > 0) {
-                    const mainAddress = addresses.find(addr => addr.is_main == 1);
-                    if (mainAddress) {
-                        await recalculateShipping(mainAddress.province_id);
-                    }
-                }
-                
-                showToast("ลบที่อยู่สำเร็จ", "success");
-            } else {
-                throw new Error(result.message || 'ไม่สามารถลบได้');
             }
+            
+            showToast("ลบที่อยู่สำเร็จ", "success");
+        } else {
+            throw new Error(result.message || 'ไม่สามารถลบได้');
+        }
 
-        } catch (error) {
-            console.error('Error deleting address:', error);
-            showToast(error.message || "เกิดข้อผิดพลาดในการลบ", "error");
+    } catch (error) {
+        console.error('Error deleting address:', error);
+        showToast(error.message || "เกิดข้อผิดพลาดในการลบ", "error");
+    }
+}
+
+function showWeightExceededWarning(actualWeight, limitWeight, errorMessage) {
+    // Remove existing warning
+    const existingWarning = document.getElementById("weightWarningContainer");
+    if (existingWarning) {
+        existingWarning.remove();
+    }
+
+    const warningDiv = document.createElement('div');
+    warningDiv.id = 'weightWarningContainer';
+    warningDiv.className = 'weight-warning-container';
+    warningDiv.innerHTML = `
+        <div style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); 
+                    color: white; 
+                    padding: 25px; 
+                    border-radius: 12px; 
+                    text-align: center; 
+                    margin: 20px 0;
+                    box-shadow: 0 4px 20px rgba(220, 53, 69, 0.4);
+                    border: 2px solid rgba(255,255,255,0.1);">
+            <div style="font-size: 52px; margin-bottom: 20px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">⚠️</div>
+            <h3 style="margin: 0 0 15px 0; font-size: 22px; font-weight: 700; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">
+                ขออภัย น้ำหนักสินค้าทั้งหมดมากกว่า ${limitWeight} กก.
+            </h3>
+            <div style="background: rgba(255,255,255,0.15); 
+                       padding: 20px; 
+                       border-radius: 10px; 
+                       margin: 20px 0;
+                       backdrop-filter: blur(5px);">
+                <div style="font-size: 16px; line-height: 1.6; opacity: 0.9;">
+                    <strong>ระบบไม่สามารถคำนวณค่าจัดส่งได้</strong><br>
+                    หากต้องการสั่งซื้อเพิ่มเติม โปรดติดต่อพนักงานตามช่องทางหน้าติดต่อเรา
+                </div>
+            </div>
+            <div style="margin-top: 25px; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                <a href="contactus.php" 
+                   style="display: inline-flex;
+                          align-items: center;
+                          gap: 8px;
+                          background: rgba(255,255,255,0.2); 
+                          color: white; 
+                          padding: 15px 25px; 
+                          border-radius: 10px; 
+                          text-decoration: none; 
+                          font-weight: 600;
+                          font-size: 16px;
+                          transition: all 0.3s ease;
+                          backdrop-filter: blur(5px);"
+                   onmouseover="this.style.background='rgba(255,255,255,0.3)'; this.style.transform='translateY(-2px)'"
+                   onmouseout="this.style.background='rgba(255,255,255,0.2)'; this.style.transform='translateY(0)'">
+                    📞 ติดต่อเรา
+                </a>
+            </div>
+        </div>
+    `;
+
+    // Insert warning BEFORE the first section (customer information)
+    const firstSection = document.querySelector('.section');
+    if (firstSection) {
+        firstSection.parentNode.insertBefore(warningDiv, firstSection);
+    } else {
+        // Fallback: insert at the beginning of the form content
+        const content = document.querySelector('.content');
+        if (content) {
+            content.insertBefore(warningDiv, content.firstChild);
         }
     }
 }
 
+function handleWeightValidationError(weightValidation) {
+    if (!weightValidation || weightValidation.success) {
+        return;
+    }
+    
+    const { weight, limit, error } = weightValidation;
+    
+    // Show weight exceeded warning
+    showWeightExceededWarning(weight, limit, error);
+    
+    // Hide submit button
+    const submitBtn = document.querySelector("button[type=submit]");
+    if (submitBtn) {
+        submitBtn.style.display = 'none';
+    }
+    
+    // Show error toast
+    showToast(error || "น้ำหนักเกินขีดจำกัดการจัดส่ง", "error");
+}
+
 // Enhanced form validation with weight checks
 function validateForm() {
+    // Check weight limit first with centralized calculation
+    const totalWeight = calculateCurrentWeight();
+    
+    if (totalWeight > 1000) {
+        showToast(`น้ำหนักรวม ${formatWeight(totalWeight, 'kg')} เกินขีดจำกัด 1,000 กก. ไม่สามารถสั่งซื้อได้`, "error");
+        return false;
+    }
+
+    // Check if cart indicates order cannot proceed (from backend validation)
+    if (currentCart?.cart?.can_order === false) {
+        showToast("ไม่สามารถดำเนินการสั่งซื้อได้ในขณะนี้", "error");
+        return false;
+    }
+
     const requiredFields = [
         { id: 'fullName', message: 'กรุณากรอกชื่อ-นามสกุล' },
         { id: 'email', message: 'กรุณากรอกอีเมล' },
@@ -892,52 +1201,33 @@ function validateForm() {
         return false;
     }
 
-    // Enhanced cart validation with weight checks
+    // Enhanced cart validation
     if (!currentCart || !currentCart.cart || !currentCart.cart.items || currentCart.cart.items.length === 0) {
         showToast("ตะกร้าสินค้าว่างเปล่า กรุณาเพิ่มสินค้าก่อน", "error");
         return false;
     }
 
-    // Validate cart totals
     if (!currentCart.cart.grandTotal || currentCart.cart.grandTotal <= 0) {
         showToast("ราคารวมไม่ถูกต้อง กรุณาโหลดตะกร้าใหม่", "error");
         return false;
     }
 
-    // Check for weight issues that might affect shipping
-    let hasWeightIssues = false;
-    let totalCalculatedWeight = 0;
-
-    if (currentCart.cart.items) {
-        currentCart.cart.items.forEach(item => {
-            if (!item.weight || item.weight === 0 || isNaN(item.weight)) {
-                hasWeightIssues = true;
-            } else {
-                let weight = parseFloat(item.weight);
-                if (item.weight_unit === 'g') weight = weight / 1000;
-                totalCalculatedWeight += weight * item.quantity;
-            }
-        });
-    }
-
-    if (hasWeightIssues && totalCalculatedWeight === 0) {
-        const confirmProceed = confirm(
-            "พบปัญหาข้อมูลน้ำหนักสินค้าซึ่งอาจส่งผลต่อการคำนวณค่าจัดส่ง\n\n" +
-            "คุณต้องการดำเนินการต่อหรือไม่?\n" +
-            "(แนะนำให้ติดต่อเจ้าหน้าที่เพื่อตรวจสอบ)"
-        );
-        
-        if (!confirmProceed) {
-            return false;
-        }
-    }
-
     return true;
 }
 
-// Enhanced form submission with proper cart validation and weight checks
+// Enhanced form submission with weight validation
 async function handleFormSubmit(e) {
     e.preventDefault();
+
+    // Frontend weight validation (first check)
+    if (currentCart?.cart) {
+        let totalWeight = calculateCurrentWeight();
+
+        if (totalWeight > 1000) {
+            showToast(`ไม่สามารถสั่งซื้อได้ น้ำหนักรวม ${formatWeight(totalWeight, 'kg')} เกินขีดจำกัด 1,000 กก.`, "error");
+            return;
+        }
+    }
 
     if (!validateForm()) return;
 
@@ -949,6 +1239,7 @@ async function handleFormSubmit(e) {
     try {
         const formData = new FormData();
 
+        // Add form fields
         formData.append('fullName', document.getElementById('fullName').value);
         formData.append('email', document.getElementById('email').value);
         formData.append('phone', document.getElementById('phone').value);
@@ -963,37 +1254,18 @@ async function handleFormSubmit(e) {
             formData.append('paymentSlip', uploadedFile.file);
         }
 
-        // Enhanced cart data submission with weight information
+        // Enhanced cart data submission
         formData.append('cartTotal', currentCart.cart.grandTotal);
         formData.append('cartItems', currentCart.cart.totalItems);
         formData.append('cartSubtotal', currentCart.cart.subTotal);
         formData.append('cartTax', currentCart.cart.taxAmount || 0);
 
         // Handle shipping cost properly
-        let shippingCost = 0;
-        if (currentCart.cart.shipping) {
-            if (typeof currentCart.cart.shipping === 'object') {
-                shippingCost = currentCart.cart.shipping.cost || 0;
-            } else {
-                shippingCost = currentCart.cart.shipping || 0;
-            }
-        }
+        let shippingCost = extractShippingCost(currentCart.cart.shipping);
         formData.append('cartShipping', shippingCost);
 
-        // Weight data with fallback calculation
-        let finalWeight = currentCart.cart.totalWeight || 0;
-        if (finalWeight === 0 && currentCart.cart.items) {
-            // Calculate weight as fallback
-            let calculatedWeight = 0;
-            currentCart.cart.items.forEach(item => {
-                if (item.weight && !isNaN(item.weight) && item.weight > 0) {
-                    let weight = parseFloat(item.weight);
-                    if (item.weight_unit === 'g') weight = weight / 1000;
-                    calculatedWeight += weight * item.quantity;
-                }
-            });
-            finalWeight = calculatedWeight;
-        }
+        // Weight data with improved calculation
+        let finalWeight = calculateCurrentWeight();
         formData.append('cartWeight', finalWeight);
 
         // Convert cart items to JSON for database storage
@@ -1008,39 +1280,44 @@ async function handleFormSubmit(e) {
         formData.append('cartItemsJson', JSON.stringify(cartItemsForDb));
 
         // Add weight validation flag
-        const hasWeightData = finalWeight > 0;
-        formData.append('hasValidWeight', hasWeightData ? '1' : '0');
+        formData.append('hasValidWeight', finalWeight > 0 ? '1' : '0');
 
-        // Debug logging
-        console.log('Form data being sent:');
-        for (let [key, value] of formData.entries()) {
-            console.log(key, value);
-        }
 
-        showToast("กำลังส่งข้อมูล...", "loading");
-
-        // FIXED: Correct file path - removed 'controllers/' prefix
         const response = await fetch('controllers/submit_payment.php', {
             method: 'POST',
             body: formData,
             credentials: 'same-origin'
         });
 
+        // Handle different response statuses
+        if (response.status === 422) {
+            // Weight validation error from backend
+            const result = await response.json();
+            if (result.validation_details && result.validation_details.code === 'WEIGHT_LIMIT_EXCEEDED') {
+                const { weight, limit } = result.validation_details;
+                showWeightExceededWarning(weight, limit, result.message);
+                showToast(result.message, "error");
+                return;
+            }
+        }
+
         if (!response.ok) {
-            // Get the actual error message from PHP
             const errorText = await response.text();
             console.error('Server response:', errorText);
-            console.error('Response status:', response.status);
             throw new Error(`HTTP ${response.status}: เกิดข้อผิดพลาดในการส่งข้อมูล`);
         }
 
         const result = await response.json();
 
         if (result.success) {
-            // Show success popup
             showSuccessPopup(result.order_id || 'ORD' + Date.now());
         } else {
-            throw new Error(result.message || 'ไม่สามารถส่งคำสั่งซื้อได้');
+            // Handle specific error types
+            if (result.validation_details?.code === 'WEIGHT_LIMIT_EXCEEDED') {
+                handleWeightValidationError(result.validation_details);
+            } else {
+                throw new Error(result.message || 'ไม่สามารถส่งคำสั่งซื้อได้');
+            }
         }
 
     } catch (error) {
@@ -1052,27 +1329,8 @@ async function handleFormSubmit(e) {
     }
 }
 
-// Add cancel button handler
-function handleCancelClick() {
-    const hasUnsavedData = 
-        document.getElementById('fullName').value ||
-        document.getElementById('email').value ||
-        document.getElementById('phone').value ||
-        uploadedFile ||
-        selectedAddressId;
-
-    if (hasUnsavedData) {
-        if (confirm('คุณมีข้อมูลที่ยังไม่ได้บันทึก คุณต้องการยกเลิกและกลับหน้าหลักหรือไม่?')) {
-            window.location.href = 'home.php';
-        }
-    } else {
-        window.location.href = 'home.php';
-    }
-}
-
 // Success popup function
 function showSuccessPopup(orderId) {
-    // Create success popup overlay
     const popup = document.createElement('div');
     popup.className = 'modal-overlay active';
     popup.style.zIndex = '9999';
@@ -1116,21 +1374,27 @@ function showSuccessPopup(orderId) {
 }
 
 function redirectToHome() {
-    showToast("กำลังเปลี่ยนเส้นทาง...", "success");
     setTimeout(() => {
         window.location.href = 'home.php';
     }, 500);
 }
 
-// Update the initialization to include cancel button handler
-document.addEventListener("DOMContentLoaded", () => {
-    initializeEventListeners();
-    loadProvinces();
-    loadCart();
-    
-    // Add cancel button event listener
-    const cancelBtn = document.querySelector('.btn-cancel');
-    if (cancelBtn) {
-        cancelBtn.addEventListener('click', handleCancelClick);
-    }
-});
+function handleCancelClick() {
+    window.location.href = 'cart.php';
+}
+
+// Force reload functions (for manual refresh if needed)
+function forceReloadProvinces() {
+    provincesLoaded = false;
+    return loadProvinces();
+}
+
+function forceReloadCart() {
+    cartLoaded = false;
+    return loadCart();
+}
+
+function forceReloadAddresses() {
+    addressesLoaded = false;
+    return loadUserAddresses();
+}
