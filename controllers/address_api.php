@@ -58,14 +58,29 @@ try {
         case 'get_by_user':
             handleGetByUser($addressController);
             break;
+        case 'get_main':
+            handleGetMain($addressController);
+            break;
         case 'update':
             handleUpdate($addressController);
             break;
         case 'delete':
             handleDelete($addressController);
             break;
+        case 'set_main':
+            handleSetMain($addressController);
+            break;
         case 'list':
             handleList($addressController);
+            break;
+        case 'get_provinces':
+            handleGetProvinces($addressController);
+            break;
+        case 'get_provinces_by_zone':
+            handleGetProvincesByZone($addressController);
+            break;
+        case 'statistics':
+            handleStatistics($addressController);
             break;
         default:
             http_response_code(400);
@@ -73,7 +88,7 @@ try {
                 'success' => false, 
                 'message' => 'Invalid action: ' . $action,
                 'code' => 'INVALID_ACTION',
-                'available_actions' => ['test', 'create', 'get', 'get_by_user', 'update', 'delete', 'list']
+                'available_actions' => ['test', 'create', 'get', 'get_by_user', 'get_main', 'update', 'delete', 'set_main', 'list', 'get_provinces', 'get_provinces_by_zone', 'statistics']
             ]);
             break;
     }
@@ -108,22 +123,27 @@ function handleTest($addressController, $pdo)
         
         // Test if Addresses table exists
         $stmt = $pdo->query("SHOW TABLES LIKE 'Addresses'");
-        $table_exists = $stmt->rowCount() > 0;
+        $addresses_table_exists = $stmt->rowCount() > 0;
+        
+        // Test if Province table exists
+        $stmt = $pdo->query("SHOW TABLES LIKE 'Province'");
+        $province_table_exists = $stmt->rowCount() > 0;
         
         $response = [
             'success' => true,
             'message' => 'Address API ทำงานได้ปกติ',
             'data' => [
                 'database_connected' => $db_test,
-                'table_exists' => $table_exists,
+                'addresses_table_exists' => $addresses_table_exists,
+                'province_table_exists' => $province_table_exists,
                 'server_time' => date('Y-m-d H:i:s'),
                 'php_version' => PHP_VERSION,
-                'available_actions' => ['test', 'create', 'get', 'get_by_user', 'update', 'delete', 'list']
+                'available_actions' => ['test', 'create', 'get', 'get_by_user', 'get_main', 'update', 'delete', 'set_main', 'list', 'get_provinces', 'get_provinces_by_zone', 'statistics']
             ]
         ];
         
-        // Only get additional info if table exists
-        if ($table_exists) {
+        // Only get additional info if tables exist
+        if ($addresses_table_exists) {
             try {
                 $addresses_count = $addressController->getCount();
                 $response['data']['addresses_count'] = $addresses_count;
@@ -131,14 +151,24 @@ function handleTest($addressController, $pdo)
                 // Get table structure
                 $stmt = $pdo->query("DESCRIBE Addresses");
                 $table_structure = $stmt->fetchAll();
-                $response['data']['table_structure'] = array_column($table_structure, 'Field');
+                $response['data']['addresses_table_structure'] = array_column($table_structure, 'Field');
                 
                 // Get sample address
                 $stmt = $pdo->query("SELECT * FROM Addresses LIMIT 1");
                 $sample_address = $stmt->fetch();
                 $response['data']['sample_address'] = $sample_address;
             } catch (Exception $e) {
-                $response['data']['table_error'] = $e->getMessage();
+                $response['data']['addresses_table_error'] = $e->getMessage();
+            }
+        }
+
+        if ($province_table_exists) {
+            try {
+                $provinces = $addressController->getProvinces();
+                $response['data']['provinces_count'] = count($provinces);
+                $response['data']['sample_provinces'] = array_slice($provinces, 0, 5);
+            } catch (Exception $e) {
+                $response['data']['province_table_error'] = $e->getMessage();
             }
         }
         
@@ -167,8 +197,9 @@ function handleCreate($addressController)
         $address_line = trim($_POST['address_line'] ?? '');
         $subdistrict = trim($_POST['subdistrict'] ?? '');
         $district = trim($_POST['district'] ?? '');
-        $province = trim($_POST['province'] ?? '');
+        $province_id = trim($_POST['province_id'] ?? '');
         $postal_code = trim($_POST['postal_code'] ?? '');
+        $is_main = isset($_POST['is_main']) ? (bool)$_POST['is_main'] : false;
 
         // Authentication check
         if (empty($user_id)) {
@@ -181,43 +212,33 @@ function handleCreate($addressController)
             return;
         }
 
-        // Validation
-        if (empty($recipient_name) || empty($phone) || empty($address_line) || 
-            empty($subdistrict) || empty($district) || empty($province) || empty($postal_code)) {
-            http_response_code(400);
-            echo json_encode([
-                'success' => false, 
-                'message' => 'กรุณากรอกข้อมูลให้ครบทุกช่อง',
-                'code' => 'MISSING_FIELDS'
-            ]);
-            return;
-        }
+        // Validation using controller method
+        $validation_data = [
+            'recipient_name' => $recipient_name,
+            'phone' => $phone,
+            'address_line' => $address_line,
+            'subdistrict' => $subdistrict,
+            'district' => $district,
+            'province_id' => $province_id,
+            'postal_code' => $postal_code
+        ];
 
-        // Validate phone number
-        if (!preg_match('/^[0-9+\-\s()]{8,20}$/', $phone)) {
+        $validation_errors = $addressController->validateAddressData($validation_data);
+        
+        if (!empty($validation_errors)) {
             http_response_code(400);
             echo json_encode([
                 'success' => false, 
-                'message' => 'รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง',
-                'code' => 'INVALID_PHONE'
-            ]);
-            return;
-        }
-
-        // Validate postal code
-        if (!preg_match('/^[0-9]{5}$/', $postal_code)) {
-            http_response_code(400);
-            echo json_encode([
-                'success' => false, 
-                'message' => 'รหัสไปรษณีย์ต้องเป็นตัวเลข 5 หลัก',
-                'code' => 'INVALID_POSTAL_CODE'
+                'message' => 'ข้อมูลไม่ถูกต้อง',
+                'errors' => $validation_errors,
+                'code' => 'VALIDATION_ERROR'
             ]);
             return;
         }
 
         // Create address
         $result = $addressController->create($user_id, $recipient_name, $phone, $address_line, 
-                                           $subdistrict, $district, $province, $postal_code);
+                                           $subdistrict, $district, $province_id, $postal_code, $is_main);
 
         if ($result) {
             echo json_encode([
@@ -330,6 +351,49 @@ function handleGetByUser($addressController)
 }
 
 /**
+ * Handle get main address by user ID
+ */
+function handleGetMain($addressController)
+{
+    try {
+        $user_id = $_GET['user_id'] ?? $_COOKIE['user_id'] ?? '';
+
+        if (empty($user_id)) {
+            http_response_code(401);
+            echo json_encode([
+                'success' => false,
+                'message' => 'ไม่ได้รับอนุญาต',
+                'code' => 'NOT_AUTHENTICATED'
+            ]);
+            return;
+        }
+
+        $address = $addressController->getMainByUserId($user_id);
+
+        if ($address) {
+            echo json_encode([
+                'success' => true,
+                'data' => $address
+            ]);
+        } else {
+            echo json_encode([
+                'success' => true,
+                'data' => null,
+                'message' => 'ไม่พบที่อยู่หลัก'
+            ]);
+        }
+    } catch (Exception $e) {
+        error_log("Get main address error: " . $e->getMessage());
+        http_response_code(500);
+        echo json_encode([
+            'success' => false, 
+            'message' => 'เกิดข้อผิดพลาด',
+            'code' => 'SERVER_ERROR'
+        ]);
+    }
+}
+
+/**
  * Handle update address
  */
 function handleUpdate($addressController)
@@ -342,8 +406,9 @@ function handleUpdate($addressController)
         $address_line = trim($_POST['address_line'] ?? '');
         $subdistrict = trim($_POST['subdistrict'] ?? '');
         $district = trim($_POST['district'] ?? '');
-        $province = trim($_POST['province'] ?? '');
+        $province_id = trim($_POST['province_id'] ?? '');
         $postal_code = trim($_POST['postal_code'] ?? '');
+        $is_main = isset($_POST['is_main']) ? (bool)$_POST['is_main'] : false;
 
         // Authentication check
         if (empty($user_id)) {
@@ -366,36 +431,26 @@ function handleUpdate($addressController)
             return;
         }
 
-        // Validation
-        if (empty($recipient_name) || empty($phone) || empty($address_line) || 
-            empty($subdistrict) || empty($district) || empty($province) || empty($postal_code)) {
-            http_response_code(400);
-            echo json_encode([
-                'success' => false, 
-                'message' => 'กรุณากรอกข้อมูลให้ครบทุกช่อง',
-                'code' => 'MISSING_FIELDS'
-            ]);
-            return;
-        }
+        // Validation using controller method
+        $validation_data = [
+            'recipient_name' => $recipient_name,
+            'phone' => $phone,
+            'address_line' => $address_line,
+            'subdistrict' => $subdistrict,
+            'district' => $district,
+            'province_id' => $province_id,
+            'postal_code' => $postal_code
+        ];
 
-        // Validate phone number
-        if (!preg_match('/^[0-9+\-\s()]{8,20}$/', $phone)) {
+        $validation_errors = $addressController->validateAddressData($validation_data);
+        
+        if (!empty($validation_errors)) {
             http_response_code(400);
             echo json_encode([
                 'success' => false, 
-                'message' => 'รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง',
-                'code' => 'INVALID_PHONE'
-            ]);
-            return;
-        }
-
-        // Validate postal code
-        if (!preg_match('/^[0-9]{5}$/', $postal_code)) {
-            http_response_code(400);
-            echo json_encode([
-                'success' => false, 
-                'message' => 'รหัสไปรษณีย์ต้องเป็นตัวเลข 5 หลัก',
-                'code' => 'INVALID_POSTAL_CODE'
+                'message' => 'ข้อมูลไม่ถูกต้อง',
+                'errors' => $validation_errors,
+                'code' => 'VALIDATION_ERROR'
             ]);
             return;
         }
@@ -414,7 +469,7 @@ function handleUpdate($addressController)
 
         // Update address
         $result = $addressController->update($address_id, $recipient_name, $phone, $address_line, 
-                                           $subdistrict, $district, $province, $postal_code);
+                                           $subdistrict, $district, $province_id, $postal_code, $is_main);
 
         if ($result) {
             echo json_encode([
@@ -510,6 +565,75 @@ function handleDelete($addressController)
 }
 
 /**
+ * Handle set address as main
+ */
+function handleSetMain($addressController)
+{
+    try {
+        $address_id = $_POST['address_id'] ?? '';
+        $user_id = $_POST['user_id'] ?? $_COOKIE['user_id'] ?? '';
+
+        // Authentication check
+        if (empty($user_id)) {
+            http_response_code(401);
+            echo json_encode([
+                'success' => false,
+                'message' => 'ไม่ได้รับอนุญาต',
+                'code' => 'NOT_AUTHENTICATED'
+            ]);
+            return;
+        }
+
+        if (empty($address_id)) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false, 
+                'message' => 'กรุณาระบุ address_id',
+                'code' => 'MISSING_ADDRESS_ID'
+            ]);
+            return;
+        }
+
+        // Check if address belongs to user
+        $existing_address = $addressController->getById($address_id);
+        if (!$existing_address || $existing_address['user_id'] != $user_id) {
+            http_response_code(403);
+            echo json_encode([
+                'success' => false, 
+                'message' => 'คุณไม่มีสิทธิ์แก้ไขที่อยู่นี้',
+                'code' => 'FORBIDDEN'
+            ]);
+            return;
+        }
+
+        // Set as main address
+        $result = $addressController->setAsMain($address_id, $user_id);
+
+        if ($result) {
+            echo json_encode([
+                'success' => true,
+                'message' => 'ตั้งเป็นที่อยู่หลักสำเร็จ'
+            ]);
+        } else {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false, 
+                'message' => 'ไม่สามารถตั้งเป็นที่อยู่หลักได้',
+                'code' => 'SET_MAIN_FAILED'
+            ]);
+        }
+    } catch (Exception $e) {
+        error_log("Set main address error: " . $e->getMessage());
+        http_response_code(500);
+        echo json_encode([
+            'success' => false, 
+            'message' => 'เกิดข้อผิดพลาด',
+            'code' => 'SERVER_ERROR'
+        ]);
+    }
+}
+
+/**
  * Handle list addresses with pagination and search
  */
 function handleList($addressController)
@@ -539,6 +663,89 @@ function handleList($addressController)
         ]);
     } catch (Exception $e) {
         error_log("List addresses error: " . $e->getMessage());
+        http_response_code(500);
+        echo json_encode([
+            'success' => false, 
+            'message' => 'เกิดข้อผิดพลาด',
+            'code' => 'SERVER_ERROR'
+        ]);
+    }
+}
+
+/**
+ * Handle get provinces
+ */
+function handleGetProvinces($addressController)
+{
+    try {
+        $provinces = $addressController->getProvinces();
+
+        echo json_encode([
+            'success' => true,
+            'data' => $provinces,
+            'count' => count($provinces)
+        ]);
+    } catch (Exception $e) {
+        error_log("Get provinces error: " . $e->getMessage());
+        http_response_code(500);
+        echo json_encode([
+            'success' => false, 
+            'message' => 'เกิดข้อผิดพลาด',
+            'code' => 'SERVER_ERROR'
+        ]);
+    }
+}
+
+/**
+ * Handle get provinces by zone
+ */
+function handleGetProvincesByZone($addressController)
+{
+    try {
+        $zone_id = $_GET['zone_id'] ?? '';
+
+        if (empty($zone_id)) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false, 
+                'message' => 'กรุณาระบุ zone_id',
+                'code' => 'MISSING_ZONE_ID'
+            ]);
+            return;
+        }
+
+        $provinces = $addressController->getProvincesByZone($zone_id);
+
+        echo json_encode([
+            'success' => true,
+            'data' => $provinces,
+            'count' => count($provinces)
+        ]);
+    } catch (Exception $e) {
+        error_log("Get provinces by zone error: " . $e->getMessage());
+        http_response_code(500);
+        echo json_encode([
+            'success' => false, 
+            'message' => 'เกิดข้อผิดพลาด',
+            'code' => 'SERVER_ERROR'
+        ]);
+    }
+}
+
+/**
+ * Handle get address statistics
+ */
+function handleStatistics($addressController)
+{
+    try {
+        $statistics = $addressController->getStatistics();
+
+        echo json_encode([
+            'success' => true,
+            'data' => $statistics
+        ]);
+    } catch (Exception $e) {
+        error_log("Get statistics error: " . $e->getMessage());
         http_response_code(500);
         echo json_encode([
             'success' => false, 

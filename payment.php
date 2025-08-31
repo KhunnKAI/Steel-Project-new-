@@ -1,10 +1,11 @@
+
 <!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ชำระเงิน</title>
-    <style>
+      <style>
         * {
             margin: 0;
             padding: 0;
@@ -190,16 +191,28 @@
             grid-template-columns: 1fr 1fr;
         }
 
+        .form-group {
+            flex: 1;
+        }
+
+        .form-group.small {
+            flex: 0 0 150px;
+        }
+
+        .form-group.full-width {
+            width: 100%;
+        }
+
         .form-group label {
             display: block;
             margin-bottom: 8px;
             font-size: 14px;
-            color: #051A37;
-            font-weight: 500;
+            color: #666;
+            font-weight: 400;
         }
 
         .required {
-            color: #940606;
+            color: #d32f2f;
             font-size: 12px;
             margin-left: 4px;
         }
@@ -212,11 +225,11 @@
             width: 100%;
             height: 48px;
             padding: 12px 16px;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
+            border: 1px solid #d0d0d0;
+            border-radius: 4px;
             font-size: 14px;
-            background: #fff;
-            transition: all 0.3s ease;
+            background: #f8f8f8;
+            transition: all 0.2s;
         }
 
         textarea {
@@ -228,8 +241,8 @@
         select:focus,
         textarea:focus {
             outline: none;
-            border-color: #940606;
-            box-shadow: 0 0 0 3px rgba(148, 6, 6, 0.1);
+            border-color: #666;
+            background: white;
         }
 
         /* Address Section */
@@ -256,21 +269,18 @@
         }
 
         .add-address-btn {
-            background: #940606;
-            color: #fff;
+            background: #1e3a5f;
+            color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
+            padding: 10px 15px;
+            border-radius: 5px;
             font-size: 14px;
-            font-weight: 500;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s;
         }
 
-        .add-address-btn:hover {
-            background: #b50707;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(148, 6, 6, 0.3);
+        .add-address-btn:hover:not(:disabled) {
+            background: #2c4e73;
         }
 
         .address-list {
@@ -279,70 +289,93 @@
         }
 
         .address-item {
-            border: 2px solid #e9ecef;
+            border: 2px solid #e0e0e0;
             border-radius: 12px;
             padding: 20px;
-            margin-bottom: 16px;
-            background: #f8f9fa;
+            margin-bottom: 15px;
+            background: #fafafa;
             transition: all 0.3s ease;
             cursor: pointer;
         }
 
         .address-item:hover {
-            border-color: #940606;
+            border-color: #d32f2f;
             background: #fff;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(148, 6, 6, 0.15);
+            box-shadow: 0 4px 12px rgba(211, 47, 47, 0.1);
         }
 
         .address-item.selected {
-            border-color: #940606;
-            background: #fff;
-            box-shadow: 0 6px 20px rgba(148, 6, 6, 0.2);
+            border-color: #d32f2f;
+            background: #fff5f5;
+            box-shadow: 0 4px 12px rgba(211, 47, 47, 0.1);
+        }
+
+        .address-content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .address-details {
+            color: #555;
+            line-height: 1.8;
+            font-size: 14px;
+            margin-bottom: 15px;
         }
 
         .address-name {
-            font-weight: 600;
-            color: #051A37;
-            font-size: 16px;
-            margin-bottom: 8px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
         }
 
         .address-info {
-            color: #6c757d;
-            line-height: 1.6;
-            margin-bottom: 16px;
+            color: #666;
         }
 
         .address-actions {
             display: flex;
             gap: 8px;
+            align-items: center;
             flex-wrap: wrap;
         }
 
         .btn {
             padding: 8px 16px;
             border: none;
-            border-radius: 6px;
+            border-radius: 20px;
             font-size: 12px;
-            font-weight: 500;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s;
         }
 
         .btn-default {
             background: #28a745;
-            color: #fff;
+            color: white;
+        }
+
+        .btn-default:hover:not(:disabled) {
+            background: #218838;
+            transform: translateY(-1px);
         }
 
         .btn-edit {
             background: #ffc107;
-            color: #212529;
+            color: #333;
+        }
+
+        .btn-edit:hover:not(:disabled) {
+            background: #e0a800;
+            transform: translateY(-1px);
         }
 
         .btn-delete {
             background: #dc3545;
-            color: #fff;
+            color: white;
+        }
+
+        .btn-delete:hover:not(:disabled) {
+            background: #c82333;
+            transform: translateY(-1px);
         }
 
         /* Payment Method Section */
@@ -407,7 +440,7 @@
             font-size: 14px;
         }
 
-        /* File Upload */
+        /* File Upload - Modified for single file */
         .file-upload-section {
             background: #fff;
             border: 3px dashed #940606;
@@ -454,6 +487,17 @@
 
         .file-upload-hint {
             color: #adb5bd;
+            font-size: 14px;
+        }
+
+        /* Single File Notice */
+        .file-notice {
+            background: #e3f2fd;
+            border-left: 4px solid #1976d2;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            color: #0d47a1;
             font-size: 14px;
         }
 
@@ -534,7 +578,7 @@
             cursor: pointer;
         }
 
-        /* Order Summary - แก้ไขให้ตรงกับ JS */
+        /* Order Summary */
         .customer-info {
             background: #e9ecef;
             border-radius: 8px;
@@ -665,14 +709,29 @@
             box-shadow: none;
         }
 
-        /* Modal */
+        .btn-cancel {
+            width: 100%;
+            height: 60px;
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            box-shadow: 0 4px 20px rgba(108, 117, 125, 0.3);
+        }
+
+        /* Modal Styles - Updated to match profile.php */
         .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(5, 26, 55, 0.8);
+            background: rgba(0, 0, 0, 0.5);
             display: none;
             justify-content: center;
             align-items: center;
@@ -684,78 +743,126 @@
         }
 
         .modal {
-            background: #fff;
-            border-radius: 16px;
+            background: white;
+            border-radius: 12px;
             width: 90%;
             max-width: 600px;
             max-height: 90vh;
             overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(5, 26, 55, 0.3);
+            position: relative;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
 
         .modal-header {
-            background: linear-gradient(135deg, #051A37 0%, #0a2448 100%);
-            padding: 24px;
+            padding: 20px 25px;
+            border-bottom: 1px solid #e0e0e0;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
         .modal-title {
-            color: #fff;
             font-size: 20px;
             font-weight: 600;
+            color: #333;
         }
 
         .close-btn {
             background: none;
             border: none;
-            color: #fff;
             font-size: 24px;
             cursor: pointer;
-            padding: 8px;
+            color: #666;
+            padding: 5px;
             border-radius: 50%;
-            transition: all 0.3s ease;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .close-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: #f0f0f0;
+            color: #333;
         }
 
         .modal-body {
-            padding: 30px;
+            padding: 25px;
         }
 
         .modal-footer {
-            padding: 24px;
-            border-top: 1px solid #e9ecef;
+            padding: 15px 25px;
+            border-top: 1px solid #e0e0e0;
             display: flex;
-            gap: 12px;
+            gap: 10px;
             justify-content: flex-end;
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #940606 0%, #b50707 100%);
-            color: #fff;
+            background: #1e3a5f;
+            color: white;
             padding: 12px 24px;
             border: none;
-            border-radius: 8px;
+            border-radius: 6px;
+            font-size: 14px;
             font-weight: 500;
             cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #2c4e73;
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         .btn-secondary {
             background: #f8f9fa;
-            color: #6c757d;
-            padding: 12px 24px;
+            color: #666;
             border: 1px solid #dee2e6;
-            border-radius: 8px;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 14px;
             font-weight: 500;
             cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #e9ecef;
+            color: #333;
+        }
+
+        .no-addresses {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
         }
 
         /* Responsive */
         @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+                gap: 15px;
+            }
+
             .form-row.two-cols {
                 grid-template-columns: 1fr;
             }
@@ -778,6 +885,15 @@
                 height: 200px;
                 margin-right: 0;
                 margin-bottom: 16px;
+            }
+
+            .modal {
+                width: 95%;
+                margin: 10px;
+            }
+
+            .modal-body {
+                padding: 20px;
             }
         }
     </style>
@@ -811,12 +927,6 @@
                             <div class="form-group">
                                 <label>ชื่อ-นามสกุล <span class="required">*จำเป็น</span></label>
                                 <input type="text" id="fullName" name="fullName" required placeholder="กรอกชื่อ-นามสกุล">
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>บริษัท/ร้านค้า</label>
-                                <input type="text" id="company" name="company" placeholder="ชื่อบริษัทหรือร้านค้า (ถ้ามี)">
                             </div>
                         </div>
                         <div class="form-row two-cols">
@@ -876,8 +986,14 @@
                     <!-- Payment Slip Upload -->
                     <div class="section">
                         <div class="section-title">แนบสลิปการโอนเงิน <span class="required">*จำเป็น</span></div>
+                        
+                        <!-- Single file notice -->
+                        <div class="file-notice">
+                            <strong>หมายเหตุ:</strong> กรุณาแนบสลิปการโอนเงินเพียง 1 ไฟล์เท่านั้น
+                        </div>
+                        
                         <div class="file-upload-section" id="fileUploadSection">
-                            <input type="file" id="slipUpload" class="file-upload-input" accept="image/*,.pdf" multiple>
+                            <input type="file" id="slipUpload" class="file-upload-input" accept="image/*,.pdf">
                             <label for="slipUpload" class="file-upload-button">เลือกไฟล์</label>
                             <div class="file-upload-text">หรือลากไฟล์มาวางที่นี่</div>
                             <div class="file-upload-hint">รองรับไฟล์: JPG, PNG, PDF (ขนาดไม่เกิน 5MB)</div>
@@ -893,7 +1009,13 @@
                         </div>
                     </div>
 
+                    <div class="section">
+                        <div class="section-title">หมายเหตุ</div>
+                        <textarea type="text" id="note" name="note" placeholder="หมายเหตุ ขอใบกำกับภาษี(ถ้ามี)"></textarea>
+                    </div>
+
                     <button type="submit" class="submit-btn">ยืนยันการสั่งซื้อ</button>
+                    <button type="button" class="btn-cancel" onclick="handleCancelClick()">ยกเลิก</button>
                 </form>
             </div>
         </div>
@@ -909,21 +1031,38 @@
             <div class="modal-body">
                 <form id="addressForm">
                     <div class="form-group">
-                        <label>ชื่อที่อยู่ <span class="required">*</span></label>
-                        <input type="text" name="addressName" required placeholder="เช่น: บ้าน, ที่ทำงาน">
+                        <label>ชื่อผู้รับ <span class="required">*จำเป็น</span></label>
+                        <input type="text" name="addressName">
                     </div>
                     <div class="form-group">
-                        <label>ที่อยู่เต็ม <span class="required">*</span></label>
-                        <textarea name="fullAddress" required placeholder="กรอกที่อยู่เต็มรายละเอียด"></textarea>
+                        <label>เบอร์โทรศัพท์</label>
+                        <input type="tel" name="phone">
+                    </div>
+                    <div class="form-group">
+                        <label>ที่อยู่เต็ม <span class="required">*จำเป็น</span></label>
+                        <textarea name="fullAddress" required placeholder="บ้านเลขที่ ซอย ถนน"></textarea>
                     </div>
                     <div class="form-row two-cols">
                         <div class="form-group">
-                            <label>จังหวัด <span class="required">*</span></label>
-                            <input type="text" name="province" required placeholder="จังหวัด">
+                            <label>ตำบล/แขวง <span class="required">*จำเป็น</span></label>
+                            <input type="text" name="subdistrict" placeholder="ตำบลหรือแขวง">
                         </div>
                         <div class="form-group">
-                            <label>รหัสไปรษณีย์ <span class="required">*</span></label>
-                            <input type="text" name="zipCode" required placeholder="รหัสไปรษณีย์">
+                            <label>อำเภอ/เขต <span class="required">*จำเป็น</span></label>
+                            <input type="text" name="district" placeholder="อำเภอหรือเขต">
+                        </div>
+                    </div>
+                    <div class="form-row two-cols">
+                        <div class="form-group">
+                            <label>จังหวัด <span class="required">*จำเป็น</span></label>
+                            <select name="province_id" required>
+                                <option value="">เลือกจังหวัด</option>
+                                <!-- Options will be populated by JavaScript -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>รหัสไปรษณีย์ <span class="required">*จำเป็น</span></label>
+                            <input type="text" name="zipCode" required pattern="[0-9]{5}" maxlength="5">
                         </div>
                     </div>
                 </form>
