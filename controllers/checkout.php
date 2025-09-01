@@ -84,7 +84,7 @@ try {
     $placeholders = implode(',', array_fill(0, count($productIds), '?'));
 
     // ตรวจสอบสินค้าที่มีอยู่
-    $stmt = $pdo->prepare("SELECT product_id, name, price, stock FROM product WHERE product_id IN ($placeholders)");
+    $stmt = $pdo->prepare("SELECT product_id, name, price, stock FROM Product WHERE product_id IN ($placeholders)");
     $stmt->execute($productIds);
     $validProducts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -104,12 +104,12 @@ try {
     if (!$validItems) throw new Exception('ไม่พบสินค้าที่ถูกต้องในคำสั่งซื้อ');
 
     // ลบ cart เดิม
-    $deleteStmt = $pdo->prepare("DELETE FROM cart WHERE user_id = :user_id");
+    $deleteStmt = $pdo->prepare("DELETE FROM Cart WHERE user_id = :user_id");
     $deleteStmt->execute([':user_id' => $user_id]);
 
     // เตรียม insert
     $insertStmt = $pdo->prepare("
-        INSERT INTO cart (user_id, product_id, quantity, created_at, updated_at)
+        INSERT INTO Cart (user_id, product_id, quantity, created_at, updated_at)
         VALUES (:user_id, :product_id, :quantity, NOW(), NOW())
     ");
 

@@ -66,7 +66,7 @@ try {
     // -------------------------
     $stmtUser = $pdo->prepare("
         SELECT user_id, name, email, phone
-        FROM users
+        FROM Users
         WHERE user_id = :user_id
     ");
     $stmtUser->bindParam(':user_id', $userId, PDO::PARAM_STR);
@@ -97,7 +97,7 @@ try {
             COALESCE(p.name, 'ไม่ระบุจังหวัด') as province,
             a.postal_code,
             a.is_main
-        FROM addresses a
+        FROM Addresses a
         LEFT JOIN Province p ON a.province_id = p.province_id
         WHERE a.user_id = :user_id
         ORDER BY a.is_main DESC, a.created_at DESC
@@ -113,10 +113,10 @@ try {
     $cartItems = [];
     
     // Check if product table exists and get its structure
-    $productCheck = $pdo->query("SHOW TABLES LIKE 'product'");
+    $productCheck = $pdo->query("SHOW TABLES LIKE 'Product'");
     if ($productCheck && $productCheck->rowCount() > 0) {
         // Check what columns exist in product table
-        $productColumns = $pdo->query("DESCRIBE product");
+        $productColumns = $pdo->query("DESCRIBE Product");
         $columns = $productColumns->fetchAll(PDO::FETCH_COLUMN);
         
         $hasStock = in_array('stock', $columns);
@@ -152,8 +152,8 @@ try {
         }
         
         $cartQuery .= "
-            FROM cart c
-            INNER JOIN product p ON c.product_id = p.product_id
+            FROM Cart c
+            INNER JOIN Product p ON c.product_id = p.product_id
             WHERE c.user_id = :user_id
             ORDER BY c.created_at DESC";
         
@@ -169,7 +169,7 @@ try {
                 $placeholders = str_repeat('?,', count($productIds) - 1) . '?';
                 
                 // Check if ProductImage table exists
-                $imageCheck = $pdo->query("SHOW TABLES LIKE 'productimage'");
+                $imageCheck = $pdo->query("SHOW TABLES LIKE 'Productimage'");
                 if ($imageCheck && $imageCheck->rowCount() > 0) {
                     try {
                         $imageQuery = "
@@ -180,8 +180,8 @@ try {
                                     ELSE 'admin/controllers/uploads/products/default-product.jpg'
                                 END as image_url,
                                 COALESCE(pi.is_main, 0) as is_main
-                            FROM product p
-                            LEFT JOIN productimage pi ON p.product_id = pi.product_id
+                            FROM Product p
+                            LEFT JOIN Productimage pi ON p.product_id = pi.product_id
                             WHERE p.product_id IN ($placeholders)
                         ";
                         
@@ -284,7 +284,7 @@ try {
             
             // Update cart in database
             if ($item['quantity'] > 0) {
-                $updateStmt = $pdo->prepare("UPDATE cart SET quantity = :quantity WHERE user_id = :user_id AND product_id = :product_id");
+                $updateStmt = $pdo->prepare("UPDATE Cart SET quantity = :quantity WHERE user_id = :user_id AND product_id = :product_id");
                 $updateStmt->execute([
                     ':quantity' => $item['quantity'],
                     ':user_id' => $userId,
@@ -292,7 +292,7 @@ try {
                 ]);
             } else {
                 // Remove from cart if no stock
-                $deleteStmt = $pdo->prepare("DELETE FROM cart WHERE user_id = :user_id AND product_id = :product_id");
+                $deleteStmt = $pdo->prepare("DELETE FROM Cart WHERE user_id = :user_id AND product_id = :product_id");
                 $deleteStmt->execute([
                     ':user_id' => $userId,
                     ':product_id' => $item['product_id']

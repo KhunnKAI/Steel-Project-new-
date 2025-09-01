@@ -96,7 +96,7 @@ try {
     // Validate address exists and belongs to user
     $stmtAddress = $pdo->prepare("
         SELECT address_id, province_id 
-        FROM addresses 
+        FROM Addresses 
         WHERE address_id = ? AND user_id = ?
     ");
     $stmtAddress->execute([$addressId, $user_id]);

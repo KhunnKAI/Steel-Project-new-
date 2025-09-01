@@ -280,7 +280,7 @@ class ShippingCalculator {
                 SELECT product_id, 
                        COALESCE(weight, 0) as weight, 
                        COALESCE(weight_unit, 'kg') as weight_unit
-                FROM product
+                FROM Product
                 WHERE product_id IN ($placeholders)
             ");
             $stmt->execute($productIds);
