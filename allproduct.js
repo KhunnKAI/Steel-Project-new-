@@ -158,7 +158,6 @@ function createProductCard(product) {
             <div class="product-info">
                 <div class="product-title">${escapeHtml(product.name) || 'ไม่ระบุชื่อ'}</div>
                 <div class="product-specs">${dimensions}</div>
-                ${product.lot ? `<div class="product-specs">Lot: ${escapeHtml(product.lot)}</div>` : ''}
                 <div class="product-price">${price}</div>
                 <div class="product-stock">${stockStatus}</div>
                 <div class="action-buttons">
