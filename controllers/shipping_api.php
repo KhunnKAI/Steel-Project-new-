@@ -244,7 +244,7 @@ function handleRecalculateCart($shippingCalculator, $pdo, $userId) {
                 COALESCE(p.weight_unit, 'kg') as weight_unit,
                 p.name as product_name
             FROM Cart c
-            INNER JOIN product p ON c.product_id = p.product_id
+            INNER JOIN Product p ON c.product_id = p.product_id
             WHERE c.user_id = :user_id
         ");
         $stmt->execute([':user_id' => $userId]);

@@ -45,7 +45,9 @@ class AddressController
             $stmt->bindParam(':district', $district, PDO::PARAM_STR);
             $stmt->bindParam(':province_id', $province_id, PDO::PARAM_STR);
             $stmt->bindParam(':postal_code', $postal_code, PDO::PARAM_STR);
-            $stmt->bindParam(':is_main', $is_main, PDO::PARAM_BOOL);
+            
+            $is_main_int = $is_main ? 1 : 0;
+            $stmt->bindParam(':is_main', $is_main_int, PDO::PARAM_INT);
             
             if ($stmt->execute()) {
                 return $this->pdo->lastInsertId();

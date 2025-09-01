@@ -56,7 +56,7 @@ class ShippingCalculator {
             // Get shipping zone for the province
             $stmt = $this->pdo->prepare("
                 SELECT p.province_id, p.name as province_name, p.zone_id,
-                       sz.name as zone_name, sz.description as zone_description
+                    sz.name as zone_name, sz.description as zone_description
                 FROM Province p
                 LEFT JOIN ShippingZone sz ON p.zone_id = sz.zone_id
                 WHERE p.province_id = ?

@@ -82,14 +82,23 @@ if (!empty($product_id)) {
         
         // ดึงรูปภาพทั้งหมดของสินค้านี้
         $sql_images = "SELECT productimage_id, image_url, is_main, created_at, updated_at
-                       FROM ProductImage 
-                       WHERE product_id = ?
-                       ORDER BY is_main DESC, created_at ASC";
-        
+               FROM ProductImage 
+               WHERE product_id = ?
+               ORDER BY is_main DESC, created_at ASC";
+
         $stmt_img = $pdo->prepare($sql_images);
         $stmt_img->execute([$product_id]);
         $images = $stmt_img->fetchAll();
-        
+
+        // แปลงเป็น relative path ใช้ backslash
+        foreach ($images as &$img) {
+            if (!empty($img['image_url'])) {
+                $relative_path = str_replace('http://localhost/steelproject/', '', $img['image_url']);
+                $img['image_url'] = str_replace('/', '\\', $relative_path);
+            }
+        }
+        unset($img);
+
         $product['images'] = $images;
         send_json_success($product, 'Product retrieved successfully');
         
