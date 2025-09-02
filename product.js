@@ -470,12 +470,60 @@ function addButtonListeners(product) {
     // ปุ่มใส่ในตะกร้า
     const cartButton = document.querySelector('.btn-secondary');
     if (cartButton) {
-        cartButton.addEventListener('click', function () {
+        cartButton.addEventListener('click', async function () {
             if (product.stock <= 0) {
                 alert('ขออภัย สินค้านี้หมดสต็อค');
                 return;
             }
-            alert(`เพิ่ม "${product.name}" ลงในตะกร้าแล้ว`);
+
+            // Ensure cart manager is available
+            async function ensureCartReady() {
+                if (window.cartManager && typeof window.cartManager.addItem === 'function') {
+                    return true;
+                }
+                // try to load cart.js dynamically if missing
+                try {
+                    await new Promise((resolve, reject) => {
+                        const existing = document.querySelector('script[src$="cart.js"]');
+                        if (existing) {
+                            // wait a tick for it to initialize
+                            setTimeout(resolve, 100);
+                            return;
+                        }
+                        const s = document.createElement('script');
+                        s.src = 'cart.js';
+                        s.onload = resolve;
+                        s.onerror = reject;
+                        document.body.appendChild(s);
+                    });
+                    return !!(window.cartManager && typeof window.cartManager.addItem === 'function');
+                } catch (e) {
+                    console.error('Failed to load cart.js', e);
+                    return false;
+                }
+            }
+
+            const ready = await ensureCartReady();
+            if (!ready) {
+                alert('ไม่สามารถเพิ่มลงตะกร้าได้ กรุณารีเฟรชหน้าแล้วลองใหม่');
+                return;
+            }
+
+            const productId = product.product_id || product.id;
+            const name = product.name || 'สินค้า';
+            const price = parseFloat(product.price) || 0;
+            const weight = parseFloat(product.weight) || 0;
+            const image = (product.images && product.images.length > 0) ? (product.images.find(i => i.is_main == 1) || product.images[0]).image_url : 'no-image.jpg';
+            const imagePath = getImagePath(image);
+
+            const ok = window.cartManager.addItem(productId, name, price, 1, imagePath, weight);
+            if (ok) {
+                if (typeof window.showToast === 'function') {
+                    window.showToast(`เพิ่ม "${name}" ลงตะกร้าแล้ว`);
+                } else {
+                    alert(`เพิ่ม "${name}" ลงตะกร้าแล้ว`);
+                }
+            }
         });
     }
 

@@ -339,7 +339,6 @@
                 <div class="product-stock"></div>
                 <div class="product-price">฿0.00 บาท/เส้น</div>
                 <div class="action-buttons">
-                    <button class="btn btn-primary">ซื้อ</button>
                     <button class="btn btn-secondary">ใส่ในตะกร้า</button>
                 </div>
             </div>
@@ -349,6 +348,7 @@
     <!-- Footer -->
     <?php include("footer.php");?>
 
+    <script src="cart.js"></script>
     <script src="product.js"></script>
 
 </body>
