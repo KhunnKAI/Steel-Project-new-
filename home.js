@@ -62,18 +62,31 @@ async function fetchProducts() {
 
                 return {
                     id: productId,
+                    product_id: productId,
                     name: product.name || 'ไม่ระบุชื่อ',
                     category: product.category_name || 'ไม่ระบุ',
+                    category_id: product.category_id || '',
                     price: parseFloat(product.price) || 0,
                     description: product.description || '',
+                    weight: product.weight ? parseFloat(product.weight) : 0,
+                    weight_unit: product.weight_unit || 'kg',
+                    width: product.width || 0,
+                    length: product.length || 0,
+                    height: product.height || 0,
+                    width_unit: product.width_unit || 'mm',
+                    length_unit: product.length_unit || 'mm',
+                    height_unit: product.height_unit || 'mm',
+                    grade: product.grade || '',
+                    unit: product.unit || 'กก.',
                     images: product.images || [],
                     image: product.images && product.images.length > 0
                         ? product.images.find(img => img.is_main)?.image_url || product.images[0].image_url
                         : 'no-image.jpg',
                     date: new Date(product.created_at),
                     lot: product.lot,
-                    stock: product.stock,
+                    stock: parseInt(product.stock) || 0,
                     supplier: product.supplier_name || 'ไม่ระบุ',
+                    supplier_name: product.supplier_name || 'ไม่ระบุ',
                     received_date: product.received_date
                 };
             });
@@ -161,6 +174,7 @@ function displayProducts(productsToShow) {
             <div class="product-name">${product.name}</div>
             <div class="product-description">${product.description}</div>
             <div class="product-price">฿${product.price.toLocaleString()}</div>
+            ${product.weight && product.weight > 0 ? `<div class="product-weight" style="color:#555; font-size:14px; margin-bottom: 10px;">น้ำหนัก: ${product.weight} ${product.weight_unit || 'กก.'} / ชิ้น</div>` : ''}
             <button class="product-btn" data-product-index="${index}">
                 เพิ่มใส่ตะกร้า
             </button>
@@ -247,6 +261,7 @@ function fallbackAddToCart(product, event) {
                 name: product.name,
                 price: product.price,
                 quantity: 1,
+                weight: product.weight || 0,
                 image: product.image,
                 addedAt: new Date().toISOString()
             };
