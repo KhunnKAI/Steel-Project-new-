@@ -59,7 +59,8 @@ error_log("Header Debug - COOKIE user_id: " . ($_COOKIE['user_id'] ?? 'not set')
             <div class="cart-badge" id="cartBadge">0</div>
         </div>
 
-        <!-- Notification Icon - แสดงเฉพาะเมื่อล็อกอินแล้ว -->
+        <!---
+        Notification Icon - แสดงเฉพาะเมื่อล็อกอินแล้ว
         <?php if ($isLoggedIn): ?>
         <div class="icon dropdown" id="notificationIcon">
             🔔
@@ -70,6 +71,7 @@ error_log("Header Debug - COOKIE user_id: " . ($_COOKIE['user_id'] ?? 'not set')
             </div>
         </div>
         <?php endif; ?>
+        -->
 
         <!-- Profile Icon -->
         <div class="icon dropdown" id="profileIcon">
@@ -82,8 +84,6 @@ error_log("Header Debug - COOKIE user_id: " . ($_COOKIE['user_id'] ?? 'not set')
                 </div>
                 <a href="profile.php">โปรไฟล์</a>
                 <a href="myorders.php">คำสั่งซื้อของฉัน</a>
-                <a href="wishlist.php">รายการโปรด</a>
-                <a href="settings.php">การตั้งค่า</a>
                 <hr class="dropdown-divider">
                 <a href="logout.php">ออกจากระบบ</a>
                 <?php else: ?>
