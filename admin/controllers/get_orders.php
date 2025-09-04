@@ -268,8 +268,9 @@ try {
     $count_stmt->execute($count_params);
     $total_count = $count_stmt->fetchColumn();
 
-    // สรุปสถิติ
+    // สรุปสถิติ - FIXED: Added s.status_id to GROUP BY and ORDER BY
     $stats_sql = "SELECT 
+                    s.status_id,
                     s.status_code,
                     s.description,
                     COUNT(o.order_id) as count,
@@ -285,7 +286,7 @@ try {
         $stats_sql .= " AND DATE(o.created_at) <= '$date_to'";
     }
     
-    $stats_sql .= " GROUP BY s.status_code, s.description ORDER BY s.status_id";
+    $stats_sql .= " GROUP BY s.status_id, s.status_code, s.description ORDER BY s.status_id";
     
     $stats_stmt = $pdo->query($stats_sql);
     $statistics = $stats_stmt->fetchAll();
@@ -327,7 +328,7 @@ function getAvailableStatusTransitions($current_status) {
         'pending_payment' => ['awaiting_shipment', 'cancelled'],
         'awaiting_shipment' => ['in_transit', 'cancelled'],
         'in_transit' => ['delivered', 'cancelled'],
-        'delivered' => ['cancelled'], // อนุญาตให้ยกเลิกได้หลังจัดส่งแล้ว (สำหรับการคืนเงิน/รีเทิร์น)
+        'delivered' => ['cancelled'], // อนุกาตให้ยกเลิกได้หลังจัดส่งแล้ว (สำหรับการคืนเงิน/รีเทิร์น)
         'cancelled' => [] // ไม่สามารถเปลี่ยนจากสถานะยกเลิกได้
     ];
     
@@ -366,7 +367,7 @@ function getStatusDefinitions() {
             'description' => 'จัดส่งแล้ว',
             'color' => '#28a745',
             'icon' => 'check',
-            'can_cancel' => true // อนุญาตให้ยกเลิกได้ (สำหรับรีเทิร์น)
+            'can_cancel' => true // อนุกาตให้ยกเลิกได้ (สำหรับรีเทิร์น)
         ],
         'cancelled' => [
             'code' => 'cancelled',

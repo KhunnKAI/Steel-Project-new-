@@ -1143,7 +1143,7 @@ if (!$current_admin) {
             <div class="stats-row">
                 <div class="stat-card pending-payment">
                     <div class="stat-number" id="pendingPaymentOrders">0</div>
-                    <div class="stat-label">รอการชำระเงิน</div>
+                    <div class="stat-label">รอตรวจสอบการการชำระเงิน</div>
                 </div>
                 <div class="stat-card awaiting-shipment">
                     <div class="stat-number" id="awaitingShipmentOrders">0</div>
