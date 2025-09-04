@@ -179,14 +179,21 @@ function displayProducts() {
 
     grid.innerHTML = filteredProducts.map((product, index) => createProductCard(product, index)).join('');
 
-    // Setup event delegation for cart buttons
-    grid.onclick = (event) => {
-        if (event.target.classList.contains('add-to-cart-btn') && !event.target.disabled) {
-            const index = event.target.dataset.productIndex;
-            const product = filteredProducts[index];
-            handleAddToCart(product, event);
-        }
-    };
+    // Setup event delegation for cart buttons (capture phase to block card navigation)
+    if (grid.__cartHandlerAttached !== true) {
+        grid.addEventListener('click', function (event) {
+            const button = event.target.closest('.add-to-cart-btn');
+            if (button && !button.disabled && grid.contains(button)) {
+                const index = button.dataset.productIndex;
+                const product = filteredProducts[index];
+                // Prevent card click navigation
+                if (event.stopPropagation) event.stopPropagation();
+                if (event.preventDefault) event.preventDefault();
+                handleAddToCart(product, { target: button });
+            }
+        }, true); // use capture to intercept before bubbling to card
+        grid.__cartHandlerAttached = true;
+    }
 }
 
 // Create product card HTML (matching style from document 3 & 4)
@@ -210,14 +217,15 @@ function createProductCard(product, index) {
         details.push(`เกรด: ${product.grade}`);
     }
 
-    // Stock status styling
+    // Stock status styling (treat unknown stock as available)
+    const stockIsNumber = typeof product.stock === 'number' && !isNaN(product.stock);
     let stockClass = 'stock-available';
-    let stockText = `คงเหลือ ${product.stock} ชิ้น`;
+    let stockText = stockIsNumber ? `คงเหลือ ${product.stock} ชิ้น` : 'มีสินค้า';
     
-    if (product.stock <= 0) {
+    if (stockIsNumber && product.stock === 0) {
         stockClass = 'stock-out';
         stockText = 'สินค้าหมด';
-    } else if (product.stock <= 5) {
+    } else if (stockIsNumber && product.stock > 0 && product.stock <= 5) {
         stockClass = 'stock-low';
         stockText = `เหลือน้อย ${product.stock} ชิ้น`;
     }
@@ -284,9 +292,8 @@ function createProductCard(product, index) {
                 <div class="action-buttons">
                     <button class="add-to-cart-btn" 
                             data-product-index="${index}"
-                            ${product.stock <= 0 ? 'disabled' : ''}
-                            onclick="event.stopPropagation();">
-                        ${product.stock <= 0 ? 'สินค้าหมด' : 'ใส่ตะกร้า'}
+                            ${stockIsNumber && product.stock === 0 ? 'disabled' : ''}>
+                        ${(stockIsNumber && product.stock === 0) ? 'สินค้าหมด' : 'ใส่ตะกร้า'}
                     </button>
                     <a href="${productDetailUrl}" class="view-detail-btn" onclick="event.stopPropagation();">
                         ดูรายละเอียด
