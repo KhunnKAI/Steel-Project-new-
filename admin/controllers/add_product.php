@@ -1,11 +1,9 @@
 <?php
 require_once 'config.php';
-requireLogin(); // ต้อง login ก่อนใช้งาน
+require_once 'stock_logger.php'; // Include stock logger
+requireLogin();
 
 header('Content-Type: application/json; charset=utf-8');
-
-error_reporting(E_ALL);
-ini_set('display_errors', 0);
 
 function send_json_error($message, $code = 500) {
     http_response_code($code);
@@ -21,10 +19,8 @@ function send_json_success($message, $data = null) {
     echo json_encode($response, JSON_UNESCAPED_UNICODE);
 }
 
-// FIXED: Handle input properly
+// Handle input
 $input = [];
-
-// Check for JSON input first
 $raw_input = file_get_contents('php://input');
 if (!empty($raw_input)) {
     $json_input = json_decode($raw_input, true);
@@ -33,12 +29,10 @@ if (!empty($raw_input)) {
     }
 }
 
-// Fallback to POST data if no valid JSON
 if (empty($input) && !empty($_POST)) {
     $input = $_POST;
 }
 
-// If still empty, send error
 if (empty($input)) {
     send_json_error('No input data received');
 }
@@ -50,6 +44,9 @@ function getVal($arr, $key, $default = null) {
 }
 
 try {
+    // Initialize stock logger
+    $stockLogger = new StockLogger($pdo);
+    
     $pdo->beginTransaction();
 
     // Generate product_id if not provided
@@ -58,8 +55,7 @@ try {
         $prefix = 'S' . date('ym');
         $sql_last = "SELECT product_id FROM Product WHERE product_id LIKE ? ORDER BY product_id DESC LIMIT 1";
         $stmt_last = $pdo->prepare($sql_last);
-        $like_prefix = $prefix . '%';
-        $stmt_last->execute([$like_prefix]);
+        $stmt_last->execute([$prefix . '%']);
         $next_number = 1;
         if ($row_last = $stmt_last->fetch()) {
             $last_num = (int)substr($row_last['product_id'], strlen($prefix));
@@ -74,7 +70,7 @@ try {
         throw new Exception('ชื่อสินค้าจำเป็นต้องระบุ');
     }
 
-    // Product fields with proper type conversion and defaults
+    // Get all product fields
     $description = getVal($input, 'description');
     $width = is_numeric(getVal($input, 'width')) ? (float)getVal($input, 'width') : null;
     $length = is_numeric(getVal($input, 'length')) ? (float)getVal($input, 'length') : null;
@@ -88,7 +84,6 @@ try {
     $stock = is_numeric(getVal($input, 'stock')) ? (int)getVal($input, 'stock') : 0;
     $price = is_numeric(getVal($input, 'price')) ? (float)getVal($input, 'price') : 0;
     
-    // Handle received_date properly
     $received_date = getVal($input, 'received_date');
     if ($received_date) {
         $ts = strtotime($received_date);
@@ -97,7 +92,6 @@ try {
         $received_date = null;
     }
 
-    // Validate category
     $allowed_categories = ['ot', 'rb', 'sp', 'ss', 'wm'];
     $category_id = getVal($input, 'category_id', 'ot');
     if (!in_array($category_id, $allowed_categories)) {
@@ -106,7 +100,7 @@ try {
 
     $supplier_id = getVal($input, 'supplier_id');
 
-    // Insert Product (ไม่ต้องใส่ productimage_id ตอนสร้าง)
+    // Insert Product
     $sql = "INSERT INTO Product (
         product_id, name, description, width, length, height, weight,
         width_unit, length_unit, height_unit, weight_unit,
@@ -123,6 +117,28 @@ try {
         $category_id, $supplier_id
     ]);
 
+    // Log initial stock if stock > 0
+    if ($stock > 0) {
+        $admin_id = $_SESSION['admin_id'] ?? $_SESSION['user_id'] ?? 'system';
+        
+        // For new products, quantity_before should be 0
+        $stock_result = $stockLogger->logStockChange(
+            $product_id,
+            'in', // Initial stock is incoming
+            $stock,
+            'receive', // Reference type for receiving stock
+            null, // No specific reference ID for initial stock
+            null, // No user ID for admin actions
+            $admin_id, // Admin who added the product
+            "Initial stock when creating product: {$name}",
+            0 // quantity_before = 0 for new products
+        );
+        
+        if (!$stock_result['success']) {
+            throw new Exception("ไม่สามารถบันทึกสต็อกเริ่มต้นได้: " . $stock_result['error']);
+        }
+    }
+
     // Handle ProductImage if provided
     $productimage_id = getVal($input, 'productimage_id');
     if ($productimage_id) {
@@ -134,7 +150,6 @@ try {
         $stmt_img = $pdo->prepare($sql_img);
         $stmt_img->execute([$productimage_id, $product_id, $image_url, $is_main]);
 
-        // Update Product to reference the main image
         if ($is_main) {
             $sql_upd = "UPDATE Product SET productimage_id = ?, updated_at = NOW() WHERE product_id = ?";
             $stmt_upd = $pdo->prepare($sql_upd);
@@ -146,7 +161,8 @@ try {
 
     send_json_success('เพิ่มสินค้าสำเร็จ', [
         'product_id' => $product_id,
-        'productimage_id' => $productimage_id
+        'productimage_id' => $productimage_id,
+        'initial_stock' => $stock
     ]);
 
 } catch (Exception $e) {

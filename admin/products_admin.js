@@ -289,41 +289,88 @@ async function saveProduct(formData) {
     }
 }
 
+// Updated deleteProduct function with better error handling
 async function deleteProduct(id) {
     if (!confirm('คุณแน่ใจหรือไม่ว่าต้องการลบสินค้านี้?')) return;
 
     try {
         const response = await fetch(ENDPOINTS.manageProduct, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ _method: 'DELETE', product_id: id })
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ 
+                _method: 'DELETE', 
+                product_id: id 
+            })
         });
 
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        if (!response.ok) {
+            throw new Error(`HTTP Error ${response.status}`);
+        }
 
         const responseText = await response.text();
+        
+        // Handle empty response (success case)
         if (!responseText.trim()) {
             if (response.ok) {
                 showNotification('ลบสินค้าเรียบร้อยแล้ว', 'success');
                 await loadProducts();
                 applyFilters();
-                if (document.getElementById('productViewModal')?.style.display === 'block') closeViewModal();
+                if (document.getElementById('productViewModal')?.style.display === 'block') {
+                    closeViewModal();
+                }
                 return;
             }
         }
 
         const result = JSON.parse(responseText);
+        
         if (result.success || result.status === 'success') {
             await loadProducts();
             applyFilters();
             showNotification('ลบสินค้าเรียบร้อยแล้ว', 'success');
-            if (document.getElementById('productViewModal')?.style.display === 'block') closeViewModal();
+            
+            if (document.getElementById('productViewModal')?.style.display === 'block') {
+                closeViewModal();
+            }
         } else {
-            throw new Error(result.message || 'ลบสินค้าล้มเหลว');
+            // Handle specific error cases with better user messages
+            let errorMessage = result.message || 'ลบสินค้าล้มเหลว';
+            
+            if (errorMessage.includes('used in active orders')) {
+                errorMessage = 'ไม่สามารถลบสินค้านี้ได้ เนื่องจากมีการใช้งานในออเดอร์ที่ยังไม่เสร็จสิ้น\nสามารถลบได้เมื่อออเดอร์ทั้งหมดจัดส่งเสร็จแล้ว หรือยกเลิกแล้ว';
+                
+                // Show option to edit instead
+                if (confirm('ไม่สามารถลบสินค้านี้ได้เนื่องจากมีออเดอร์ที่ยังไม่เสร็จสิ้น\n\nสามารถลบได้เมื่อ:\n- ออเดอร์ทั้งหมดจัดส่งเสร็จแล้ว (status04)\n- หรือออเดอร์ถูกยกเลิกแล้ว (status05)\n\nต้องการแก้ไขข้อมูลสินค้าแทนหรือไม่?')) {
+                    if (document.getElementById('productViewModal')?.style.display === 'block') {
+                        closeViewModal();
+                    }
+                    editProduct(id);
+                    return;
+                }
+            } else if (errorMessage.includes('used in orders')) {
+                errorMessage = 'ไม่สามารถลบสินค้านี้ได้ เนื่องจากมีการใช้งานในออเดอร์แล้ว';
+            } else if (errorMessage.includes('not found')) {
+                errorMessage = 'ไม่พบสินค้าที่ต้องการลบ อาจถูกลบไปแล้ว';
+            }
+            
+            showNotification(errorMessage, 'warning');
         }
+        
     } catch (error) {
         console.error('Error deleting product:', error);
-        showNotification('เกิดข้อผิดพลาดในการลบสินค้า: ' + error.message, 'error');
+        
+        let errorMessage = 'เกิดข้อผิดพลาดในการลบสินค้า: ';
+        
+        if (error.message.includes('Failed to fetch')) {
+            errorMessage += 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้';
+        } else {
+            errorMessage += error.message;
+        }
+        
+        showNotification(errorMessage, 'error');
     }
 }
 
