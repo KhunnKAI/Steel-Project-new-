@@ -160,6 +160,67 @@ try {
             throw new Exception('No rows were updated - order may not exist');
         }
 
+        // Handle stock restoration when order is cancelled
+        if ($new_status === 'cancelled' && $current_status !== 'cancelled') {
+            // Get order items to restore stock
+            $items_sql = "SELECT product_id, quantity FROM OrderItem WHERE order_id = ?";
+            $items_stmt = $pdo->prepare($items_sql);
+            
+            if (!$items_stmt) {
+                throw new Exception('Failed to prepare items query: ' . implode(', ', $pdo->errorInfo()));
+            }
+            
+            $items_result = $items_stmt->execute([$order_id]);
+            if (!$items_result) {
+                throw new Exception('Failed to get order items: ' . implode(', ', $items_stmt->errorInfo()));
+            }
+            
+            $items = $items_stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Restore stock for each item
+            $stock_updates = [];
+            foreach ($items as $item) {
+                $restore_stock_sql = "UPDATE Product SET 
+                                      stock = stock + ?, 
+                                      updated_at = NOW()
+                                      WHERE product_id = ?";
+                
+                $restore_stmt = $pdo->prepare($restore_stock_sql);
+                if (!$restore_stmt) {
+                    throw new Exception('Failed to prepare stock restore query for product: ' . $item['product_id']);
+                }
+                
+                $restore_result = $restore_stmt->execute([$item['quantity'], $item['product_id']]);
+                if (!$restore_result) {
+                    throw new Exception('Failed to restore stock for product: ' . $item['product_id']);
+                }
+                
+                $stock_updates[] = [
+                    'product_id' => $item['product_id'],
+                    'quantity_restored' => $item['quantity']
+                ];
+                
+                // Log stock restoration for audit trail
+                try {
+                    $stock_log_sql = "INSERT INTO stock_log (product_id, order_id, change_type, quantity_change, admin_id, notes, created_at) 
+                                      VALUES (?, ?, 'restore', ?, ?, ?, NOW())";
+                    $stock_log_stmt = $pdo->prepare($stock_log_sql);
+                    if ($stock_log_stmt) {
+                        $stock_log_stmt->execute([
+                            $item['product_id'], 
+                            $order_id, 
+                            $item['quantity'], 
+                            $admin_id, 
+                            'Stock restored due to order cancellation'
+                        ]);
+                    }
+                } catch (Exception $log_error) {
+                    // If logging table doesn't exist, continue without error
+                    error_log("Stock restoration logging failed: " . $log_error->getMessage());
+                }
+            }
+        }
+
         // Handle payment verification if moving to awaiting_shipment
         if ($current_status === 'pending_payment' && $new_status === 'awaiting_shipment') {
             // Try to update payment record if it exists
@@ -226,7 +287,7 @@ try {
 
     // Prepare response message based on status change
     $status_messages = [
-        'cancelled' => 'ยกเลิกคำสั่งซื้อเรียบร้อยแล้ว',
+        'cancelled' => 'ยกเลิกคำสั่งซื้อเรียบร้อยแล้ว และคืนสต็อกสินค้าเรียบร้อย',
         'awaiting_shipment' => 'อนุมัติการชำระเงินและเตรียมจัดส่งแล้ว',
         'in_transit' => 'อัปเดตสถานะเป็นกำลังจัดส่งแล้ว',
         'delivered' => 'อัปเดตสถานะเป็นจัดส่งแล้วเรียบร้อย'
@@ -234,30 +295,39 @@ try {
 
     $message = $status_messages[$new_status] ?? 'อัปเดตสถานะคำสั่งซื้อเรียบร้อยแล้ว';
 
+    // Prepare response data
+    $response_data = [
+        'order_id' => $updated_order['order_id'],
+        'old_status' => [
+            'code' => $current_status,
+            'description' => $order['current_status_desc']
+        ],
+        'new_status' => [
+            'code' => $updated_order['status_code'],
+            'description' => $updated_order['description']
+        ],
+        'updated_at' => $updated_order['updated_at'],
+        'updated_by' => [
+            'admin_id' => $admin_id,
+            'admin_position' => $admin_position
+        ],
+        'notes' => $notes,
+        'can_be_cancelled' => $updated_order['status_code'] !== 'cancelled'
+    ];
+
+    // Add stock restoration info if order was cancelled
+    if ($new_status === 'cancelled' && isset($stock_updates) && !empty($stock_updates)) {
+        $response_data['stock_restored'] = $stock_updates;
+        $response_data['total_items_restored'] = count($stock_updates);
+    }
+
     // Clean output buffer and send JSON response
     ob_clean();
     
     echo json_encode([
         'success' => true,
         'message' => $message,
-        'data' => [
-            'order_id' => $updated_order['order_id'],
-            'old_status' => [
-                'code' => $current_status,
-                'description' => $order['current_status_desc']
-            ],
-            'new_status' => [
-                'code' => $updated_order['status_code'],
-                'description' => $updated_order['description']
-            ],
-            'updated_at' => $updated_order['updated_at'],
-            'updated_by' => [
-                'admin_id' => $admin_id,
-                'admin_position' => $admin_position
-            ],
-            'notes' => $notes,
-            'can_be_cancelled' => $updated_order['status_code'] !== 'cancelled'
-        ]
+        'data' => $response_data
     ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
 } catch (Exception $e) {

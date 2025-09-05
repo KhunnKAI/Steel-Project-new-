@@ -141,6 +141,29 @@ if (!$current_admin) {
             box-shadow: 0 5px 15px rgba(153, 0, 0, 0.3);
         }
 
+        .stockmovement-btn {
+            padding: 12px 24px;
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .stockmovement-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
+            background: linear-gradient(45deg, #0056b3, #004085);
+        }
+
         .filters-section {
             background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
             padding: 25px 30px;
@@ -1594,9 +1617,9 @@ if (!$current_admin) {
                     <button class="add-btn" onclick="openAddModal()">
                         <i class="fas fa-plus"></i> เพิ่มสินค้า
                     </button>
-                    <!-- <button class="stockmovement-btn" onclick="window.location.href='stockmovement_admin.html'">
+                    <button class="stockmovement-btn" onclick="window.location.href='stockmovement_admin.php'">
                         <i class="fas fa-exchange-alt"></i> บันทึกการเคลื่อนไหวสินค้า
-                    </button> -->
+                    </button>
                 </div>
             </div>
 

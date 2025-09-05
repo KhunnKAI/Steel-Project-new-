@@ -106,6 +106,21 @@ try {
         throw new Exception("ไม่พบข้อมูลที่อยู่จัดส่ง");
     }
 
+    // Validate stock availability before processing
+    foreach ($cartItems as $item) {
+        $stmt = $pdo->prepare("SELECT stock, name FROM Product WHERE product_id = ?");
+        $stmt->execute([$item['product_id']]);
+        $product = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$product) {
+            throw new Exception("ไม่พบสินค้า ID: " . $item['product_id']);
+        }
+        
+        if ($product['stock'] < intval($item['quantity'])) {
+            throw new Exception("สินค้า '{$product['product_name']}' มีสต็อกไม่เพียงพอ (เหลือ {$product['stock']} ชิ้น ต้องการ {$item['quantity']} ชิ้น)");
+        }
+    }
+
     // Start transaction
     $pdo->beginTransaction();
 
@@ -173,6 +188,35 @@ try {
             ]);
             
             $itemCounter++;
+        }
+
+        // UPDATE STOCK - Deduct quantities from Product table
+        foreach ($cartItems as $item) {
+            $quantity = intval($item['quantity']);
+            $product_id = $item['product_id'];
+            
+            // Update stock with validation to prevent negative stock
+            $stmt = $pdo->prepare("
+                UPDATE Product 
+                SET stock = stock - ?, 
+                    updated_at = NOW()
+                WHERE product_id = ? AND stock >= ?
+            ");
+            
+            $stmt->execute([$quantity, $product_id, $quantity]);
+            
+            // Check if the update affected any rows (i.e., stock was sufficient)
+            if ($stmt->rowCount() === 0) {
+                // Get current stock for error message
+                $checkStmt = $pdo->prepare("SELECT stock, product_name FROM Product WHERE product_id = ?");
+                $checkStmt->execute([$product_id]);
+                $currentProduct = $checkStmt->fetch(PDO::FETCH_ASSOC);
+                
+                throw new Exception("สินค้า '{$currentProduct['product_name']}' มีสต็อกไม่เพียงพอ (เหลือ {$currentProduct['stock']} ชิ้น)");
+            }
+            
+            // Log stock deduction
+            error_log("Stock deducted: Product ID {$product_id}, Quantity: {$quantity}");
         }
 
         // Handle file upload with secure filename
