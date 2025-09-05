@@ -13,10 +13,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "teststeel";
+// ใช้ config.php แทน
+require_once 'config.php';
 
 // ฟังก์ชันส่ง error
 function send_json_error($message, $status_code = 400) {
@@ -34,7 +32,8 @@ function send_json_success($message, $data = null) {
     exit;
 }
 
-$conn = new mysqli($servername, $username, $password, $dbname);
+// สร้าง mysqli connection จาก PDO config
+$conn = new mysqli($host, $username, $password, $db_name);
 if ($conn->connect_error) {
     send_json_error("Connection failed: " . $conn->connect_error, 500);
 }

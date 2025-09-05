@@ -14,11 +14,8 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
-// Database configuration
-$DB_HOST = 'localhost';
-$DB_USER = 'root';
-$DB_PASS = '';
-$DB_NAME = 'teststeel';
+// ใช้ config.php แทน
+require_once 'config.php';
 
 function send_json_error($message, $code = 500) {
     http_response_code($code);
@@ -65,8 +62,8 @@ try {
         send_json_error('Only POST method is allowed', 405);
     }
 
-    // Database connection
-    $conn = new mysqli($DB_HOST, $DB_USER, $DB_PASS, $DB_NAME);
+    // สร้าง mysqli connection จาก config.php
+    $conn = new mysqli($host, $username, $password, $db_name);
     if ($conn->connect_error) {
         send_json_error('Database connection failed: ' . $conn->connect_error);
     }
