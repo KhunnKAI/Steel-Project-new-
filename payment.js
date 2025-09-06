@@ -346,7 +346,7 @@ async function loadUserAddresses() {
                 subdistrict: addr.subdistrict || '',
                 district: addr.district || '',
                 province_id: addr.province_id,
-                province: addr.province,
+                province: addr.province_name || addr.province || '',
                 zipCode: addr.postal_code,
                 is_main: addr.is_main
             }));
@@ -374,6 +374,68 @@ function selectAddressByData(addressData) {
     if (existingAddress) {
         selectedAddressId = existingAddress.id;
         renderAddresses();
+    }
+}
+
+// Load one address and prefill modal for editing
+async function editAddress(addressId) {
+    try {
+        const response = await fetch(`controllers/address_api.php?action=get&address_id=${addressId}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin'
+        });
+
+        if (!response.ok) {
+            throw new Error('ไม่สามารถโหลดข้อมูลที่อยู่ได้');
+        }
+
+        const result = await response.json();
+        if (!result.success || !result.data) {
+            throw new Error(result.message || 'ไม่พบข้อมูลที่อยู่');
+        }
+
+        const addr = result.data;
+
+        // Ensure provinces are loaded for the select
+        await loadProvinces();
+
+        // Open modal and prefill
+        openAddressModal();
+        const form = document.getElementById('addressForm');
+        if (!form) return;
+
+        const setVal = (selector, value) => {
+            const el = form.querySelector(selector);
+            if (el) el.value = value || '';
+        };
+
+        setVal('#address_id', addr.address_id);
+        setVal('input[name="addressName"]', addr.recipient_name);
+        setVal('input[name="phone"]', addr.phone);
+        setVal('textarea[name="fullAddress"]', addr.address_line);
+        setVal('input[name="subdistrict"]', addr.subdistrict);
+        setVal('input[name="district"]', addr.district);
+        setVal('input[name="zipCode"]', addr.postal_code);
+
+        const provinceSelect = form.querySelector('select[name="province_id"]');
+        if (provinceSelect) {
+            // Populate options if not yet populated
+            if (provinceSelect.options.length <= 1 && provinces.length > 0) {
+                provinceSelect.innerHTML = '<option value="">เลือกจังหวัด *</option>';
+                provinces.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p.province_id;
+                    option.textContent = p.name;
+                    provinceSelect.appendChild(option);
+                });
+            }
+            provinceSelect.value = addr.province_id || '';
+        }
+
+    } catch (error) {
+        console.error('Error loading address for edit:', error);
+        showToast(error.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูลที่อยู่', 'error');
     }
 }
 
@@ -795,6 +857,9 @@ function openAddressModal() {
     if (!modal || !form) return;
 
     form.reset();
+    // Clear hidden id when opening fresh
+    const hiddenId = form.querySelector('#address_id');
+    if (hiddenId) hiddenId.value = '';
 
     const provinceSelect = form.querySelector('select[name="province_id"]');
     if (provinceSelect) {
@@ -860,8 +925,11 @@ async function saveAddress() {
         return;
     }
 
+    const editingAddressId = formData.get('address_id');
+    const isEditing = editingAddressId && String(editingAddressId).trim() !== '';
+
     const addressData = {
-        action: 'create',
+        action: isEditing ? 'update' : 'create',
         recipient_name: formData.get("addressName").trim(),
         address_line: formData.get("fullAddress").trim(),
         subdistrict: formData.get("subdistrict").trim(),
@@ -871,6 +939,10 @@ async function saveAddress() {
         phone: formData.get("phone") ? formData.get("phone").trim() : '',
         is_main: addresses.length === 0 ? 1 : 0
     };
+
+    if (isEditing) {
+        addressData.address_id = editingAddressId;
+    }
 
     try {
         const apiFormData = new FormData();
@@ -895,7 +967,7 @@ async function saveAddress() {
             addressesLoaded = false;
             await loadUserAddresses();
             closeAddressModal();
-            showToast("เพิ่มที่อยู่สำเร็จ", "success");
+            showToast(isEditing ? "แก้ไขที่อยู่สำเร็จ" : "เพิ่มที่อยู่สำเร็จ", "success");
         } else {
             throw new Error(result.message || 'ไม่สามารถบันทึกได้');
         }
@@ -937,9 +1009,10 @@ function renderAddresses() {
                     ${addressDisplay}
                 </div>
                 <div class="address-actions">
-                    <button type="button" class="btn btn-default" onclick="event.stopPropagation(); selectAddress(${address.id})">
+                    <button type="button" class="btn btn-default" onclick="event.stopPropagation(); selectAddress(${address.id})" ${isSelected ? 'style="background: #6c757d;" disabled' : ''}>
                         ${isSelected ? 'เลือกแล้ว' : 'เลือก'}
                     </button>
+                    <button type="button" class="btn-edit-address" onclick="event.stopPropagation(); editAddress(${address.id})">แก้ไข</button>
                     <button type="button" class="btn btn-delete" onclick="event.stopPropagation(); deleteAddress(${address.id})">ลบ</button>
                 </div>
             </div>

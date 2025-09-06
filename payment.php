@@ -367,6 +367,23 @@
             transform: translateY(-1px);
         }
 
+        /* Match profile page edit button class name */
+        .btn-edit-address {
+            background: #ffc107;
+            color: #333;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-edit-address:hover:not(:disabled) {
+            background: #e0a800;
+            transform: translateY(-1px);
+        }
+
         .btn-delete {
             background: #dc3545;
             color: white;
@@ -1029,6 +1046,7 @@
             </div>
             <div class="modal-body">
                 <form id="addressForm">
+                    <input type="hidden" name="address_id" id="address_id">
                     <div class="form-group">
                         <label>ชื่อผู้รับ <span class="required">*จำเป็น</span></label>
                         <input type="text" name="addressName">
