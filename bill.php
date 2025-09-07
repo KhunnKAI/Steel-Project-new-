@@ -190,6 +190,12 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            border-radius: 8px;
+            transition: transform 0.3s ease;
+        }
+
+        .product-image img:hover {
+            transform: scale(1.05);
         }
 
         .product-image-placeholder {
@@ -310,6 +316,56 @@
         .section:nth-child(4) { animation-delay: 0.3s; }
         .section:nth-child(5) { animation-delay: 0.4s; }
 
+        /* Loading and Error States */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            display: none;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #d32f2f;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border: 1px solid #f5c6cb;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 1rem;
@@ -340,6 +396,11 @@
     <!-- Header -->
     <?php include("header.php");?>
     
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+    
     <div class="container">
         <div class="main-title">
             สถานะใบเสร็จ
@@ -349,13 +410,6 @@
             <div class="section-title">สถานะสินค้า</div>
             
             <div class="status-timeline">
-                <div class="timeline-item">
-                    <div class="timeline-icon active">✓</div>
-                    <div class="timeline-content">
-                        <div class="timeline-title">คุณได้สร้างรายการสั่งซื้อแล้ว</div>
-                    </div>
-                </div>
-
                 <div class="timeline-item">
                     <div class="timeline-icon">⏳</div>
                     <div class="timeline-content">
@@ -373,7 +427,7 @@
                 <div class="timeline-item">
                     <div class="timeline-icon">🚚</div>
                     <div class="timeline-content">
-                        <div class="timeline-title">รอจัดส่ง</div>
+                        <div class="timeline-title">ระหว่างการจัดส่ง</div>
                     </div>
                 </div>
 
@@ -469,6 +523,258 @@
     <?php include("footer.php");?>
 
     <script>
+        let currentUserId = null;
+        let currentOrderId = null;
+
+        // API Configuration
+        const API_BASE_URL = './';
+        const API_ENDPOINTS = {
+            ORDER: API_BASE_URL + 'controllers/order_api.php'
+        };
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            initializePage();
+        });
+
+        function initializePage() {
+            // Check if user is logged in
+            currentUserId = getCookie('user_id');
+            if (!currentUserId) {
+                window.location.href = 'login.php';
+                return;
+            }
+
+            // Get order ID from URL parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            currentOrderId = urlParams.get('order_id');
+            
+            if (!currentOrderId) {
+                showError('ไม่พบหมายเลขคำสั่งซื้อ');
+                return;
+            }
+
+            // Load order data
+            loadOrderDetails();
+        }
+
+        async function loadOrderDetails() {
+            try {
+                showLoading();
+
+                const response = await fetch(`${API_ENDPOINTS.ORDER}?action=get_order_details&order_id=${currentOrderId}&user_id=${currentUserId}`, {
+                    method: "GET"
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log("Order details response:", data);
+
+                if (data.success && data.data) {
+                    displayOrderDetails(data.data);
+                } else {
+                    showError(data.message || 'ไม่สามารถโหลดข้อมูลคำสั่งซื้อได้');
+                }
+            } catch (error) {
+                console.error("Error loading order details:", error);
+                showError('เกิดข้อผิดพลาดในการโหลดข้อมูลคำสั่งซื้อ');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function displayOrderDetails(order) {
+            // Update order details
+            updateOrderDetails(order);
+            
+            // Update status timeline
+            updateStatusTimeline(order.status.status_code);
+            
+            // Update product list
+            updateProductList(order.order_items);
+            
+            // Update page title
+            document.title = `รายละเอียดคำสั่งซื้อ ${order.order_id}`;
+        }
+
+        function updateOrderDetails(order) {
+            const orderDate = new Date(order.created_at).toLocaleDateString('th-TH', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            const statusText = getStatusText(order.status.status_code);
+
+            // Update order details section
+            const detailsContainer = document.querySelector('.order-details');
+            if (detailsContainer) {
+                detailsContainer.innerHTML = `
+                    <div class="detail-row">
+                        <span class="detail-label">หมายเลขคำสั่งซื้อ:</span>
+                        <span class="detail-value">${order.order_id}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">วันที่สั่งซื้อ:</span>
+                        <span class="detail-value">${orderDate}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">ชื่อผู้สั่ง:</span>
+                        <span class="detail-value">${order.customer_info.name || '-'}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">สถานะ:</span>
+                        <span class="detail-value">${statusText}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">เบอร์โทรศัพท์:</span>
+                        <span class="detail-value">${order.customer_info.phone || '-'}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">ยอดรวมทั้งหมด:</span>
+                        <span class="detail-value">${formatCurrency(order.total_amount)}</span>
+                    </div>
+                `;
+            }
+        }
+
+        function updateStatusTimeline(statusCode) {
+            const timelineItems = document.querySelectorAll('.timeline-item');
+            
+            // Reset all timeline items
+            timelineItems.forEach(item => {
+                const icon = item.querySelector('.timeline-icon');
+                icon.classList.remove('active');
+            });
+
+            // Set active status based on order status
+            const statusMap = {
+                'pending_payment': 1,
+                'awaiting_shipment': 2,
+                'in_transit': 3,
+                'delivered': 4,
+                'cancelled': 0
+            };
+
+            const activeIndex = statusMap[statusCode] || 0;
+            if (activeIndex > 0 && timelineItems[activeIndex]) {
+                timelineItems[activeIndex].querySelector('.timeline-icon').classList.add('active');
+            }
+        }
+
+        function updateProductList(orderItems) {
+            const productList = document.querySelector('.product-list');
+            if (!productList) return;
+
+            if (!orderItems || orderItems.length === 0) {
+                productList.innerHTML = '<div class="no-data">ไม่พบรายการสินค้า</div>';
+                return;
+            }
+
+            let html = '';
+            let totalAmount = 0;
+
+            orderItems.forEach(item => {
+                const lineTotal = item.quantity * item.price_each;
+                totalAmount += lineTotal;
+
+                const productImage = item.product_image ? 
+                    `<img src="${item.product_image}" alt="${item.product_name || 'สินค้า'}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                     <div class="product-image-placeholder" style="display: none;">🖼️</div>` :
+                    `<div class="product-image-placeholder">🖼️</div>`;
+
+                html += `
+                    <div class="product-item">
+                        <div class="product-image">
+                            ${productImage}
+                        </div>
+                        <div class="product-info">
+                            <div class="product-name">${item.product_name || 'ไม่ระบุชื่อสินค้า'}</div>
+                            <div class="product-code">รหัสสินค้า: ${item.product_id}</div>
+                            <div class="product-price">${formatCurrency(item.price_each)}</div>
+                        </div>
+                        <div class="product-quantity">จำนวน: ${item.quantity}</div>
+                    </div>
+                `;
+            });
+
+            // Add total row
+            html += `
+                <div class="detail-row" style="margin-top: 1rem; padding-top: 1rem; border-top: 2px solid #d32f2f;">
+                    <span class="detail-label">ยอดรวมทั้งสิ้น:</span>
+                    <span class="detail-value">${formatCurrency(totalAmount)}</span>
+                </div>
+            `;
+
+            productList.innerHTML = html;
+        }
+
+        function getStatusText(statusCode) {
+            const statusMap = {
+                'pending_payment': 'รอการชำระเงิน',
+                'awaiting_shipment': 'รอจัดส่ง',
+                'in_transit': 'กำลังจัดส่ง',
+                'delivered': 'จัดส่งแล้ว',
+                'cancelled': 'ยกเลิก'
+            };
+            return statusMap[statusCode] || statusCode;
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('th-TH', {
+                style: 'currency',
+                currency: 'THB',
+                minimumFractionDigits: 2
+            }).format(amount);
+        }
+
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
+        }
+
+        function showLoading() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                overlay.classList.add('active');
+            }
+        }
+
+        function hideLoading() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                overlay.classList.remove('active');
+            }
+        }
+
+        function showError(message) {
+            hideLoading();
+            
+            // Create error message element
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            
+            // Insert error message after main title
+            const mainTitle = document.querySelector('.main-title');
+            if (mainTitle) {
+                mainTitle.insertAdjacentElement('afterend', errorDiv);
+            }
+            
+            // Hide all sections
+            const sections = document.querySelectorAll('.section');
+            sections.forEach(section => {
+                section.style.display = 'none';
+            });
+        }
+
         // Animation เมื่อโหลดหน้า
         document.addEventListener('DOMContentLoaded', function() {
             const sections = document.querySelectorAll('.section');

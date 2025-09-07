@@ -6,7 +6,8 @@ let isEditingAddress = false;
 const API_BASE_URL = './'; // or your actual base URL
 const API_ENDPOINTS = {
     CUSTOMER: API_BASE_URL + 'controllers/customer_api.php',
-    ADDRESS: API_BASE_URL + 'controllers/address_api.php'
+    ADDRESS: API_BASE_URL + 'controllers/address_api.php',
+    ORDER: API_BASE_URL + 'controllers/order_api.php'
 };
 
 // Initialize page
@@ -26,6 +27,7 @@ function initializePage() {
     // Load user data
     loadCustomerData();
     loadAddressData();
+    loadOrderData();
 
     // Initialize provinces dropdown
     loadProvinces();
@@ -302,6 +304,123 @@ function displayAddresses(addresses) {
     });
 
     container.innerHTML = html;
+}
+
+// Order Data Functions
+async function loadOrderData() {
+    try {
+        console.log('Loading order data for user:', currentUserId);
+
+        const response = await fetch(`${API_ENDPOINTS.ORDER}?action=get_user_orders&user_id=${currentUserId}&limit=10`, {
+            method: "GET"
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("Order data response:", data);
+
+        if (data.success) {
+            console.log(`Loaded ${data.data.length} orders`);
+            displayOrders(data.data || []);
+        } else {
+            console.error("Failed to load orders:", data.message);
+            showError(data.message || 'ไม่สามารถโหลดข้อมูลคำสั่งซื้อได้');
+            displayOrders([]);
+        }
+    } catch (error) {
+        console.error("Error loading orders:", error);
+        showError('เกิดข้อผิดพลาดในการโหลดข้อมูลคำสั่งซื้อ');
+        displayOrders([]);
+    }
+}
+
+function displayOrders(orders) {
+    const orderSection = document.querySelector('.order-section');
+    if (!orderSection) return;
+
+    // Find the order items container or create one
+    let orderContainer = orderSection.querySelector('.order-items-container');
+    if (!orderContainer) {
+        // Create container for dynamic orders
+        orderContainer = document.createElement('div');
+        orderContainer.className = 'order-items-container';
+        
+        // Insert after the title
+        const title = orderSection.querySelector('.order-title');
+        if (title) {
+            title.insertAdjacentElement('afterend', orderContainer);
+        }
+    }
+
+    if (!orders || orders.length === 0) {
+        orderContainer.innerHTML = '<div class="no-orders">ยังไม่มีคำสั่งซื้อ</div>';
+        return;
+    }
+
+    let html = '';
+    orders.forEach((order) => {
+        const orderDate = new Date(order.created_at).toLocaleDateString('th-TH', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        });
+
+        const statusText = getStatusText(order.status.status_code);
+        const statusClass = getStatusClass(order.status.status_code);
+
+        // Get first product image if available
+        const firstProductImage = order.order_items && order.order_items.length > 0 && order.order_items[0].product_image ? 
+            order.order_items[0].product_image : null;
+
+        html += `
+            <div class="order-item">
+                <div class="order-details">
+                    <div class="order-id">เลขคำสั่งซื้อ ${order.order_id}</div>
+                    <div class="order-date">วันที่สั่งซื้อ ${orderDate}<br>สถานะ : <span class="status-badge ${statusClass}">${statusText}</span></div>
+                    <div class="order-amount">จำนวนที่สั่งซื้อ ${order.total_quantity || 0}</div>
+                    <div class="order-total">ยอดรวม ${formatCurrency(order.total_amount)}</div>
+                </div>
+                <div class="order-actions">
+                    <a href="bill.php?order_id=${order.order_id}" class="btn btn-view">ดูรายละเอียด</a>
+                </div>
+            </div>
+        `;
+    });
+
+    orderContainer.innerHTML = html;
+}
+
+function getStatusText(statusCode) {
+    const statusMap = {
+        'pending_payment': 'รอการชำระเงิน',
+        'awaiting_shipment': 'รอจัดส่ง',
+        'in_transit': 'กำลังจัดส่ง',
+        'delivered': 'จัดส่งแล้ว',
+        'cancelled': 'ยกเลิก'
+    };
+    return statusMap[statusCode] || statusCode;
+}
+
+function getStatusClass(statusCode) {
+    const classMap = {
+        'pending_payment': 'status-pending',
+        'awaiting_shipment': 'status-awaiting',
+        'in_transit': 'status-transit',
+        'delivered': 'status-delivered',
+        'cancelled': 'status-cancelled'
+    };
+    return classMap[statusCode] || 'status-default';
+}
+
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('th-TH', {
+        style: 'currency',
+        currency: 'THB',
+        minimumFractionDigits: 2
+    }).format(amount);
 }
 
 // Province Functions

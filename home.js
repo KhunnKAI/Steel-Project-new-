@@ -172,7 +172,6 @@ function displayProducts(productsToShow) {
             }
             </div>
             <div class="product-name">${product.name}</div>
-            <div class="product-description">${product.description}</div>
             <div class="product-price">฿${product.price.toLocaleString()}</div>
             ${product.weight && product.weight > 0 ? `<div class="product-weight" style="color:#555; font-size:14px; margin-bottom: 10px;">น้ำหนัก: ${product.weight} ${product.weight_unit || 'กก.'} / ชิ้น</div>` : ''}
             <button class="product-btn" data-product-index="${index}">

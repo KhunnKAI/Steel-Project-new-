@@ -214,6 +214,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        margin-bottom: 20px;
     }
 
     .order-details {
@@ -253,6 +254,75 @@
         color: #666;
         padding: 8px 16px;
         font-size: 12px;
+    }
+
+    .btn-view:hover:not(:disabled) {
+        background-color: #bbbbbbff;
+    }
+
+    /* Status Badges */
+    .status-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+        text-align: center;
+        min-width: 80px;
+    }
+
+    .status-pending {
+        background-color: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+    }
+
+    .status-awaiting {
+        background-color: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+    }
+
+    .status-transit {
+        background-color: #cce5ff;
+        color: #004085;
+        border: 1px solid #b3d7ff;
+    }
+
+    .status-delivered {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    .status-cancelled {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    .status-default {
+        background-color: #e2e3e5;
+        color: #383d41;
+        border: 1px solid #d6d8db;
+    }
+
+    /* No orders message */
+    .no-orders {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+        font-style: italic;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        border: 2px dashed #dee2e6;
+    }
+
+    /* Order items container */
+    .order-items-container {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
     }
 
     /* address section*/
@@ -865,18 +935,7 @@
         <!-- Order History Section -->
         <div class="order-section">
             <h2 class="order-title">ประวัติคำสั่งซื้อ</h2>
-
-            <div class="order-item">
-                <div class="order-details">
-                    <div class="order-id">เลขคำสั่งซื้อ steel123456</div>
-                    <div class="order-date">วันที่สั่งซื้อ 7/9/2025<br>สถานะ : จัดส่งแล้ว</div>
-                    <div class="order-amount">จำนวนที่สั่งซื้อ 10</div>
-                    <div class="order-total">ยอดรวม 1000.00</div>
-                </div>
-                <div class="order-actions">
-                    <a href="#" class="btn btn-view">ดูรายละเอียด</a>
-                </div>
-            </div>
+            <!-- Order items will be loaded dynamically here -->
         </div>
     </div>
 
