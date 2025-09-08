@@ -89,6 +89,44 @@ if (!$current_admin) {
             font-weight: 600;
         }
 
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .period-selector {
+            padding: 8px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .period-selector:hover {
+            border-color: #007bff;
+        }
+
+        .refresh-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .refresh-btn:hover {
+            background: #0056b3;
+            transform: translateY(-1px);
+        }
+
         .user-info {
             display: flex;
             align-items: center;
@@ -237,12 +275,141 @@ if (!$current_admin) {
             margin-bottom: 30px;
         }
 
+        .bottom-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
         .chart-container,
-        .activity-panel {
+        .activity-panel,
+        .recent-orders-panel {
             background: white;
             border-radius: 15px;
             padding: 25px;
             box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .recent-orders-list {
+            max-height: 450px;
+            overflow-y: auto;
+        }
+
+        /* Table Styles for Recent Orders */
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .orders-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .orders-table thead {
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .orders-table th {
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .orders-table tbody tr {
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s ease;
+        }
+
+        .orders-table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .orders-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .orders-table td {
+            padding: 15px 12px;
+            vertical-align: middle;
+        }
+
+        .order-id-badge {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .customer-name {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .order-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: 500;
+            font-size: 12px;
+            text-align: center;
+            min-width: 80px;
+        }
+
+        /* Status Colors */
+        .order-status.status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .order-status.status-confirmed {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .order-status.status-paid {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .order-status.status-shipped {
+            background: #cce7ff;
+            color: #004085;
+        }
+
+        .order-status.status-delivered {
+            background: #d1f2eb;
+            color: #00695c;
+        }
+
+        .order-status.status-cancelled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .order-status.status-unknown {
+            background: #e2e3e5;
+            color: #495057;
+        }
+
+        .amount-value {
+            font-weight: 600;
+            color: #4CAF50;
+            font-size: 14px;
+        }
+
+        .time-ago {
+            color: #6c757d;
+            font-size: 13px;
         }
 
         .panel-title {
@@ -259,15 +426,15 @@ if (!$current_admin) {
             max-height: 300px;
         }
 
-        .activity-list {
+        .activity-list, .top-products-list {
             max-height: 350px;
             overflow-y: auto;
         }
 
         .activity-item {
             display: flex;
-            align-items: center;
-            gap: 15px;
+            justify-content: space-between;
+            align-items: flex-start;
             padding: 15px 0;
             border-bottom: 1px solid #f0f0f0;
         }
@@ -276,120 +443,108 @@ if (!$current_admin) {
             border-bottom: none;
         }
 
-        .activity-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            color: white;
-        }
-
-        .activity-icon.order {
-            background: #2196F3;
-        }
-
-        .activity-icon.product {
-            background: #FF9800;
-        }
-
-        .activity-icon.user {
-            background: #9C27B0;
-        }
-
         .activity-content {
             flex: 1;
         }
 
-        .activity-title {
-            font-weight: 600;
+        .activity-description {
+            font-weight: 500;
             color: #333;
-            margin-bottom: 2px;
+            margin-bottom: 5px;
+        }
+
+        .activity-amount {
+            font-size: 14px;
+            font-weight: 600;
+            color: #4CAF50;
         }
 
         .activity-time {
             font-size: 12px;
             color: #999;
+            white-space: nowrap;
+            margin-left: 15px;
         }
 
-        .recent-orders {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
-        }
-
-        .orders-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-
-        .orders-table th,
-        .orders-table td {
-            padding: 15px;
-            text-align: left;
+        .product-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 0;
             border-bottom: 1px solid #f0f0f0;
+            gap: 15px;
         }
 
-        .orders-table th {
-            background: #f8f9fa;
+        .product-item:last-child {
+            border-bottom: none;
+        }
+
+        .product-rank {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #007bff;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .product-info {
+            flex: 1;
+        }
+
+        .product-name {
             font-weight: 600;
             color: #333;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            margin-bottom: 3px;
         }
 
-        .orders-table td {
-            color: #555;
-        }
-
-        .order-id {
-            font-family: 'Courier New', monospace;
-            font-weight: 600;
-            color: #007bff;
-            font-size: 14px;
-            background: #f0f8ff;
-            padding: 4px 8px;
-            border-radius: 4px;
-            display: inline-block;
-        }
-
-        .status-badge {
-            padding: 6px 12px;
-            border-radius: 20px;
+        .product-category {
             font-size: 12px;
+            color: #666;
+        }
+
+        .product-stats {
+            text-align: right;
+        }
+
+        .product-sold {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .product-revenue {
             font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            color: #4CAF50;
         }
 
-        .status-pending {
-            background: #fff3cd;
-            color: #856404;
+        .loading-indicator {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #666;
         }
 
-        .status-processing {
-            background: #e3f2fd;
-            color: #1976d2;
+        .loading-indicator i {
+            font-size: 24px;
+            animation: spin 1s linear infinite;
         }
 
-        .status-shipped {
-            background: #e8f5e8;
-            color: #2e7d32;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
-        .status-completed {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .status-cancelled {
+        .error-message {
+            display: none;
             background: #f8d7da;
             color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
         }
 
         /* Session timeout warning */
@@ -404,6 +559,20 @@ if (!$current_admin) {
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             z-index: 1002;
             display: none;
+        }
+
+        .session-warning button {
+            background: transparent;
+            border: 1px solid white;
+            color: white;
+            padding: 5px 10px;
+            margin-left: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .session-warning button:hover {
+            background: rgba(255, 255, 255, 0.2);
         }
 
         /* Sidebar Styles */
@@ -485,19 +654,19 @@ if (!$current_admin) {
                 grid-template-columns: 1fr;
             }
 
+            .bottom-grid {
+                grid-template-columns: 1fr;
+            }
+
             .header {
                 flex-direction: column;
                 gap: 15px;
                 text-align: center;
             }
 
-            .orders-table {
-                font-size: 14px;
-            }
-
-            .orders-table th,
-            .orders-table td {
-                padding: 10px 8px;
+            .header-controls {
+                flex-wrap: wrap;
+                justify-content: center;
             }
 
             .sidebar {
@@ -511,22 +680,95 @@ if (!$current_admin) {
             .sidebar.show {
                 left: 0;
             }
-        }
 
-        @media screen and (max-width: 480px) {
+            /* Table responsiveness on mobile */
+            .orders-table {
+                font-size: 13px;
+            }
 
             .orders-table th,
             .orders-table td {
-                padding: 8px 4px;
+                padding: 10px 8px;
+            }
+
+            .order-id-badge {
+                font-size: 11px;
+                padding: 3px 6px;
+            }
+
+            .order-status {
+                font-size: 11px;
+                padding: 3px 6px;
+                min-width: 70px;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .stat-card {
+                padding: 20px;
+            }
+
+            .stat-value {
+                font-size: 24px;
+            }
+
+            /* Stack table cells on very small screens */
+            .orders-table,
+            .orders-table thead,
+            .orders-table tbody,
+            .orders-table th,
+            .orders-table td,
+            .orders-table tr {
+                display: block;
+            }
+
+            .orders-table thead tr {
+                position: absolute;
+                top: -9999px;
+                left: -9999px;
+            }
+
+            .orders-table tr {
+                border: 1px solid #ccc;
+                margin-bottom: 10px;
+                padding: 10px;
+                border-radius: 8px;
+                background: white;
+            }
+
+            .orders-table td {
+                border: none;
+                position: relative;
+                padding: 8px 8px 8px 35%;
+                text-align: right;
+            }
+
+            .orders-table td:before {
+                content: attr(data-label);
+                position: absolute;
+                left: 6px;
+                width: 30%;
+                padding-right: 10px;
+                white-space: nowrap;
+                font-weight: 600;
+                color: #495057;
+                text-align: left;
             }
         }
     </style>
 </head>
 
 <body>
+
     <!-- Session timeout warning -->
     <div id="sessionWarning" class="session-warning">
         <i class="fas fa-clock"></i> เซสชันจะหมดอายุใน <span id="timeRemaining"></span> นาที
+        <button onclick="resetSessionTimeout()">ขยายเวลา</button>
     </div>
 
     <div class="navbar-toggle" onclick="toggleSidebar()">
@@ -546,31 +788,31 @@ if (!$current_admin) {
             <nav>
                 <ul>
                     <li class="active">
-                        <a href="dashboard_admin.php" onclick="showSection('dashboard')">
+                        <a href="dashboard_admin.php">
                             <i class="fas fa-tachometer-alt"></i>
                             แดชบอร์ด
                         </a>
                     </li>
                     <li>
-                        <a href="products_admin.php" onclick="showSection('products')">
+                        <a href="products_admin.php">
                             <i class="fas fa-box"></i>
                             จัดการสินค้า
                         </a>
                     </li>
                     <li>
-                        <a href="orders_admin.php" onclick="showSection('orders')">
+                        <a href="orders_admin.php">
                             <i class="fas fa-shopping-cart"></i>
                             จัดการคำสั่งซื้อ
                         </a>
                     </li>
                     <li>
-                        <a href="admins_admin.php" onclick="showSection('admins')">
+                        <a href="admins_admin.php">
                             <i class="fas fa-users-cog"></i>
                             จัดการผู้ดูแล
                         </a>
                     </li>
                     <li>
-                        <a href="reports_admin.php" onclick="showSection('reports')">
+                        <a href="reports_admin.php">
                             <i class="fas fa-chart-bar"></i>
                             รายงาน
                         </a>
@@ -588,6 +830,21 @@ if (!$current_admin) {
         <main class="main-content">
             <div class="header">
                 <h1><i class="fas fa-tachometer-alt"></i> แดชบอร์ด</h1>
+                
+                <div class="header-controls">
+                    <select class="period-selector">
+                        <option value="7days">7 วันที่ผ่านมา</option>
+                        <option value="30days">30 วันที่ผ่านมา</option>
+                        <option value="90days">90 วันที่ผ่านมา</option>
+                        <option value="1year">1 ปีที่ผ่านมา</option>
+                    </select>
+                    
+                    <button class="refresh-btn" id="refresh-dashboard">
+                        <i class="fas fa-sync-alt"></i>
+                        รีเฟรช
+                    </button>
+                </div>
+
                 <div class="user-info">
                     <div>
                         <div style="font-weight: 600;">สวัสดี, <?php echo htmlspecialchars($current_admin['fullname']); ?></div>
@@ -598,496 +855,98 @@ if (!$current_admin) {
                 </div>
             </div>
 
-            <div class="stats-grid">
-                <div class="stat-card sales">
-                    <div class="stat-header">
-                        <div>
-                            <div class="stat-value" id="sales-value">฿245,680</div>
-                            <div class="stat-label">ยอดขายวันนี้</div>
-                            <div class="stat-change positive">
-                                <i class="fas fa-arrow-up"></i> +12.5%
-                            </div>
-                        </div>
-                        <div class="stat-icon sales">
-                            <i class="fas fa-dollar-sign"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="stat-card orders">
-                    <div class="stat-header">
-                        <div>
-                            <div class="stat-value" id="orders-value">8,156</div>
-                            <div class="stat-label">คำสั่งซื้อทั้งหมด</div>
-                            <div class="stat-change positive">
-                                <i class="fas fa-arrow-up"></i> +8.2%
-                            </div>
-                        </div>
-                        <div class="stat-icon orders">
-                            <i class="fas fa-shopping-cart"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="stat-card products">
-                    <div class="stat-header">
-                        <div>
-                            <div class="stat-value" id="products-value">1,234</div>
-                            <div class="stat-label">สินค้าทั้งหมด</div>
-                            <div class="stat-change negative">
-                                <i class="fas fa-arrow-down"></i> -2.1%
-                            </div>
-                        </div>
-                        <div class="stat-icon products">
-                            <i class="fas fa-box"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="stat-card users">
-                    <div class="stat-header">
-                        <div>
-                            <div class="stat-value" id="users-value">342</div>
-                            <div class="stat-label">ลูกค้าทั้งหมด</div>
-                            <div class="stat-change positive">
-                                <i class="fas fa-arrow-up"></i> +5.7%
-                            </div>
-                        </div>
-                        <div class="stat-icon users">
-                            <i class="fas fa-users"></i>
-                        </div>
-                    </div>
-                </div>
+            <div class="loading-indicator">
+                <i class="fas fa-spinner"></i>
+                <div>กำลังโหลดข้อมูล...</div>
             </div>
 
-            <div class="content-grid">
-                <div class="chart-container">
-                    <div class="panel-title">
-                        <i class="fas fa-chart-line"></i>
-                        ยอดขายรายวัน (7 วันที่ผ่านมา)
+            <div class="dashboard-content">
+                <div class="stats-grid">
+                    <div class="stat-card sales">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-value" id="total-sales">฿0</div>
+                                <div class="stat-label">ยอดขายทั้งหมด</div>
+                            </div>
+                            <div class="stat-icon sales">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                        </div>
                     </div>
-                    <canvas id="salesChart" class="chart-canvas"></canvas>
-                </div>
 
-                <div class="activity-panel">
-                    <div class="panel-title">
-                        <i class="fas fa-bell"></i>
-                        กิจกรรมล่าสุด
-                    </div>
-                    <div class="activity-list">
-                        <div class="activity-item">
-                            <div class="activity-icon order">
+                    <div class="stat-card orders">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-value" id="total-orders">0</div>
+                                <div class="stat-label">คำสั่งซื้อทั้งหมด</div>
+                            </div>
+                            <div class="stat-icon orders">
                                 <i class="fas fa-shopping-cart"></i>
                             </div>
-                            <div class="activity-content">
-                                <div class="activity-title">คำสั่งซื้อใหม่ #ORD-202508-007</div>
-                                <div class="activity-time">5 นาทีที่แล้ว</div>
-                            </div>
                         </div>
-                        <div class="activity-item">
-                            <div class="activity-icon order">
-                                <i class="fas fa-check-circle"></i>
+                    </div>
+
+                    <div class="stat-card products">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-value" id="total-products">0</div>
+                                <div class="stat-label">สินค้าทั้งหมด</div>
                             </div>
-                            <div class="activity-content">
-                                <div class="activity-title">คำสั่งซื้อ #ORD-202508-003 สำเร็จ</div>
-                                <div class="activity-time">15 นาทีที่แล้ว</div>
-                            </div>
-                        </div>
-                        <div class="activity-item">
-                            <div class="activity-icon product">
+                            <div class="stat-icon products">
                                 <i class="fas fa-box"></i>
                             </div>
-                            <div class="activity-content">
-                                <div class="activity-title">เพิ่มสินค้าใหม่: เหล็กเส้นกลม SR24</div>
-                                <div class="activity-time">1 ชั่วโมงที่แล้ว</div>
-                            </div>
                         </div>
-                        <div class="activity-item">
-                            <div class="activity-icon order">
-                                <i class="fas fa-truck"></i>
+                    </div>
+
+                    <div class="stat-card users">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-value" id="total-users">0</div>
+                                <div class="stat-label">ลูกค้าทั้งหมด</div>
                             </div>
-                            <div class="activity-content">
-                                <div class="activity-title">จัดส่งคำสั่งซื้อ #ORD-202508-001</div>
-                                <div class="activity-time">2 ชั่วโมงที่แล้ว</div>
-                            </div>
-                        </div>
-                        <div class="activity-item">
-                            <div class="activity-icon user">
-                                <i class="fas fa-user-plus"></i>
-                            </div>
-                            <div class="activity-content">
-                                <div class="activity-title">ลูกค้าใหม่สมัครสมาชิก</div>
-                                <div class="activity-time">3 ชั่วโมงที่แล้ว</div>
+                            <div class="stat-icon users">
+                                <i class="fas fa-users"></i>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="recent-orders">
-                <div class="panel-title">
-                    <i class="fas fa-list"></i>
-                    คำสั่งซื้อล่าสุด
+                <div class="content-grid">
+                    <div class="chart-container">
+                        <div class="panel-title">
+                            <i class="fas fa-chart-line"></i>
+                            ยอดขายรายวัน
+                        </div>
+                        <canvas id="salesChart" class="chart-canvas"></canvas>
+                    </div>
+
+                    <div class="activity-panel">
+                        <div class="panel-title">
+                            <i class="fas fa-bell"></i>
+                            กิจกรรมล่าสุด
+                        </div>
+                        <div class="activity-list" id="recent-activity-list">
+                            <!-- Data will be loaded by JavaScript -->
+                        </div>
+                    </div>
                 </div>
-                <table class="orders-table">
-                    <thead>
-                        <tr>
-                            <th>รหัสคำสั่งซื้อ</th>
-                            <th>ลูกค้า</th>
-                            <th>ยอดรวม</th>
-                            <th>สถานะ</th>
-                            <th>วันที่</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><span class="order-id">ORD-202508-007</span></td>
-                            <td>นาย สมชาย ใจดี</td>
-                            <td>฿13,400</td>
-                            <td><span class="status-badge status-pending">รอดำเนินการ</span></td>
-                            <td>05/08/2025</td>
-                        </tr>
-                        <tr>
-                            <td><span class="order-id">ORD-202508-006</span></td>
-                            <td>บริษัท ก่อสร้าง ABC จำกัด</td>
-                            <td>฿84,500</td>
-                            <td><span class="status-badge status-processing">กำลังดำเนินการ</span></td>
-                            <td>01/08/2025</td>
-                        </tr>
-                        <tr>
-                            <td><span class="order-id">ORD-202507-005</span></td>
-                            <td>นาย อนุชา พัฒนา</td>
-                            <td>฿4,600</td>
-                            <td><span class="status-badge status-cancelled">ยกเลิก</span></td>
-                            <td>27/07/2025</td>
-                        </tr>
-                        <tr>
-                            <td><span class="order-id">ORD-202507-004</span></td>
-                            <td>นาง วิภา สุขใส</td>
-                            <td>฿13,850</td>
-                            <td><span class="status-badge status-shipped">จัดส่งแล้ว</span></td>
-                            <td>28/07/2025</td>
-                        </tr>
-                        <tr>
-                            <td><span class="order-id">ORD-202507-003</span></td>
-                            <td>นาย ประเสริฐ มั่งมี</td>
-                            <td>฿4,500</td>
-                            <td><span class="status-badge status-completed">สำเร็จ</span></td>
-                            <td>29/07/2025</td>
-                        </tr>
-                    </tbody>
-                </table>
+
+                <div class="bottom-grid">
+                    <div class="recent-orders-panel">
+                        <div class="panel-title">
+                            <i class="fas fa-shopping-bag"></i>
+                            คำสั่งซื้อล่าสุด
+                        </div>
+                        <div class="recent-orders-list" id="recent-orders-list">
+                            <!-- Data will be loaded by JavaScript -->
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
 
-    <script>
-        // Session management
-        let sessionTimer;
-        let warningShown = false;
-        
-        // Update current time
-        function updateTime() {
-            const now = new Date();
-            const options = {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            };
-            document.getElementById('current-time').textContent =
-                now.toLocaleDateString('th-TH', options);
-        }
-
-        // Check session status
-       async function checkSession() {
-            try {
-                const response = await fetch('controllers/check_session.php');
-                
-                if (!response.ok) {
-                    console.error('Session check failed with status:', response.status);
-                    return;
-                }
-                
-                const responseText = await response.text();
-                console.log('Session check raw response:', responseText); // Debug log
-                
-                let data;
-                try {
-                    data = JSON.parse(responseText);
-                } catch (parseError) {
-                    console.error('JSON parsing error:', parseError);
-                    console.error('Response was not valid JSON:', responseText);
-                    
-                    // If response contains HTML, it's likely a PHP error
-                    if (responseText.includes('<') || responseText.includes('<!DOCTYPE')) {
-                        console.error('Server returned HTML instead of JSON - likely a PHP error');
-                        showAlert('เกิดข้อผิดพลาดในระบบ กรุณาติดต่อผู้ดูแลระบบ', 'error');
-                    }
-                    return;
-                }
-                
-                if (!data.logged_in) {
-                    window.location.href = 'login_admin.html?timeout=1';
-                    return;
-                }
-                
-                // Show warning when 15 minutes left
-                const timeLeft = data.time_remaining;
-                if (timeLeft <= 900 && timeLeft > 0 && !warningShown) { // 15 minutes
-                    showSessionWarning(Math.ceil(timeLeft / 60));
-                    warningShown = true;
-                } else if (timeLeft > 900) {
-                    warningShown = false;
-                    hideSessionWarning();
-                }
-                
-            } catch (error) {
-                console.error('Error checking session:', error);
-                // Don't show alert for network errors as they're common
-                if (error.name !== 'TypeError' || !error.message.includes('fetch')) {
-                    console.error('Unexpected session check error:', error);
-                }
-            }
-        }
-
-        // Function to show alerts (add this if it doesn't exist)
-        function showAlert(message, type = 'error') {
-            // Create alert if it doesn't exist
-            let alertDiv = document.getElementById('sessionAlert');
-            if (!alertDiv) {
-                alertDiv = document.createElement('div');
-                alertDiv.id = 'sessionAlert';
-                alertDiv.style.cssText = `
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    background: #f59e0b;
-                    color: white;
-                    padding: 15px 20px;
-                    border-radius: 8px;
-                    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-                    z-index: 1002;
-                    max-width: 300px;
-                `;
-                document.body.appendChild(alertDiv);
-            }
-            
-            if (type === 'error') {
-                alertDiv.style.background = '#dc2626';
-            } else if (type === 'success') {
-                alertDiv.style.background = '#059669';
-            }
-            
-            alertDiv.textContent = message;
-            alertDiv.style.display = 'block';
-            
-            // Auto-hide after 5 seconds
-            setTimeout(() => {
-                alertDiv.style.display = 'none';
-            }, 5000);
-        }
-
-        // Show session warning
-        function showSessionWarning(minutes) {
-            const warning = document.getElementById('sessionWarning');
-            const timeSpan = document.getElementById('timeRemaining');
-            timeSpan.textContent = minutes;
-            warning.style.display = 'block';
-            
-            // Auto-hide after 10 seconds
-            setTimeout(() => {
-                hideSessionWarning();
-            }, 10000);
-        }
-
-        // Hide session warning
-        function hideSessionWarning() {
-            const warning = document.getElementById('sessionWarning');
-            warning.style.display = 'none';
-        }
-
-        // Handle logout
-        async function handleLogout() {
-            if (confirm('คุณต้องการออกจากระบบหรือไม่?')) {
-                try {
-                    const response = await fetch('controllers/logout.php', { // Fixed path
-                        method: 'POST',
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    });
-                    
-                    const data = await response.json();
-                    if (data.success) {
-                        window.location.href = data.redirect;
-                    }
-                } catch (error) {
-                    // Fallback to regular logout
-                    window.location.href = 'controllers/logout.php'; // Fixed path
-                }
-            }
-        }
-
-        // Toggle sidebar
-        function toggleSidebar() {
-            const sidebar = document.getElementById("sidebar");
-            const main = document.querySelector(".main-content");
-
-            if (sidebar) {
-                sidebar.classList.toggle("show");
-                main.classList.toggle("overlay");
-            }
-        }
-
-        // Show different sections
-        function showSection(section) {
-            if (section === 'products') {
-                window.location.href = 'products_admin.php';
-            } else if (section === 'orders') {
-                window.location.href = 'orders_admin.php';
-            } else if (section === 'admins') {
-                window.location.href = 'admins_admin.php';
-            } else if (section === 'reports') {
-                window.location.href = 'reports_admin.php';
-            } else if (section === 'dashboard') {
-                if (window.innerWidth <= 768) {
-                    const sidebar = document.getElementById("sidebar");
-                    const main = document.querySelector(".main-content");
-                    if (sidebar) {
-                        sidebar.classList.remove("show");
-                        main.classList.remove("overlay");
-                    }
-                }
-            }
-        }
-
-        // Close sidebar when clicking outside (mobile only)
-        document.addEventListener("click", function (e) {
-            const sidebar = document.getElementById("sidebar");
-            const toggle = document.querySelector(".navbar-toggle");
-            const main = document.querySelector(".main-content");
-
-            if (!sidebar) return;
-
-            const clickedOutside = !sidebar.contains(e.target) && !toggle.contains(e.target);
-
-            if (sidebar.classList.contains("show") && clickedOutside && window.innerWidth <= 768) {
-                sidebar.classList.remove("show");
-                main.classList.remove("overlay");
-            }
-        });
-
-        // Animate numbers
-        function animateValue(element, start, end, duration) {
-            let startTimestamp = null;
-            const step = (timestamp) => {
-                if (!startTimestamp) startTimestamp = timestamp;
-                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-                const current = Math.floor(progress * (end - start) + start);
-
-                if (element.id === 'sales-value') {
-                    element.textContent = '฿' + current.toLocaleString();
-                } else {
-                    element.textContent = current.toLocaleString();
-                }
-
-                if (progress < 1) {
-                    window.requestAnimationFrame(step);
-                }
-            };
-            window.requestAnimationFrame(step);
-        }
-
-        // Initialize chart
-        function initChart() {
-            const ctx = document.getElementById('salesChart').getContext('2d');
-
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['29/07', '30/07', '31/07', '01/08', '02/08', '03/08', '04/08'],
-                    datasets: [{
-                        label: 'ยอดขาย (บาท)',
-                        data: [180000, 210000, 195000, 240000, 230000, 265000, 245680],
-                        borderColor: '#990000',
-                        backgroundColor: 'rgba(153, 0, 0, 0.1)',
-                        tension: 0.4,
-                        fill: true,
-                        pointBackgroundColor: '#990000',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: function (value) {
-                                    return '฿' + value.toLocaleString();
-                                }
-                            }
-                        }
-                    },
-                    elements: {
-                        line: {
-                            borderWidth: 3
-                        }
-                    }
-                }
-            });
-        }
-
-        // Export functions for global access
-        window.toggleSidebar = toggleSidebar;
-        window.showSection = showSection;
-        window.handleLogout = handleLogout;
-
-        // Initialize everything
-        document.addEventListener('DOMContentLoaded', function () {
-            updateTime();
-            setInterval(updateTime, 60000); // Update every minute
-
-            // Check session every 30 seconds
-            checkSession();
-            setInterval(checkSession, 30000);
-
-            // Animate stats on load
-            setTimeout(() => {
-                animateValue(document.getElementById('sales-value'), 0, 245680, 2000);
-                animateValue(document.getElementById('orders-value'), 0, 8156, 1500);
-                animateValue(document.getElementById('products-value'), 0, 1234, 1800);
-                animateValue(document.getElementById('users-value'), 0, 342, 1600);
-            }, 500);
-
-            // Initialize chart
-            initChart();
-        });
-
-        // Handle page visibility change - pause session check when tab not active
-        document.addEventListener('visibilitychange', function() {
-            if (!document.hidden) {
-                // Tab became active, check session immediately
-                checkSession();
-            }
-        });
-    </script>
+    <script src="dashboard_admin.js"></script>
 </body>
 
 </html>
