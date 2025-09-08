@@ -140,16 +140,14 @@ async function loadReport(reportType) {
         const startDateElement = document.getElementById('startDate');
         const endDateElement = document.getElementById('endDate');
         const categoryElement = document.getElementById('productCategory');
-        const periodElement = document.getElementById('period');
         
         const startDate = startDateElement ? startDateElement.value : formatDate(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
         const endDate = endDateElement ? endDateElement.value : formatDate(new Date());
         const categoryId = categoryElement ? categoryElement.value : 'all';
-        const period = periodElement ? periodElement.value : 'daily';
 
         switch(reportType) {
             case 'sales':
-                await loadSalesReport(startDate, endDate, period, categoryId);
+                await loadSalesReport(startDate, endDate, categoryId);
                 break;
             case 'stock':
                 await loadStockReport(categoryId);
@@ -227,8 +225,8 @@ async function apiCall(reportType, params = {}) {
     }
 }
 
-// Sales Report - Fixed to handle proper data structure
-async function loadSalesReport(startDate, endDate, period, categoryId) {
+// Sales Report - Fixed to handle proper data structure (removed period parameter)
+async function loadSalesReport(startDate, endDate, categoryId) {
     try {
         // Load all sales data with proper error handling
         const [summaryData, productData, topProductsData] = await Promise.allSettled([
@@ -296,9 +294,9 @@ function populateSalesTable(data) {
             <td>${item.product_id || '-'}</td>
             <td>${item.product_name || '-'}</td>
             <td>${getCategoryNameThai(item.category_name || item.category_id) || '-'}</td>
-            <td class="text-right">${formatNumber(item.total_quantity || item.quantity_sold)}</td>
-            <td class="text-right">${formatCurrency(item.total_sales || item.total_revenue)}</td>
-            <td class="text-right">${formatCurrency(item.avg_price || item.price)}</td>
+            <td class="text-center">${formatNumber(item.total_quantity || item.quantity_sold)}</td>
+            <td class="text-center">${formatCurrency(item.total_sales || item.total_revenue)}</td>
+            <td class="text-center">${formatCurrency(item.avg_price || item.price)}</td>
             <td class="text-center">${formatNumber(item.order_count || item.orders)}</td>
         `;
     });
@@ -322,9 +320,9 @@ function populateBestSellingTable(data) {
         row.innerHTML = `
             <td>${item.product_id || '-'}</td>
             <td>${item.product_name || '-'}</td>
-            <td class="text-right">${formatNumber(item.total_sold || item.quantity_sold)}</td>
-            <td class="text-right">${formatCurrency(item.total_revenue || item.revenue)}</td>
-            <td class="text-right">${formatNumber(item.current_stock || item.stock_quantity || 0)}</td>
+            <td class="text-center">${formatNumber(item.total_sold || item.quantity_sold)}</td>
+            <td class="text-center">${formatCurrency(item.total_revenue || item.revenue)}</td>
+            <td class="text-center">${formatNumber(item.current_stock || item.stock_quantity || 0)}</td>
             <td><span class="status-badge ${status.class}">${status.text}</span></td>
         `;
     });
@@ -413,10 +411,10 @@ function populateStockTable(data) {
             <td>${item.product_id || '-'}</td>
             <td>${item.product_name || '-'}</td>
             <td>${getCategoryNameThai(item.category_name || item.category_id) || '-'}</td>
-            <td class="text-right">${formatNumber(item.current_stock || item.stock_quantity || 0)}</td>
-            <td class="text-right">${formatCurrency(item.price || 0)}</td>
+            <td class="text-center">${formatNumber(item.current_stock || item.stock_quantity || 0)}</td>
+            <td class="text-center">${formatCurrency(item.price || 0)}</td>
             <td><span class="status-badge ${status.class}">${status.text}</span></td>
-            <td class="text-right">${formatCurrency(stockValue)}</td>
+            <td class="text-center">${formatCurrency(stockValue)}</td>
         `;
     });
 }
@@ -442,9 +440,9 @@ function populateReorderTable(data) {
         row.innerHTML = `
             <td>${item.product_id || '-'}</td>
             <td>${item.product_name || '-'}</td>
-            <td class="text-right">${formatNumber(item.current_stock || item.stock_quantity || 0)}</td>
-            <td class="text-right">${formatNumber(item.avg_daily_sales || item.daily_usage || 0)}</td>
-            <td class="text-right ${urgency}">${daysRemaining} วัน</td>
+            <td class="text-center">${formatNumber(item.current_stock || item.stock_quantity || 0)}</td>
+            <td class="text-center">${formatNumber(item.avg_daily_sales || item.daily_usage || 0)}</td>
+            <td class="text-center ${urgency}">${daysRemaining} วัน</td>
             <td><span class="status-badge status-${(item.stock_status || item.urgency || '').toLowerCase()}">${getStockStatusThai(item.stock_status || item.urgency)}</span></td>
         `;
     });
@@ -528,9 +526,9 @@ function populateMovementTable(data) {
             <td>${item.product_id || '-'}</td>
             <td>${item.product_name || '-'}</td>
             <td><span class="${typeInfo.class}">${typeInfo.text}</span></td>
-            <td class="text-right">${formatNumber(Math.abs(item.quantity_change || item.quantity || 0))}</td>
-            <td class="text-right">${formatNumber(item.quantity_before || item.before_quantity || 0)}</td>
-            <td class="text-right">${formatNumber(item.quantity_after || item.after_quantity || 0)}</td>
+            <td class="text-center">${formatNumber(Math.abs(item.quantity_change || item.quantity || 0))}</td>
+            <td class="text-center">${formatNumber(item.quantity_before || item.before_quantity || 0)}</td>
+            <td class="text-center">${formatNumber(item.quantity_after || item.after_quantity || 0)}</td>
             <td>${getReferenceThai(item.reference_type || item.reference)}</td>
             <td>${item.admin_name || item.user_name || item.performed_by || '-'}</td>
         `;
@@ -609,8 +607,8 @@ function populateShippingTable(data) {
             <td class="text-center">${formatNumber(totalOrders)}</td>
             <td class="text-center">${formatNumber(deliveredOrders)}</td>
             <td class="text-center">${successRate}%</td>
-            <td class="text-right">${formatCurrency(item.total_shipping_fee || item.shipping_fee || 0)}</td>
-            <td class="text-right">${formatCurrency(item.avg_shipping_fee || item.average_fee || 0)}</td>
+            <td class="text-center">${formatCurrency(item.total_shipping_fee || item.shipping_fee || 0)}</td>
+            <td class="text-center">${formatCurrency(item.avg_shipping_fee || item.average_fee || 0)}</td>
         `;
     });
 }
@@ -673,8 +671,8 @@ function populateCustomerTable(data) {
             <td>${item.customer_name || item.name || item.fullname || '-'}</td>
             <td>${item.email || '-'}</td>
             <td class="text-center">${formatNumber(item.total_orders || item.orders || 0)}</td>
-            <td class="text-right">${formatCurrency(item.total_spent || item.total_amount || 0)}</td>
-            <td class="text-right">${formatCurrency(item.avg_order_value || item.average_order || 0)}</td>
+            <td class="text-center">${formatCurrency(item.total_spent || item.total_amount || 0)}</td>
+            <td class="text-center">${formatCurrency(item.avg_order_value || item.average_order || 0)}</td>
             <td>${formatThaiDate(item.last_order_date || item.last_order)}</td>
         `;
     });
@@ -790,13 +788,11 @@ function resetFilters() {
     const endDateEl = document.getElementById('endDate');
     const categoryEl = document.getElementById('productCategory');
     const reportTypeEl = document.getElementById('reportType');
-    const periodEl = document.getElementById('period');
     
     if (startDateEl) startDateEl.value = formatDate(startDate);
     if (endDateEl) endDateEl.value = formatDate(endDate);
     if (categoryEl) categoryEl.value = 'all';
     if (reportTypeEl) reportTypeEl.value = 'sales';
-    if (periodEl) periodEl.value = 'daily';
     
     showReport('sales');
 }
@@ -809,164 +805,115 @@ async function applyFilters() {
         await loadReport(reportType);
         showNotification('ปรับใช้ตัวกรองสำเร็จ', 'success');
     } catch (error) {
-        showNotification('เกิดข้อผิดพลาดในการปรับใช้ตัวกรong', 'error');
+        showNotification('เกิดข้อผิดพลาดในการปรับใช้ตัวกรอง', 'error');
     }
 }
 
-// Export and Print functions
-function exportReport() {
+// Export Excel function - Generate Excel file using SheetJS
+async function exportReport(format = 'excel') {
     const activeReport = document.querySelector('.report-content.active');
     if (!activeReport) {
         showNotification('ไม่พบรายงานที่จะส่งออก', 'warning');
         return;
     }
-    
+
     const reportType = activeReport.id.split('-')[0];
-    let csvContent = '';
     let filename = '';
-    
+    let data = [];
+
     try {
+        // Extract data and set filename
         switch(reportType) {
             case 'sales':
-                csvContent = generateCSV('sales-table', 'รหัสสินค้า,ชื่อสินค้า,หมวดหมู่,จำนวนที่ขาย,ยอดขาย,ราคาเฉลี่ย,จำนวนคำสั่งซื้อ');
-                filename = 'sales_report_' + formatDate(new Date()) + '.csv';
+                data = extractTableData('sales-table');
+                filename = 'รายงานยอดขาย_' + formatDate(new Date());
                 break;
             case 'stock':
-                csvContent = generateCSV('stock-table', 'รหัสสินค้า,ชื่อสินค้า,หมวดหมู่,คงเหลือ,ราคา,สถานะ,มูลค่า');
-                filename = 'stock_report_' + formatDate(new Date()) + '.csv';
+                data = extractTableData('stock-table');
+                filename = 'รายงานสต็อก_' + formatDate(new Date());
                 break;
             case 'movement':
-                csvContent = generateCSV('movement-table', 'วันที่,รหัสสินค้า,ชื่อสินค้า,ประเภท,จำนวน,ก่อน,หลัง,อ้างอิง,ผู้ดำเนินการ');
-                filename = 'movement_report_' + formatDate(new Date()) + '.csv';
+                data = extractTableData('movement-table');
+                filename = 'รายงานการเคลื่อนไหว_' + formatDate(new Date());
                 break;
             case 'shipping':
-                csvContent = generateCSV('shipping-table', 'เขตจัดส่ง,คำสั่งซื้อทั้งหมด,จัดส่งแล้ว,อัตราความสำเร็จ,ค่าจัดส่งรวม,ค่าจัดส่งเฉลี่ย');
-                filename = 'shipping_report_' + formatDate(new Date()) + '.csv';
+                data = extractTableData('shipping-table');
+                filename = 'รายงานการจัดส่ง_' + formatDate(new Date());
                 break;
             case 'customer':
-                csvContent = generateCSV('customer-table', 'ชื่อลูกค้า,อีเมล,จำนวนคำสั่งซื้อ,ยอดซื้อรวม,ค่าเฉลี่ยต่อคำสั่ง,คำสั่งซื้อล่าสุด');
-                filename = 'customer_report_' + formatDate(new Date()) + '.csv';
+                data = extractTableData('customer-table');
+                filename = 'รายงานลูกค้า_' + formatDate(new Date());
                 break;
             default:
                 showNotification('ไม่รองรับการส่งออกสำหรับรายงานนี้', 'warning');
                 return;
         }
-        
-        if (!csvContent || csvContent.trim() === '') {
+
+        if (data.length === 0) {
             showNotification('ไม่มีข้อมูลสำหรับส่งออก', 'warning');
             return;
         }
-        
-        // Add BOM for UTF-8 to ensure proper Thai character display in Excel
-        const BOM = '\uFEFF';
-        const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', filename);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        
+
+        if (format === 'excel') {
+            // ✅ Create workbook and worksheet here
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            XLSX.utils.book_append_sheet(wb, ws, "Report");
+            XLSX.writeFile(wb, filename + '.xlsx');
+        }
+
         showNotification('ส่งออกรายงานสำเร็จ', 'success');
-        
     } catch (error) {
         console.error('Export error:', error);
         showNotification('เกิดข้อผิดพลาดในการส่งออกรายงาน', 'error');
     }
 }
 
-function generateCSV(tableId, headers) {
-    const tbody = document.querySelector(`#${tableId} tbody`);
-    if (!tbody) return '';
-    
-    let csv = headers + '\n';
-    
-    Array.from(tbody.rows).forEach(row => {
-        if (row.cells.length > 1 && !row.cells[0].getAttribute('colspan')) {
-            const cells = Array.from(row.cells);
-            const csvRow = cells.map(cell => {
-                // Clean cell text and handle special characters
-                let text = cell.textContent.trim();
-                text = text.replace(/"/g, '""'); // Escape quotes
-                return `"${text}"`; // Wrap in quotes
-            }).join(',');
-            csv += csvRow + '\n';
-        }
-    });
-    
-    return csv;
-}
+function extractTableData(tableId) {
+    const table = document.getElementById(tableId);
+    if (!table) return [];
 
-function printReport() {
-    // Create a new window for printing
-    const printWindow = window.open('', '_blank');
-    const activeReport = document.querySelector('.report-content.active');
-    
-    if (!activeReport) {
-        showNotification('ไม่พบรายงานที่จะพิมพ์', 'warning');
-        return;
+    const data = [];
+    const headers = [];
+
+    // Extract headers
+    const headerRow = table.querySelector('thead tr');
+    if (headerRow) {
+        Array.from(headerRow.cells).forEach(cell => {
+            headers.push(cell.textContent.trim());
+        });
+        data.push(headers);
     }
-    
-    // Get report title
-    const activeTab = document.querySelector('.tab-button.active');
-    const reportTitle = activeTab ? activeTab.textContent.trim() : 'รายงาน';
-    
-    // Build print content
-    const printContent = `
-        <!DOCTYPE html>
-        <html lang="th">
-        <head>
-            <meta charset="UTF-8">
-            <title>${reportTitle}</title>
-            <style>
-                body { font-family: 'Sarabun', Arial, sans-serif; margin: 20px; }
-                h1, h2 { color: #333; text-align: center; }
-                .summary-cards { display: flex; gap: 20px; margin: 20px 0; flex-wrap: wrap; }
-                .summary-card { flex: 1; min-width: 200px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; text-align: center; }
-                .summary-value { font-size: 24px; font-weight: bold; color: #990000; }
-                .summary-label { color: #666; margin-top: 5px; }
-                table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px; }
-                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                th { background-color: #f5f5f5; font-weight: bold; }
-                .text-right { text-align: right; }
-                .text-center { text-align: center; }
-                .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; }
-                .status-in-stock { background-color: #d4edda; color: #155724; }
-                .status-low-stock { background-color: #fff3cd; color: #856404; }
-                .status-critical { background-color: #f8d7da; color: #721c24; }
-                .movement-in { color: #28a745; font-weight: bold; }
-                .movement-out { color: #dc3545; font-weight: bold; }
-                .movement-adjust { color: #17a2b8; font-weight: bold; }
-                @media print {
-                    .no-print { display: none; }
-                    body { margin: 0; }
-                    .summary-cards { page-break-inside: avoid; }
-                    table { page-break-inside: auto; }
-                    tr { page-break-inside: avoid; page-break-after: auto; }
-                }
-            </style>
-        </head>
-        <body>
-            <h1>ระบบจัดการร้านค้า - ${reportTitle}</h1>
-            <p style="text-align: center; color: #666;">วันที่พิมพ์: ${formatThaiDate(new Date())}</p>
-            ${activeReport.innerHTML}
-        </body>
-        </html>
-    `;
-    
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-    
-    // Wait for content to load then print
-    setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-    }, 500);
-    
-    showNotification('กำลังพิมพ์รายงาน...', 'info');
+
+    // Extract data rows
+    const tbody = table.querySelector('tbody');
+    if (tbody) {
+        Array.from(tbody.rows).forEach(row => {
+            if (row.cells.length > 1 && !row.cells[0].getAttribute('colspan')) {
+                const rowData = [];
+                Array.from(row.cells).forEach(cell => {
+                    let text = cell.textContent.replace(/\s+/g, ' ').trim();
+
+                    // Remove status badge styling
+                    const badge = cell.querySelector('.status-badge');
+                    if (badge) {
+                        text = badge.textContent.trim();
+                    }
+
+                    // Try convert to number if possible
+                    const num = text.replace(/,/g, '');
+                    if (!isNaN(num) && num !== '') {
+                        rowData.push(Number(num));
+                    } else {
+                        rowData.push(text);
+                    }
+                });
+                data.push(rowData);
+            }
+        });
+    }
+
+    return data;
 }
 
 function showNotification(message, type = 'info') {
@@ -1196,20 +1143,6 @@ if (!document.getElementById('notification-styles')) {
         .loading-spinner {
             margin-bottom: 15px;
         }
-        
-        @media print {
-            .filter-section,
-            .navbar-toggle,
-            .sidebar,
-            .loading,
-            .notification {
-                display: none !important;
-            }
-            
-            .main-content {
-                margin-left: 0 !important;
-            }
-        }
     `;
     document.head.appendChild(style);
 }
@@ -1231,5 +1164,4 @@ window.showReport = showReport;
 window.resetFilters = resetFilters;
 window.applyFilters = applyFilters;
 window.exportReport = exportReport;
-window.printReport = printReport;
 window.handleLogout = handleLogout;

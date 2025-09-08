@@ -22,7 +22,9 @@ if (!$current_admin) {
     <title>รายงาน - ระบบจัดการร้านค้า</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+
     
     <style>
         * {
@@ -207,15 +209,6 @@ if (!$current_admin) {
 
         .btn-export:hover {
             background: #218838;
-        }
-
-        .btn-print {
-            background: #17a2b8;
-            color: white;
-        }
-
-        .btn-print:hover {
-            background: #138496;
         }
 
         /* Report Tabs */
@@ -562,24 +555,6 @@ if (!$current_admin) {
                 padding: 8px 4px;
             }
         }
-
-        /* Print styles */
-        @media print {
-            body { margin: 0; }
-            .filter-section,
-            .navbar-toggle,
-            .sidebar,
-            .btn {
-                display: none !important;
-            }
-            .main-content {
-                margin-left: 0 !important;
-                padding: 20px !important;
-            }
-            .report-tabs {
-                display: none !important;
-            }
-        }
     </style>
 </head>
 
@@ -679,14 +654,6 @@ if (!$current_admin) {
                         <input type="date" id="endDate">
                     </div>
                     <div class="filter-group">
-                        <label>ช่วงเวลา</label>
-                        <select id="period">
-                            <option value="daily">รายวัน</option>
-                            <option value="weekly">รายสัปดาห์</option>
-                            <option value="monthly">รายเดือน</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
                         <label>ประเภทสินค้า</label>
                         <select id="productCategory">
                             <option value="all">ทั้งหมด</option>
@@ -705,11 +672,8 @@ if (!$current_admin) {
                     <button class="btn btn-primary" onclick="applyFilters()">
                         <i class="fas fa-search"></i> ค้นหา
                     </button>
-                    <button class="btn btn-export" onclick="exportReport()">
-                        <i class="fas fa-download"></i> ส่งออก Excel
-                    </button>
-                    <button class="btn btn-print" onclick="printReport()">
-                        <i class="fas fa-print"></i> พิมพ์
+                    <button class="btn btn-export" onclick="exportReport('excel')">
+                        <i class="fas fa-file-excel"></i> ส่งออก Excel
                     </button>
                 </div>
             </div>
@@ -843,7 +807,7 @@ if (!$current_admin) {
                     </div>
                     <div class="summary-card sales">
                         <div class="summary-value" id="total-stock-value">฿0</div>
-                        <div class="summary-label">มูลค่าสต็อกรวม</div>
+                        <div class="summary-label">มูลค่าสต็อครวม</div>
                     </div>
                 </div>
 
@@ -1062,11 +1026,9 @@ if (!$current_admin) {
         </main>
     </div>
 
-    <!-- Include the fixed JavaScript -->
-    <script>
-        // Define base URL for AJAX calls
-        window.BASE_URL = '<?php echo rtrim(dirname($_SERVER['PHP_SELF']), '/\\'); ?>/';
-    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script> -->
     <script src="reports_admin.js"></script>
 </body>
 </html>
