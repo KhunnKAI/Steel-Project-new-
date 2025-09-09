@@ -76,9 +76,6 @@ class DashboardManager {
                 this.loadRecentOrders()
             ]);
             
-            // Animate stats after loading
-            setTimeout(() => this.animateStats(), 100);
-            
         } catch (error) {
             console.error('Error loading dashboard data:', error);
             this.handleLoadError(error);
@@ -205,9 +202,9 @@ class DashboardManager {
     // Update overview cards with null checks
     updateOverviewCards(data) {
         if (!data) return;
-        
+
         const updates = [
-            { id: 'total-sales', value: data.total_sales, prefix: '฿' },
+            { id: 'total-sales', value: data.total_sales, prefix: '฿', isMoney: true },
             { id: 'total-orders', value: data.total_orders },
             { id: 'total-products', value: data.total_products },
             { id: 'total-users', value: data.total_users },
@@ -215,10 +212,31 @@ class DashboardManager {
             { id: 'low-stock-count', value: data.low_stock_count }
         ];
 
-        updates.forEach(({ id, value, prefix = '' }) => {
+        updates.forEach(({ id, value, prefix = '', suffix = '', isMoney = false }) => {
             const element = document.getElementById(id);
             if (element && value !== undefined && value !== null) {
-                element.textContent = prefix + Number(value).toLocaleString();
+                let formattedValue;
+
+                if (!isNaN(value)) {
+                    const num = Number.parseFloat(value);
+                    if (isMoney) {
+                        // ✅ Fixed: Use proper Thai locale formatting with decimals
+                        formattedValue = num.toLocaleString('th-TH', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        });
+                    } else {
+                        // For non-money values, no decimals needed
+                        formattedValue = num.toLocaleString('th-TH', {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0
+                        });
+                    }
+                } else {
+                    formattedValue = value;
+                }
+
+                element.textContent = `${prefix}${formattedValue}${suffix}`;
             }
         });
     }
@@ -675,36 +693,6 @@ class DashboardManager {
         if (timeElement) {
             timeElement.textContent = timeString;
         }
-    }
-
-    animateStats() {
-        const statCards = document.querySelectorAll('.stat-value');
-        
-        statCards.forEach(card => {
-            const finalValue = card.textContent;
-            const numericValue = parseInt(finalValue.replace(/[^\d]/g, ''));
-            
-            if (isNaN(numericValue) || numericValue === 0) return;
-            
-            let currentValue = 0;
-            const increment = Math.max(1, Math.ceil(numericValue / 50));
-            const duration = Math.min(2000, Math.max(500, numericValue / 10));
-            const stepTime = duration / (numericValue / increment);
-            
-            const timer = setInterval(() => {
-                currentValue += increment;
-                if (currentValue >= numericValue) {
-                    currentValue = numericValue;
-                    clearInterval(timer);
-                }
-                
-                if (finalValue.includes('฿')) {
-                    card.textContent = '฿' + currentValue.toLocaleString();
-                } else {
-                    card.textContent = currentValue.toLocaleString();
-                }
-            }, stepTime);
-        });
     }
 
     // Session Management
