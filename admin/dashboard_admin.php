@@ -24,6 +24,7 @@ if (!$current_admin) {
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <link rel="stylesheet" href="sidebar_admin.css">
 
     <style>
         * {
@@ -575,67 +576,6 @@ if (!$current_admin) {
             background: rgba(255, 255, 255, 0.2);
         }
 
-        /* Sidebar Styles */
-        .sidebar {
-            background: #940606;
-            color: white;
-            width: 260px;
-            min-width: 260px;
-            height: 100%;
-            position: fixed;
-            display: flex;
-            flex-direction: column;
-            transition: all 0.3s ease;
-            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
-        }
-
-        .sidebar.collapsed {
-            width: 0;
-            min-width: 0;
-            overflow: hidden;
-        }
-
-        .logo {
-            padding: 30px 20px;
-            text-align: center;
-            border-bottom: 1px solid #940606;
-            font-size: 18px;
-            font-weight: 600;
-            margin-top: 10px;
-        }
-
-        nav ul {
-            list-style: none;
-            padding: 20px 0;
-        }
-
-        nav li {
-            margin: 5px 0;
-            transition: all 0.3s ease;
-        }
-
-        nav li a {
-            display: flex;
-            align-items: center;
-            padding: 15px 25px;
-            color: white;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            border-left: 4px solid transparent;
-        }
-
-        nav li a i {
-            margin-right: 12px;
-            width: 20px;
-            text-align: center;
-        }
-
-        nav li.active a,
-        nav li a:hover {
-            background: #051A37;
-        }
-
         @media screen and (max-width: 768px) {
             .navbar-toggle {
                 display: block;
@@ -667,18 +607,6 @@ if (!$current_admin) {
             .header-controls {
                 flex-wrap: wrap;
                 justify-content: center;
-            }
-
-            .sidebar {
-                position: fixed;
-                top: 0;
-                left: -260px;
-                height: 100vh;
-                z-index: 1000;
-            }
-
-            .sidebar.show {
-                left: 0;
             }
 
             /* Table responsiveness on mobile */
@@ -776,56 +704,7 @@ if (!$current_admin) {
     </div>
 
     <div class="container">
-        <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
-            <div class="logo">
-                <div>
-                    <img src="image/logo_cropped.png" width="100px">
-                </div>
-                <h2>ระบบผู้ดูแล</h2>
-            </div>
-
-            <nav>
-                <ul>
-                    <li class="active">
-                        <a href="dashboard_admin.php">
-                            <i class="fas fa-tachometer-alt"></i>
-                            แดชบอร์ด
-                        </a>
-                    </li>
-                    <li>
-                        <a href="products_admin.php">
-                            <i class="fas fa-box"></i>
-                            จัดการสินค้า
-                        </a>
-                    </li>
-                    <li>
-                        <a href="orders_admin.php">
-                            <i class="fas fa-shopping-cart"></i>
-                            จัดการคำสั่งซื้อ
-                        </a>
-                    </li>
-                    <li>
-                        <a href="admins_admin.php">
-                            <i class="fas fa-users-cog"></i>
-                            จัดการผู้ดูแล
-                        </a>
-                    </li>
-                    <li>
-                        <a href="reports_admin.php">
-                            <i class="fas fa-chart-bar"></i>
-                            รายงาน
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" onclick="handleLogout()">
-                            <i class="fas fa-sign-out-alt"></i>
-                            ออกจากระบบ
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-        </aside>
+        <?php include 'sidebar_admin.php'; ?>
 
         <main class="main-content">
             <div class="header">
@@ -946,6 +825,7 @@ if (!$current_admin) {
         </main>
     </div>
 
+    <script src="sidebar_admin.js"></script>
     <script src="dashboard_admin.js"></script>
 </body>
 

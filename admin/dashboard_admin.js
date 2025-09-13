@@ -513,54 +513,6 @@ class DashboardManager {
         );
     }
 
-    // Setup sidebar-related listeners
-    setupSidebarListeners() {
-        // Window resize
-        window.addEventListener('resize', this.throttle(() => {
-            this.handleWindowResize();
-        }, 250));
-
-        // Click outside to close sidebar on mobile
-        document.addEventListener('click', (event) => {
-            this.handleOutsideClick(event);
-        });
-    }
-
-    // Setup keyboard shortcuts
-    setupKeyboardShortcuts() {
-        document.addEventListener('keydown', (event) => {
-            // Alt + shortcuts
-            if (event.altKey) {
-                switch (event.key.toLowerCase()) {
-                    case 'd':
-                        event.preventDefault();
-                        window.location.href = 'dashboard_admin.php';
-                        break;
-                    case 'p':
-                        event.preventDefault();
-                        window.location.href = 'products_admin.php';
-                        break;
-                    case 'o':
-                        event.preventDefault();
-                        window.location.href = 'orders_admin.php';
-                        break;
-                    case 'r':
-                        event.preventDefault();
-                        this.loadDashboardData();
-                        break;
-                }
-            }
-            
-            // Escape to close sidebar
-            if (event.key === 'Escape') {
-                const sidebar = document.getElementById('sidebar');
-                if (sidebar && sidebar.classList.contains('show')) {
-                    sidebar.classList.remove('show');
-                }
-            }
-        });
-    }
-
     // Utility functions
     createEmptyState(message) {
         return `<div style="text-align: center; color: #666; padding: 20px;">${message}</div>`;
@@ -746,37 +698,6 @@ class DashboardManager {
         window.location.href = 'controllers/logout.php';
     }
 
-    // Window and UI Event Handlers
-    handleWindowResize() {
-        const sidebar = document.getElementById('sidebar');
-        const mainContent = document.querySelector('.main-content');
-        
-        if (window.innerWidth > 768) {
-            sidebar.classList.remove('show');
-            if (!sidebar.classList.contains('collapsed')) {
-                mainContent.style.marginLeft = '260px';
-            }
-        } else {
-            mainContent.style.marginLeft = '0';
-        }
-        
-        if (this.salesChart) {
-            this.salesChart.resize();
-        }
-    }
-
-    handleOutsideClick(event) {
-        const sidebar = document.getElementById('sidebar');
-        const toggle = document.querySelector('.navbar-toggle');
-        
-        if (window.innerWidth <= 768 && 
-            sidebar.classList.contains('show') && 
-            !sidebar.contains(event.target) && 
-            !toggle.contains(event.target)) {
-            sidebar.classList.remove('show');
-        }
-    }
-
     // Periodic Updates
     startPeriodicUpdates() {
         setInterval(() => {
@@ -798,31 +719,6 @@ class DashboardManager {
     }
 }
 
-// Global functions for backward compatibility
-function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const mainContent = document.querySelector('.main-content');
-    
-    if (window.innerWidth <= 768) {
-        sidebar.classList.toggle('show');
-    } else {
-        sidebar.classList.toggle('collapsed');
-        if (sidebar.classList.contains('collapsed')) {
-            mainContent.style.marginLeft = '0';
-        } else {
-            mainContent.style.marginLeft = '260px';
-        }
-    }
-}
-
-function handleLogout() {
-    if (confirm('คุณต้องการออกจากระบบหรือไม่?')) {
-        if (window.dashboardManager) {
-            window.dashboardManager.cleanup();
-        }
-        window.location.href = 'controllers/logout.php';
-    }
-}
 
 function resetSessionTimeout() {
     if (window.dashboardManager) {
@@ -835,8 +731,6 @@ window.dashboardManager = new DashboardManager();
 
 // Export for external use
 window.dashboardUtils = {
-    toggleSidebar,
-    handleLogout,
     resetSessionTimeout,
     updateDashboardData: () => window.dashboardManager?.loadDashboardData(),
     loadDashboardData: () => window.dashboardManager?.loadDashboardData()

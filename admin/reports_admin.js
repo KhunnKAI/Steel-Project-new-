@@ -78,28 +78,6 @@ function formatNumber(number) {
     return new Intl.NumberFormat('th-TH').format(number);
 }
 
-// Sidebar toggle for mobile
-function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    if (sidebar) {
-        sidebar.classList.toggle('show');
-    }
-}
-
-// Close sidebar when clicking outside on mobile
-document.addEventListener('click', function(e) {
-    const sidebar = document.getElementById('sidebar');
-    const toggle = document.querySelector('.navbar-toggle');
-    
-    if (window.innerWidth <= 768 && 
-        sidebar && toggle &&
-        !sidebar.contains(e.target) && 
-        !toggle.contains(e.target) && 
-        sidebar.classList.contains('show')) {
-        sidebar.classList.remove('show');
-    }
-});
-
 // Report tab switching
 function showReport(reportType) {
     // Update tab buttons
@@ -1045,28 +1023,6 @@ function initializeTableSearch() {
     });
 }
 
-async function handleLogout() {
-    if (!confirm('คุณต้องการออกจากระบบหรือไม่?')) return;
-    
-    try {
-        const response = await fetch('controllers/logout.php', {
-            method: 'POST', 
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            window.location.href = data.redirect;
-        } else {
-            throw new Error(data.error || 'Logout failed');
-        }
-    } catch (error) {
-        console.error('Logout error:', error);
-        // Fallback to direct redirect
-        window.location.href = 'controllers/logout.php';
-    }
-}
 
 // Add CSS for notification animations and improved styling
 if (!document.getElementById('notification-styles')) {
@@ -1159,9 +1115,7 @@ window.addEventListener('unhandledrejection', function(e) {
 });
 
 // Ensure all functions are available globally
-window.toggleSidebar = toggleSidebar;
 window.showReport = showReport;
 window.resetFilters = resetFilters;
 window.applyFilters = applyFilters;
 window.exportReport = exportReport;
-window.handleLogout = handleLogout;

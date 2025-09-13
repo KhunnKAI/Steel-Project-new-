@@ -900,39 +900,6 @@ function changeMainImage(imageSrc, index) {
     document.querySelectorAll('.thumbnail').forEach((thumb, i) => thumb.classList.toggle('active', i === index));
 }
 
-// Utility functions
-function toggleSidebar() {
-    const sidebar = document.getElementById("sidebar");
-    const main = document.querySelector(".main-content");
-    if (sidebar) { sidebar.classList.toggle("show"); if (main) main.classList.toggle("overlay"); }
-}
-
-function showSection(section) {
-    const sections = {
-        dashboard: 'dashboard_admin.php', orders: 'orders_admin.php',
-        admins: 'admins_admin.php', reports: 'reports_admin.php'
-    };
-    if (sections[section]) window.location.href = sections[section];
-    else if (section === 'products' && window.innerWidth <= 768) {
-        const sidebar = document.getElementById("sidebar");
-        const main = document.querySelector(".main-content");
-        if (sidebar) { sidebar.classList.remove("show"); main?.classList.remove("overlay"); }
-    }
-}
-
-async function handleLogout() {
-    if (!confirm('คุณต้องการออกจากระบบหรือไม่?')) return;
-    try {
-        const response = await fetch('controllers/logout.php', {
-            method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
-        const data = await response.json();
-        if (data.success) window.location.href = data.redirect;
-    } catch (error) {
-        window.location.href = 'controllers/logout.php';
-    }
-}
-
 async function refreshProducts() {
     try {
         const btn = document.querySelector('.refresh-btn');
@@ -970,11 +937,11 @@ const globalFunctions = {
     viewProduct, editProduct, deleteProduct, openAddModal, closeModal, closeViewModal,
     editProductFromView: () => { if (currentViewId) { closeViewModal(); editProduct(currentViewId); } },
     deleteProductFromView: () => { if (currentViewId) { closeViewModal(); deleteProduct(currentViewId); } },
-    changeMainImage, changePage, toggleSidebar, showSection, clearDateFilters, resetAllFilters,
+    changeMainImage, changePage, clearDateFilters, resetAllFilters,
     viewProductImages, viewImage, removeImage, closeImageGallery, navigateImage,
     onSortChange: () => { applySorting(); renderProducts(); }, applyFilters,
     debounceSearch: () => { clearTimeout(searchTimeout); searchTimeout = setTimeout(applyFilters, 300); },
-    refreshProducts, showNotification, handleLogout
+    refreshProducts, showNotification
 };
 
 Object.assign(window, globalFunctions);

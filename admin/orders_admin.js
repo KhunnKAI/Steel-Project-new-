@@ -14,6 +14,7 @@ let notesModalReject = null;
 document.addEventListener('DOMContentLoaded', function() {
     initializeEventListeners();
     loadOrders();
+    handleResize(); // Initialize responsive design
 });
 
 function initializeEventListeners() {
@@ -717,63 +718,29 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Sidebar functions
-function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const mainContent = document.querySelector('.main-content');
-    const navbarToggle = document.querySelector('.navbar-toggle');
-    
-    if (sidebar && mainContent) {
-        const isCollapsed = sidebar.classList.contains('collapsed');
-        
-        if (isCollapsed) {
-            sidebar.classList.remove('collapsed');
-            mainContent.style.marginLeft = '260px';
-            if (navbarToggle) {
-                navbarToggle.style.display = 'none';
-            }
-        } else {
-            sidebar.classList.add('collapsed');
-            mainContent.style.marginLeft = '0';
-            if (navbarToggle) {
-                navbarToggle.style.display = 'block';
-            }
-        }
-    }
-}
-
-// Logout function
-function handleLogout() {
-    if (confirm('คุณต้องการออกจากระบบหรือไม่?')) {
-        window.location.href = 'controllers/logout.php';
-    }
-}
-
-// Responsive handling
+// Responsive design handler
 function handleResize() {
+    const navbar = document.querySelector('.navbar-toggle');
     const sidebar = document.getElementById('sidebar');
     const mainContent = document.querySelector('.main-content');
-    const navbarToggle = document.querySelector('.navbar-toggle');
-    
+
     if (window.innerWidth <= 768) {
-        if (sidebar && !sidebar.classList.contains('collapsed')) {
-            sidebar.classList.add('collapsed');
-        }
+        // Mobile view
+        if (navbar) navbar.style.display = 'block';
         if (mainContent) {
             mainContent.style.marginLeft = '0';
-        }
-        if (navbarToggle) {
-            navbarToggle.style.display = 'block';
+            mainContent.style.padding = '80px 15px 30px 15px';
         }
     } else {
-        if (sidebar && sidebar.classList.contains('collapsed')) {
-            sidebar.classList.remove('collapsed');
+        // Desktop view
+        if (navbar) navbar.style.display = 'none';
+        if (sidebar && sidebar.classList.contains('show')) {
+            sidebar.classList.remove('show');
         }
         if (mainContent) {
+            mainContent.classList.remove('overlay');
             mainContent.style.marginLeft = '260px';
-        }
-        if (navbarToggle) {
-            navbarToggle.style.display = 'none';
+            mainContent.style.padding = '30px';
         }
     }
 }

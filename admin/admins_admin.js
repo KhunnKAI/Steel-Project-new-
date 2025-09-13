@@ -994,66 +994,10 @@ class AdminManager {
             }, 300);
         }, 4000);
     }
-
-    // Sidebar and navigation
-    toggleSidebar() {
-        const sidebar = document.getElementById("sidebar");
-        const main = document.querySelector(".main-content");
-
-        if (sidebar) {
-            sidebar.classList.toggle("show");
-            if (main) main.classList.toggle("overlay");
-        }
-    }
-
-    showSection(section) {
-        const pages = {
-            'dashboard': 'dashboard_admin.html',
-            'products': 'products_admin.html', 
-            'orders': 'orders_admin.html',
-            'reports': 'reports_admin.html',
-            'admins': null // Current page
-        };
-
-        if (pages[section] && pages[section] !== null) {
-            window.location.href = pages[section];
-        } else if (section === 'admins') {
-            // Close sidebar on mobile
-            if (window.innerWidth <= 768) {
-                const sidebar = document.getElementById("sidebar");
-                const main = document.querySelector(".main-content");
-                if (sidebar) {
-                    sidebar.classList.remove("show");
-                    if (main) main.classList.remove("overlay");
-                }
-            }
-        }
-    }
 }
 
 // Initialize the admin manager when DOM is loaded
 let adminManager;
-
-document.addEventListener('DOMContentLoaded', function() {
-    adminManager = new AdminManager();
-    
-    // Setup global click handler for sidebar
-    document.addEventListener("click", function (e) {
-        const sidebar = document.getElementById("sidebar");
-        const toggle = document.querySelector(".navbar-toggle");
-        const main = document.querySelector(".main-content");
-
-        if (!sidebar || !main) return;
-
-        const clickedOutside = !sidebar.contains(e.target) && 
-                              (!toggle || !toggle.contains(e.target));
-
-        if (sidebar.classList.contains("show") && clickedOutside && window.innerWidth <= 768) {
-            sidebar.classList.remove("show");
-            main.classList.remove("overlay");
-        }
-    });
-});
 
 // Global functions for backward compatibility
 function openAddModal() {

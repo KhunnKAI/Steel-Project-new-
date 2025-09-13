@@ -22,6 +22,7 @@ if (!$current_admin) {
     <title>จัดการคำสั่งซื้อ - ระบบจัดการร้านค้า</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="sidebar_admin.css">
     
     <style>
         * {
@@ -1066,61 +1067,12 @@ if (!$current_admin) {
 </head>
 
 <body>
-    <button class="navbar-toggle" onclick="toggleSidebar()" type="button" aria-label="Toggle navigation">
+    <div class="navbar-toggle" onclick="toggleSidebar()">
         <i class="fas fa-bars"></i>
-    </button>
+    </div>
 
     <div class="container">
-        <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
-            <div class="logo">
-                <div>
-                    <img src="image/logo_cropped.png" width="100" alt="Logo" loading="lazy">
-                </div>
-                <h2>ระบบผู้ดูแล</h2>
-            </div>
-            
-            <nav>
-                <ul>
-                    <li>
-                        <a href="dashboard_admin.php">
-                            <i class="fas fa-tachometer-alt" aria-hidden="true"></i>
-                            แดชบอร์ด
-                        </a>
-                    </li>
-                    <li>
-                        <a href="products_admin.php">
-                            <i class="fas fa-box" aria-hidden="true"></i>
-                            จัดการสินค้า
-                        </a>
-                    </li>
-                    <li class="active">
-                        <a href="orders_admin.php">
-                            <i class="fas fa-shopping-cart" aria-hidden="true"></i>
-                            จัดการคำสั่งซื้อ
-                        </a>
-                    </li>
-                    <li>
-                        <a href="admins_admin.php">
-                            <i class="fas fa-users-cog" aria-hidden="true"></i>
-                            จัดการผู้ดูแล
-                        </a>
-                    </li>
-                    <li>
-                        <a href="reports_admin.php">
-                            <i class="fas fa-chart-bar" aria-hidden="true"></i>
-                            รายงาน
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" onclick="handleLogout(); return false;">
-                            <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
-                            ออกจากระบบ
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-        </aside>
+        <?php include 'sidebar_admin.php'; ?>
 
         <main class="main-content">
             <div class="header">
@@ -1359,6 +1311,7 @@ if (!$current_admin) {
     </div>
 
     <!-- JavaScript -->
+     <script src="sidebar_admin.js"></script>
     <script src="orders_admin.js?v=<?php echo time(); ?>"></script>
 </body>
 </html>
