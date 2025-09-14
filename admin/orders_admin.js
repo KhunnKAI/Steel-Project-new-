@@ -5,6 +5,7 @@ let allOrders = [];
 let filteredOrders = [];
 let currentOrderId = null;
 let isLoading = false;
+let currentUser = null; // Store current user permissions
 
 // Notes modal variables
 let notesModalResolve = null;
@@ -13,9 +14,88 @@ let notesModalReject = null;
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     initializeEventListeners();
-    loadOrders();
-    handleResize(); // Initialize responsive design
+    loadCurrentUser().then(() => {
+        loadOrders();
+    });
+    handleResize();
 });
+
+// Load current user permissions
+async function loadCurrentUser() {
+    try {
+        const response = await fetch('controllers/get_current_user.php', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            currentUser = data.data;
+            console.log('Current user loaded:', currentUser);
+        } else {
+            throw new Error(data.message || 'Failed to load user info');
+        }
+        
+    } catch (error) {
+        console.error('Error loading current user:', error);
+        showNotification('ไม่สามารถโหลดข้อมูลผู้ใช้ได้: ' + error.message, 'error');
+        // Redirect to login if unauthorized
+        if (error.message.includes('401')) {
+            window.location.href = 'controllers/logout.php';
+        }
+    }
+}
+
+// Check if user has permission for specific status action
+function hasPermissionForStatus(statusCode, action = 'update') {
+    if (!currentUser) return false;
+    
+    const position = currentUser.position;
+    
+    // Define permissions for each status and action
+    const statusPermissions = {
+        'pending_payment': {
+            'approve': ['manager', 'super', 'accounting', 'sales'],
+            'reject': ['manager', 'super', 'accounting', 'sales']
+        },
+        'awaiting_shipment': {
+            'ship': ['manager', 'super', 'sales', 'warehouse'],
+            'cancel': ['manager', 'super', 'sales', 'warehouse']
+        },
+        'in_transit': {
+            'complete': ['manager', 'super', 'shipping', 'sales'],
+            'cancel': ['manager', 'super', 'shipping', 'sales']
+        },
+        'delivered': {
+            'view': ['manager', 'accounting', 'super', 'sales', 'warehouse', 'shipping']
+        },
+        'cancelled': {
+            'view': ['manager', 'accounting', 'super', 'sales', 'warehouse', 'shipping']
+        }
+    };
+    
+    // General cancel permission
+    if (action === 'cancel') {
+        return ['manager', 'super', 'sales'].includes(position);
+    }
+    
+    // Check specific status permissions
+    const statusPerms = statusPermissions[statusCode];
+    if (!statusPerms) return false;
+    
+    const actionPerms = statusPerms[action];
+    if (!actionPerms) return false;
+    
+    return actionPerms.includes(position);
+}
 
 function initializeEventListeners() {
     // Search input
@@ -139,7 +219,7 @@ function applyFilters() {
         if (dateToFilter) {
             const orderDate = new Date(order.created_at);
             const toDate = new Date(dateToFilter);
-            toDate.setHours(23, 59, 59, 999); // End of day
+            toDate.setHours(23, 59, 59, 999);
             if (orderDate > toDate) return false;
         }
 
@@ -151,7 +231,6 @@ function applyFilters() {
 }
 
 function updateStatistics(statistics) {
-    // Initialize counters
     const stats = {
         pending_payment: 0,
         awaiting_shipment: 0,
@@ -160,14 +239,12 @@ function updateStatistics(statistics) {
         cancelled: 0
     };
 
-    // Count orders from statistics
     statistics.forEach(stat => {
         if (stats.hasOwnProperty(stat.status_code)) {
             stats[stat.status_code] = parseInt(stat.count) || 0;
         }
     });
 
-    // Update DOM elements
     const elements = {
         pendingPaymentOrders: stats.pending_payment,
         awaitingShipmentOrders: stats.awaiting_shipment,
@@ -201,7 +278,6 @@ function displayOrders(orders, totalCount) {
         return;
     }
 
-    // Calculate pagination
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = Math.min(startIndex + itemsPerPage, orders.length);
     const currentPageOrders = orders.slice(startIndex, endIndex);
@@ -278,55 +354,109 @@ function createActionButtons(order) {
         </button>
     `);
 
-    // Status-specific action buttons
+    // Status-specific action buttons with permission checks
     switch (status) {
         case 'pending_payment':
             if (order.payment_info?.slip_image) {
+                // Check approve permission
+                if (hasPermissionForStatus('pending_payment', 'approve')) {
+                    buttons.push(`
+                        <button class="btn btn-approve" onclick="approvePayment('${order.order_id}')" title="อนุมัติการชำระเงิน">
+                            <i class="fas fa-check"> อนุมัติ </i>
+                        </button>
+                    `);
+                } else {
+                    buttons.push(`
+                        <button class="btn btn-approve btn-disabled" disabled title="ไม่มีสิทธิ์อนุมัติ">
+                            <i class="fas fa-lock"> ล็อค </i>
+                        </button>
+                    `);
+                }
+                
+                // Check reject permission
+                if (hasPermissionForStatus('pending_payment', 'reject')) {
+                    buttons.push(`
+                        <button class="btn btn-reject" onclick="rejectPayment('${order.order_id}')" title="ปฏิเสธการชำระเงิน">
+                            <i class="fas fa-times"> ปฏิเสธ </i>
+                        </button>
+                    `);
+                } else {
+                    buttons.push(`
+                        <button class="btn btn-reject btn-disabled" disabled title="ไม่มีสิทธิ์ปฏิเสธ">
+                            <i class="fas fa-lock"> ล็อค </i>
+                        </button>
+                    `);
+                }
+            }
+            break;
+
+        case 'awaiting_shipment':
+            // Check ship permission
+            if (hasPermissionForStatus('awaiting_shipment', 'ship')) {
                 buttons.push(`
-                    <button class="btn btn-approve" onclick="approvePayment('${order.order_id}')" title="อนุมัติการชำระเงิน">
-                        <i class="fas fa-check"> อนุมัติ </i>
+                    <button class="btn btn-ship" onclick="shipOrder('${order.order_id}')" title="จัดส่งสินค้า">
+                        <i class="fas fa-truck"> จัดส่ง </i>
                     </button>
                 `);
+            } else {
                 buttons.push(`
-                    <button class="btn btn-reject" onclick="rejectPayment('${order.order_id}')" title="ปฏิเสธการชำระเงิน">
-                        <i class="fas fa-times"> ปฏิเสธ </i>
+                    <button class="btn btn-ship btn-disabled" disabled title="ไม่มีสิทธิ์จัดส่ง">
+                        <i class="fas fa-lock"> ล็อค </i>
+                    </button>
+                `);
+            }
+            
+            // Check cancel permission
+            if (hasPermissionForStatus('awaiting_shipment', 'cancel')) {
+                buttons.push(`
+                    <button class="btn btn-cancel" onclick="cancelOrder('${order.order_id}')" title="ยกเลิกคำสั่งซื้อ">
+                        <i class="fas fa-ban"> ยกเลิก </i>
+                    </button>
+                `);
+            } else {
+                buttons.push(`
+                    <button class="btn btn-cancel btn-disabled" disabled title="ไม่มีสิทธิ์ยกเลิก">
+                        <i class="fas fa-lock"> ล็อค </i>
                     </button>
                 `);
             }
             break;
 
-        case 'awaiting_shipment':
-            buttons.push(`
-                <button class="btn btn-ship" onclick="shipOrder('${order.order_id}')" title="จัดส่งสินค้า">
-                    <i class="fas fa-truck"> จัดส่ง </i>
-                </button>
-            `);
-            buttons.push(`
-                <button class="btn btn-cancel" onclick="cancelOrder('${order.order_id}')" title="ยกเลิกคำสั่งซื้อ">
-                    <i class="fas fa-ban"> ยกเลิก </i>
-                </button>
-            `);
-            break;
-
         case 'in_transit':
-            buttons.push(`
-                <button class="btn btn-approve" onclick="markAsDelivered('${order.order_id}')" title="ยืนยันการจัดส่ง">
-                    <i class="fas fa-check"> สำเร็จ </i>
-                </button>
-            `);
-            buttons.push(`
-                <button class="btn btn-cancel" onclick="cancelOrder('${order.order_id}')" title="ยกเลิกคำสั่งซื้อ">
-                    <i class="fas fa-ban"> ยกเลิก </i>
-                </button>
-            `);
+            // Check complete permission
+            if (hasPermissionForStatus('in_transit', 'complete')) {
+                buttons.push(`
+                    <button class="btn btn-approve" onclick="markAsDelivered('${order.order_id}')" title="ยืนยันการจัดส่ง">
+                        <i class="fas fa-check"> สำเร็จ </i>
+                    </button>
+                `);
+            } else {
+                buttons.push(`
+                    <button class="btn btn-approve btn-disabled" disabled title="ไม่มีสิทธิ์ยืนยัน">
+                        <i class="fas fa-lock"> ล็อค </i>
+                    </button>
+                `);
+            }
+            
+            // Check cancel permission
+            if (hasPermissionForStatus('in_transit', 'cancel')) {
+                buttons.push(`
+                    <button class="btn btn-cancel" onclick="cancelOrder('${order.order_id}')" title="ยกเลิกคำสั่งซื้อ">
+                        <i class="fas fa-ban"> ยกเลิก </i>
+                    </button>
+                `);
+            } else {
+                buttons.push(`
+                    <button class="btn btn-cancel btn-disabled" disabled title="ไม่มีสิทธิ์ยกเลิก">
+                        <i class="fas fa-lock"> ล็อค </i>
+                    </button>
+                `);
+            }
             break;
 
         case 'delivered':
-            // Only view button for delivered orders - no cancel button
-            break;
-
         case 'cancelled':
-            // Only view button for cancelled orders
+            // Only view button for completed orders
             break;
     }
 
@@ -357,14 +487,12 @@ function updatePagination(totalItems) {
 
     let paginationHTML = '';
 
-    // Previous button
     paginationHTML += `
         <button ${currentPage <= 1 ? 'disabled' : ''} onclick="changePage(${currentPage - 1})">
             <i class="fas fa-chevron-left"></i> ก่อนหน้า
         </button>
     `;
 
-    // Page numbers with ellipsis logic
     const maxVisiblePages = 5;
     let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
     let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
@@ -395,7 +523,6 @@ function updatePagination(totalItems) {
         paginationHTML += `<button onclick="changePage(${totalPages})">${totalPages}</button>`;
     }
 
-    // Next button
     paginationHTML += `
         <button ${currentPage >= totalPages ? 'disabled' : ''} onclick="changePage(${currentPage + 1})">
             ถัดไป <i class="fas fa-chevron-right"></i>
@@ -412,11 +539,10 @@ function changePage(page) {
     currentPage = page;
     displayOrders(filteredOrders, filteredOrders.length);
     
-    // Scroll to top of table
     document.querySelector('.table-container')?.scrollIntoView({ behavior: 'smooth' });
 }
 
-// Order action functions
+// Order action functions with permission validation
 function viewOrder(orderId) {
     const order = allOrders.find(o => o.order_id === orderId);
     if (!order) {
@@ -428,10 +554,19 @@ function viewOrder(orderId) {
 }
 
 function approvePayment(orderId) {
+    if (!hasPermissionForStatus('pending_payment', 'approve')) {
+        showNotification('คุณไม่มีสิทธิ์ในการอนุมัติการชำระเงิน', 'error');
+        return;
+    }
     updateOrderStatus(orderId, 'awaiting_shipment');
 }
 
 async function rejectPayment(orderId) {
+    if (!hasPermissionForStatus('pending_payment', 'reject')) {
+        showNotification('คุณไม่มีสิทธิ์ในการปฏิเสธการชำระเงิน', 'error');
+        return;
+    }
+    
     try {
         const notes = await showNotesModal('กรุณาระบุเหตุผลในการปฏิเสธการชำระเงิน', 'ปฏิเสธการชำระเงิน');
         if (notes !== null) {
@@ -443,14 +578,33 @@ async function rejectPayment(orderId) {
 }
 
 function shipOrder(orderId) {
+    if (!hasPermissionForStatus('awaiting_shipment', 'ship')) {
+        showNotification('คุณไม่มีสิทธิ์ในการจัดส่งสินค้า', 'error');
+        return;
+    }
     updateOrderStatus(orderId, 'in_transit');
 }
 
 function markAsDelivered(orderId) {
+    if (!hasPermissionForStatus('in_transit', 'complete')) {
+        showNotification('คุณไม่มีสิทธิ์ในการยืนยันการจัดส่ง', 'error');
+        return;
+    }
     updateOrderStatus(orderId, 'delivered');
 }
 
 async function cancelOrder(orderId) {
+    const order = allOrders.find(o => o.order_id === orderId);
+    if (!order) {
+        showNotification('ไม่พบข้อมูลคำสั่งซื้อ', 'error');
+        return;
+    }
+    
+    if (!hasPermissionForStatus(order.status.status_code, 'cancel')) {
+        showNotification('คุณไม่มีสิทธิ์ในการยกเลิกคำสั่งซื้อ', 'error');
+        return;
+    }
+    
     try {
         const notes = await showNotesModal('กรุณาระบุเหตุผลในการยกเลิกคำสั่งซื้อ', 'ยกเลิกคำสั่งซื้อ');
         if (notes !== null) {
@@ -467,15 +621,12 @@ function showNotesModal(message, title) {
         notesModalResolve = resolve;
         notesModalReject = reject;
 
-        // Set modal content
         document.getElementById('notesModalTitle').textContent = title;
         document.getElementById('notesModalMessage').textContent = message;
         document.getElementById('notesTextarea').value = '';
 
-        // Show modal
         document.getElementById('notesModal').style.display = 'block';
         
-        // Focus on textarea
         setTimeout(() => {
             document.getElementById('notesTextarea').focus();
         }, 100);
@@ -529,16 +680,13 @@ async function updateOrderStatus(orderId, newStatus, notes = '') {
         if (data.success) {
             showNotification(data.message || 'อัปเดตสถานะสำเร็จ', 'success');
             
-            // Reload orders data
             await loadOrders();
             
-            // If modal is open for this order, refresh its content
             if (currentOrderId === orderId) {
                 const updatedOrder = allOrders.find(o => o.order_id === orderId);
                 if (updatedOrder) {
                     displayOrderDetails(updatedOrder);
                 } else {
-                    // If order not found after update, close modal
                     closeOrderDetailsModal();
                     showNotification('ไม่พบข้อมูลคำสั่งซื้อที่อัปเดต', 'warning');
                 }
@@ -557,12 +705,10 @@ async function updateOrderStatus(orderId, newStatus, notes = '') {
 function displayOrderDetails(order) {
     currentOrderId = order.order_id;
     
-    // Update order details
     document.getElementById('detailCustomerName').textContent = order.customer_info?.name || '-';
     document.getElementById('detailCustomerPhone').textContent = order.customer_info?.phone || '-';
     document.getElementById('detailCustomerEmail').textContent = order.customer_info?.email || '-';
     
-    // Address
     let addressText = '-';
     if (order.shipping_address) {
         const addr = order.shipping_address;
@@ -570,30 +716,67 @@ function displayOrderDetails(order) {
     }
     document.getElementById('detailCustomerAddress').textContent = addressText;
     
-    // Order info
     document.getElementById('detailOrderId').textContent = order.order_id;
     document.getElementById('detailOrderDate').textContent = formatDate(order.created_at);
     document.getElementById('detailOrderStatus').innerHTML = createStatusBadge(order.status);
     document.getElementById('detailOrderNotes').textContent = order.note || 'ไม่มี';
     
-    // Payment section
     const paymentSection = document.getElementById('paymentSection');
     if (order.status?.status_code === 'pending_payment' && order.payment_info) {
         paymentSection.style.display = 'block';
         displayPaymentInfo(order.payment_info);
+        updatePaymentActions(order.order_id);
     } else {
         paymentSection.style.display = 'none';
     }
     
-    // Order items
     displayOrderItems(order.order_items || []);
     
-    // Total
     document.getElementById('detailOrderTotal').textContent = 
         `ยอดรวมทั้งหมด: ${formatCurrency(order.total_amount)}`;
     
-    // Show modal
     document.getElementById('orderDetailsModal').style.display = 'block';
+}
+
+function updatePaymentActions(orderId) {
+    const verificationActions = document.querySelector('.verification-actions');
+    if (!verificationActions) return;
+    
+    let actionsHTML = '';
+    
+    if (hasPermissionForStatus('pending_payment', 'approve')) {
+        actionsHTML += `
+            <button class="approve-payment-btn" onclick="approvePayment('${orderId}')" type="button">
+                <i class="fas fa-check"></i>
+                อนุมัติการชำระเงิน
+            </button>
+        `;
+    } else {
+        actionsHTML += `
+            <button class="approve-payment-btn btn-disabled" disabled type="button">
+                <i class="fas fa-lock"></i>
+                ไม่มีสิทธิ์อนุมัติ
+            </button>
+        `;
+    }
+    
+    if (hasPermissionForStatus('pending_payment', 'reject')) {
+        actionsHTML += `
+            <button class="reject-payment-btn" onclick="rejectPayment('${orderId}')" type="button">
+                <i class="fas fa-times"></i>
+                ปฏิเสธการชำระเงิน
+            </button>
+        `;
+    } else {
+        actionsHTML += `
+            <button class="reject-payment-btn btn-disabled" disabled type="button">
+                <i class="fas fa-lock"></i>
+                ไม่มีสิทธิ์ปฏิเสธ
+            </button>
+        `;
+    }
+    
+    verificationActions.innerHTML = actionsHTML;
 }
 
 function displayPaymentInfo(paymentInfo) {

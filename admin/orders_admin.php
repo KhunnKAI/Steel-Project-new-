@@ -87,6 +87,21 @@ if (!$current_admin) {
             font-size: 28px;
             color: #333;
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .role-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #990000;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            color: white;
         }
 
         .search-filter {
@@ -341,7 +356,7 @@ if (!$current_admin) {
             min-width: fit-content;
         }
 
-        /* Status badge styles to match JavaScript */
+        /* Status badge styles */
         .status-pending-payment { 
             background: #fff3cd; 
             color: #856404;
@@ -425,7 +440,7 @@ if (!$current_admin) {
             font-family: 'Prompt', sans-serif;
         }
 
-        .actions .btn:hover {
+        .actions .btn:hover:not(.btn-disabled) {
             transform: translateY(-1px);
             box-shadow: 0 3px 8px rgba(0,0,0,0.12);
         }
@@ -454,7 +469,7 @@ if (!$current_admin) {
             justify-content: center;
         }
 
-        .btn-approve:hover {
+        .btn-approve:hover:not(.btn-disabled) {
             background: #218838;
         }
 
@@ -466,7 +481,7 @@ if (!$current_admin) {
             justify-content: center;
         }
 
-        .btn-ship:hover {
+        .btn-ship:hover:not(.btn-disabled) {
             background: #0056b3;
         }
 
@@ -478,7 +493,7 @@ if (!$current_admin) {
             justify-content: center;
         }
 
-        .btn-cancel:hover {
+        .btn-cancel:hover:not(.btn-disabled) {
             background: #c82333;
         }
 
@@ -490,8 +505,35 @@ if (!$current_admin) {
             justify-content: center;
         }
 
-        .btn-reject:hover {
+        .btn-reject:hover:not(.btn-disabled) {
             background: #e8680f;
+        }
+
+        /* Disabled button styles */
+        .btn-disabled {
+            opacity: 0.5 !important;
+            cursor: not-allowed !important;
+            background: #6c757d !important;
+            color: white !important;
+            pointer-events: none;
+            position: relative;
+        }
+
+        .btn-disabled:hover {
+            transform: none !important;
+            box-shadow: none !important;
+            background: #6c757d !important;
+        }
+
+        .btn-disabled::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: inherit;
         }
 
         .btn-primary {
@@ -839,7 +881,7 @@ if (!$current_admin) {
             color: white;
         }
 
-        .approve-payment-btn:hover {
+        .approve-payment-btn:hover:not(.btn-disabled) {
             background: linear-gradient(45deg, #388e3c, #4caf50);
             box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
             transform: translateY(-1px);
@@ -850,10 +892,25 @@ if (!$current_admin) {
             color: white;
         }
 
-        .reject-payment-btn:hover {
+        .reject-payment-btn:hover:not(.btn-disabled) {
             background: linear-gradient(45deg, #d32f2f, #f44336);
             box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
             transform: translateY(-1px);
+        }
+
+        /* Enhanced verification actions for payment section */
+        .verification-actions .btn-disabled {
+            min-width: 140px;
+            justify-content: center;
+            opacity: 0.4;
+            background: #dee2e6 !important;
+            color: #6c757d !important;
+            border: 1px solid #ced4da;
+            cursor: not-allowed;
+        }
+
+        .verification-actions .btn-disabled i {
+            color: #adb5bd;
         }
 
         .lightbox {
@@ -1041,6 +1098,36 @@ if (!$current_admin) {
 
         /* Responsive Design */
         @media screen and (max-width: 1200px) {
+            .actions {
+                width: auto;
+                min-width: auto;
+            }
+            
+            .actions .btn {
+                min-width: 35px;
+                padding: 4px 6px;
+            }
+        }
+
+        @media screen and (max-width: 768px) {
+            .main-content {
+                margin-left: 0 !important;
+                padding: 80px 15px 30px 15px !important;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: stretch;
+            }
+            
+            .search-container input[type="text"] {
+                width: 100%;
+            }
+            
+            .order-details {
+                grid-template-columns: 1fr;
+            }
         }
 
         /* Print Styles */
@@ -1076,7 +1163,16 @@ if (!$current_admin) {
 
         <main class="main-content">
             <div class="header">
-                <h1><i class="fas fa-shopping-cart" aria-hidden="true"></i> จัดการคำสั่งซื้อ</h1>
+                <div>
+                    <h1>
+                        <i class="fas fa-shopping-cart" aria-hidden="true"></i> 
+                        จัดการคำสั่งซื้อ
+                        <div class="role-indicator">
+                            <i class="fas fa-user-shield"></i>
+                            <?php echo htmlspecialchars($current_admin['fullname'] . ' (' . $current_admin['position'] . ')'); ?>
+                        </div>
+                    </h1>
+                </div>
                 <div class="search-filter">
                     <div class="search-container">
                         <input type="text" id="searchInput" placeholder="ค้นหารหัสคำสั่งซื้อ, ชื่อลูกค้า..." autocomplete="off">
@@ -1241,14 +1337,7 @@ if (!$current_admin) {
                 </div>
 
                 <div class="verification-actions">
-                    <button class="approve-payment-btn" onclick="approvePayment(currentOrderId)" type="button">
-                        <i class="fas fa-check" aria-hidden="true"></i>
-                        อนุมัติการชำระเงิน
-                    </button>
-                    <button class="reject-payment-btn" onclick="rejectPayment(currentOrderId)" type="button">
-                        <i class="fas fa-times" aria-hidden="true"></i>
-                        ปฏิเสธการชำระเงิน
-                    </button>
+                    <!-- Actions will be populated by JavaScript based on permissions -->
                 </div>
             </div>
 
@@ -1311,7 +1400,7 @@ if (!$current_admin) {
     </div>
 
     <!-- JavaScript -->
-     <script src="sidebar_admin.js"></script>
+    <script src="sidebar_admin.js"></script>
     <script src="orders_admin.js?v=<?php echo time(); ?>"></script>
 </body>
 </html>

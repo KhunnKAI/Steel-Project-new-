@@ -44,8 +44,21 @@ try {
         }
     }
     
-    // Generate admin_id with EMP + 4 random digits
-    $admin_id = generateUniqueEmployeeCode($pdo);
+    // Use admin_id from frontend if provided, otherwise generate new one
+    if (!empty($input_data['admin_id'])) {
+        $admin_id = $input_data['admin_id'];
+        
+        // Check if this admin_id already exists
+        $stmt = $pdo->prepare("SELECT admin_id FROM Admin WHERE admin_id = ?");
+        $stmt->execute([$admin_id]);
+        if ($stmt->fetch()) {
+            // If admin_id from frontend already exists, generate new one
+            $admin_id = generateUniqueEmployeeCode($pdo);
+        }
+    } else {
+        // Generate admin_id with EMP + 4 random digits as fallback
+        $admin_id = generateUniqueEmployeeCode($pdo);
+    }
     
     // Hash password
     $hashed_password = password_hash($input_data['password'], PASSWORD_DEFAULT);
@@ -171,15 +184,6 @@ function generateUniqueEmployeeCode($pdo) {
  */
 function logAdminChange($admin_id, $action, $details, $pdo) {
     try {
-        // Create admin_log table if it doesn't exist
-        $pdo->exec("CREATE TABLE IF NOT EXISTS admin_log (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            admin_id VARCHAR(20) NOT NULL,
-            action VARCHAR(50) NOT NULL,
-            details JSON,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )");
-        
         $log_stmt = $pdo->prepare("INSERT INTO admin_log (admin_id, action, details, created_at) VALUES (?, ?, ?, NOW())");
         $log_stmt->execute([$admin_id, $action, json_encode($details)]);
     } catch (Exception $e) {

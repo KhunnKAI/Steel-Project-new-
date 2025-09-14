@@ -326,11 +326,6 @@ class AdminManager {
     }
 
     getFormData() {
-        const selectedPermissions = [];
-        document.querySelectorAll('#permissionsGrid input[type="checkbox"]:checked').forEach(checkbox => {
-            selectedPermissions.push(checkbox.value);
-        });
-
         return {
             admin_id: document.getElementById('staffCode')?.value || '',
             fullname: document.getElementById('staffName')?.value || '',
@@ -338,8 +333,7 @@ class AdminManager {
             position: document.getElementById('staffRole')?.value || '',
             department: document.getElementById('staffDepartment')?.value || '',
             status: document.getElementById('staffActive')?.checked ? 'active' : 'inactive',
-            password: document.getElementById('staffPassword')?.value || '',
-            permissions: selectedPermissions
+            password: document.getElementById('staffPassword')?.value || ''
         };
     }
 
@@ -475,78 +469,6 @@ class AdminManager {
         } else {
             staffCodeInput.value = newCode;
         }
-        
-        // Auto-generate notification is optional, remove if too noisy
-        // this.showNotification(`สร้างรหัสพนักงานใหม่: ${staffCodeInput.value}`, 'info');
-    }
-
-    // Role and department management
-    updateDepartmentAndPermissions() {
-        const role = document.getElementById('staffRole')?.value;
-        const departmentSelect = document.getElementById('staffDepartment');
-        const permissionCheckboxes = document.querySelectorAll('#permissionsGrid input[type="checkbox"]');
-        
-        if (!role) return;
-
-        // Clear all permissions first
-        permissionCheckboxes.forEach(checkbox => {
-            checkbox.checked = false;
-            checkbox.disabled = false;
-        });
-
-        // Set department and permissions based on role
-        const roleConfigs = {
-            'manager': {
-                department: 'management',
-                permissions: ['dashboard', 'products', 'orders', 'admins', 'reports']
-            },
-            'sales': {
-                department: 'sales',
-                permissions: ['dashboard', 'products', 'orders']
-            },
-            'warehouse': {
-                department: 'warehouse', 
-                permissions: ['dashboard', 'products']
-            },
-            'shipping': {
-                department: 'logistics',
-                permissions: ['dashboard', 'orders']
-            },
-            'accounting': {
-                department: 'accounting',
-                permissions: ['dashboard', 'orders', 'reports']
-            },
-            'super': {
-                department: 'it',
-                permissions: ['dashboard', 'products', 'orders', 'admins', 'reports'],
-                lockPermissions: true
-            }
-        };
-
-        const config = roleConfigs[role];
-        if (config && departmentSelect) {
-            departmentSelect.value = config.department;
-            
-            config.permissions.forEach(perm => {
-                const checkbox = document.getElementById(`perm-${perm}`);
-                if (checkbox) {
-                    checkbox.checked = true;
-                    if (config.lockPermissions) {
-                        checkbox.disabled = true;
-                    }
-                }
-            });
-        }
-        
-        // Generate staff code when role changes (if it's for new staff)
-        if (!this.currentEditId) {
-            this.generateStaffCode();
-        }
-    }
-
-    // Utility methods
-    getRoleInfo(role) {
-        return this.roleMap[role] || { class: 'role-manager', text: 'ไม่ทราบ', avatar: '#6c757d' };
     }
 
     getStatusInfo(status) {
@@ -555,6 +477,10 @@ class AdminManager {
             'inactive': { class: 'status-inactive', text: 'ไม่ได้ใช้งาน' }
         };
         return statusMap[status] || { class: 'status-inactive', text: 'ไม่ทราบ' };
+    }
+
+    getRoleInfo(position) {
+        return this.roleMap[position] || { class: 'role-other', text: position, avatar: '#666' };
     }
 
     getInitials(name) {
@@ -624,7 +550,6 @@ class AdminManager {
         const generatedPasswordDisplay = document.getElementById('generatedPasswordDisplay');
         const passwordStrength = document.getElementById('passwordStrength');
         const staffCode = document.getElementById('staffCode');
-        const permissionCheckboxes = document.querySelectorAll('#permissionsGrid input[type="checkbox"]');
         
         if (modalTitle) modalTitle.textContent = 'เพิ่มพนักงานใหม่';
         if (staffForm) staffForm.reset();
@@ -649,13 +574,7 @@ class AdminManager {
         if (staffCode) staffCode.value = '';
         this.generateStaffCode(); // Generate staff code right when opening modal
         
-        // Clear permissions
-        permissionCheckboxes.forEach(checkbox => {
-            checkbox.checked = false;
-            checkbox.disabled = false;
-        });
-        
-        // Set default permissions (will also trigger staff code generation, but that's ok)
+        // Set default values
         this.updateDepartmentAndPermissions();
         
         const staffModal = document.getElementById('staffModal');
@@ -690,9 +609,7 @@ class AdminManager {
             code: document.getElementById('detailCode'),
             role: document.getElementById('detailRole'),
             department: document.getElementById('detailDepartment'),
-            status: document.getElementById('detailStatus'),
-            notes: document.getElementById('detailNotes'),
-            permissions: document.getElementById('detailPermissions')
+            status: document.getElementById('detailStatus')
         };
 
         if (elements.title) elements.title.textContent = `รายละเอียดพนักงาน - ${person.fullname}`;
@@ -702,41 +619,9 @@ class AdminManager {
         if (elements.role) elements.role.innerHTML = `<span class="role-badge ${roleInfo.class}">${roleInfo.text}</span>`;
         if (elements.department) elements.department.textContent = departmentName;
         if (elements.status) elements.status.innerHTML = `<span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>`;
-        if (elements.notes) elements.notes.textContent = person.notes || 'ไม่มีหมายเหตุ';
-
-        // Populate permissions
-        if (elements.permissions) {
-            const permissionLabels = {
-                dashboard: 'แดชบอร์ด',
-                products: 'จัดการสินค้า',
-                orders: 'จัดการคำสั่งซื้อ',
-                admins: 'จัดการผู้ดูแล',
-                reports: 'รายงาน'
-            };
-
-            const permissions = person.permissions || this.getDefaultPermissions(person.position);
-            elements.permissions.innerHTML = permissions.map(perm => `
-                <div style="padding: 8px; background: white; border-radius: 6px; display: flex; align-items: center; gap: 8px;">
-                    <i class="fas fa-check" style="color: #28a745;"></i>
-                    <span>${permissionLabels[perm] || perm}</span>
-                </div>
-            `).join('');
-        }
 
         const staffDetailsModal = document.getElementById('staffDetailsModal');
         if (staffDetailsModal) staffDetailsModal.style.display = 'block';
-    }
-
-    getDefaultPermissions(position) {
-        const defaultPermissions = {
-            'manager': ['dashboard', 'products', 'orders', 'admins', 'reports'],
-            'sales': ['dashboard', 'products', 'orders'],
-            'warehouse': ['dashboard', 'products'],
-            'shipping': ['dashboard', 'orders'],
-            'accounting': ['dashboard', 'orders', 'reports'],
-            'super': ['dashboard', 'products', 'orders', 'admins', 'reports']
-        };
-        return defaultPermissions[position] || ['dashboard'];
     }
 
     editStaff(adminId) {
@@ -753,7 +638,6 @@ class AdminManager {
             staffRole: document.getElementById('staffRole'),
             staffDepartment: document.getElementById('staffDepartment'),
             staffActive: document.getElementById('staffActive'),
-            staffNotes: document.getElementById('staffNotes'),
             passwordGroup: document.getElementById('passwordGroup'),
             passwordConfirmGroup: document.getElementById('passwordConfirmGroup'),
             staffPassword: document.getElementById('staffPassword'),
@@ -767,7 +651,6 @@ class AdminManager {
         if (elements.staffRole) elements.staffRole.value = person.position;
         if (elements.staffDepartment) elements.staffDepartment.value = person.department;
         if (elements.staffActive) elements.staffActive.checked = person.status === 'active';
-        if (elements.staffNotes) elements.staffNotes.value = person.notes || '';
         
         // Hide password fields for editing
         if (elements.passwordGroup) elements.passwordGroup.style.display = 'none';
@@ -775,15 +658,7 @@ class AdminManager {
         if (elements.staffPassword) elements.staffPassword.required = false;
         if (elements.staffPasswordConfirm) elements.staffPasswordConfirm.required = false;
 
-        // Set permissions
         this.updateDepartmentAndPermissions();
-        const permissions = person.permissions || this.getDefaultPermissions(person.position);
-        permissions.forEach(perm => {
-            const checkbox = document.getElementById(`perm-${perm}`);
-            if (checkbox && !checkbox.disabled) {
-                checkbox.checked = true;
-            }
-        });
 
         const staffModal = document.getElementById('staffModal');
         if (staffModal) staffModal.style.display = 'block';
@@ -818,6 +693,47 @@ class AdminManager {
                 this.showNotification(result.message, 'error');
             }
         }
+    }
+
+    // Helper method for role/department management
+    updateDepartmentAndPermissions() {
+        // This method can be empty since we removed permissions
+        // But we keep it to avoid breaking the event listeners
+    }
+
+    updatePasswordStrength(password) {
+        const strengthDiv = document.getElementById('passwordStrength');
+        if (!strengthDiv || !password) return;
+
+        let strength = 0;
+        let feedback = '';
+
+        if (password.length >= 8) strength++;
+        if (/[a-z]/.test(password)) strength++;
+        if (/[A-Z]/.test(password)) strength++;
+        if (/[0-9]/.test(password)) strength++;
+        if (/[^A-Za-z0-9]/.test(password)) strength++;
+
+        switch (strength) {
+            case 0:
+            case 1:
+            case 2:
+                strengthDiv.className = 'password-strength weak';
+                feedback = 'รหัสผ่านอ่อน';
+                break;
+            case 3:
+                strengthDiv.className = 'password-strength medium';
+                feedback = 'รหัสผ่านปานกลาง';
+                break;
+            case 4:
+            case 5:
+                strengthDiv.className = 'password-strength strong';
+                feedback = 'รหัสผ่านแข็งแรง';
+                break;
+        }
+
+        strengthDiv.textContent = feedback;
+        strengthDiv.style.display = 'block';
     }
 
     // Rendering methods
@@ -998,6 +914,10 @@ class AdminManager {
 
 // Initialize the admin manager when DOM is loaded
 let adminManager;
+
+document.addEventListener('DOMContentLoaded', function() {
+    adminManager = new AdminManager();
+});
 
 // Global functions for backward compatibility
 function openAddModal() {

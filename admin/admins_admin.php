@@ -973,41 +973,10 @@ if (!$current_admin) {
                 </div>
                 
                 <div class="form-group">
-                    <label>สิทธิ์การใช้งาน</label>
-                    <div class="permissions-section">
-                        <div class="permissions-grid" id="permissionsGrid">
-                            <div class="permission-item">
-                                <input type="checkbox" id="perm-dashboard" value="dashboard">
-                                <label for="perm-dashboard">แดชบอร์ด</label>
-                            </div>
-                            <div class="permission-item">
-                                <input type="checkbox" id="perm-products" value="products">
-                                <label for="perm-products">จัดการสินค้า</label>
-                            </div>
-                            <div class="permission-item">
-                                <input type="checkbox" id="perm-orders" value="orders">
-                                <label for="perm-orders">จัดการคำสั่งซื้อ</label>
-                            </div>
-                            <div class="permission-item">
-                                <input type="checkbox" id="perm-admins" value="admins">
-                                <label for="perm-admins">จัดการผู้ดูแล</label>
-                            </div>
-                            <div class="permission-item">
-                                <input type="checkbox" id="perm-reports" value="reports">
-                                <label for="perm-reports">รายงาน</label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="form-group">
                     <div class="checkbox-group">
                         <input type="checkbox" id="staffActive" checked>
                         <label for="staffActive">เปิดใช้งานทันที</label>
                     </div>
-                </div>
-                <div class="form-group">
-                    <label>หมายเหตุ</label>
-                    <textarea id="staffNotes" rows="3" placeholder="หมายเหตุเพิ่มเติม..."></textarea>
                 </div>
                 <div class="form-actions">
                     <button type="button" class="cancel-form-btn" onclick="closeModal()">ยกเลิก</button>
@@ -1073,7 +1042,7 @@ if (!$current_admin) {
         </div>
     </div>
 
-    <script src="sidebar_admin.js"></script>
+    
     <script src="admins_admin.js"></script>
 
 </body>
