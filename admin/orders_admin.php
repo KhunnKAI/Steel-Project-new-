@@ -104,6 +104,29 @@ if (!$current_admin) {
             color: white;
         }
 
+        .print-btn {
+            padding: 12px 24px;
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .print-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
+            background: linear-gradient(45deg, #0056b3, #004085);
+        }
+
         .search-filter {
             display: flex;
             gap: 15px;
@@ -1173,6 +1196,9 @@ if (!$current_admin) {
                         </div>
                     </h1>
                 </div>
+                <button class="print-btn" onclick="window.location.href='printorders_admin.php'">
+                        <i class="fas fa-print"></i> พิมพ์รายละเอียดคำสั่งซื้อ
+                    </button>
                 <div class="search-filter">
                     <div class="search-container">
                         <input type="text" id="searchInput" placeholder="ค้นหารหัสคำสั่งซื้อ, ชื่อลูกค้า..." autocomplete="off">
