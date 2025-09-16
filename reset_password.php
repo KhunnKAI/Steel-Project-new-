@@ -15,7 +15,7 @@ require 'vendor/autoload.php';
         .container { max-width: 420px; margin: 60px auto; background: #fff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); padding: 28px; }
         h1 { font-size: 22px; margin: 0 0 6px; color: #1f2937; text-align: center; }
         p.desc { color: #6b7280; font-size: 14px; margin: 0 0 20px; text-align: center; }
-        .input { width: 100%; padding: 12px 14px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 15px; background: #f9fafb; outline: none; transition: border-color .2s; margin-bottom: 14px; }
+        .input { width: 90%; padding: 12px 14px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 15px; background: #f9fafb; outline: none; transition: border-color .2s; margin-bottom: 14px; }
         .input:focus { border-color: #2563eb; background: #fff; }
         .btn { width: 100%; padding: 12px; border: 0; border-radius: 10px; background: #dc3545; color: #fff; font-weight: 600; cursor: pointer; font-size: 15px; }
         .btn:disabled { background: #9ca3af; cursor: not-allowed; }
