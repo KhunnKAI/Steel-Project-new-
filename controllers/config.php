@@ -38,4 +38,19 @@ try {
     error_log("Database initialization error: " . $e->getMessage());
     die("Database initialization failed.");
 }
+
+// SMTP configuration for sending emails (PHPMailer)
+// Gmail SMTP configuration
+$smtp_config = [
+    'enabled' => true, // เปิดใช้งาน SMTP
+    'host' => 'smtp.gmail.com', // Gmail SMTP server
+    'port' => 587, // TLS port for Gmail
+    'username' => 'prawitchaya.game@gmail.com', // Gmail address
+    'password' => 'fvci trvk mrno khdl', // App password (not regular password)
+    'encryption' => 'tls', // Use TLS encryption
+    'from_email' => 'prawitchaya.game@gmail.com', // Sender email
+    'from_name' => 'ช้างเหล็กไทย', // Sender name (fixed Thai encoding)
+    'reply_to_email' => 'prawitchaya.game@gmail.com',
+    'reply_to_name' => 'ช้างเหล็กไทย Support'
+];
 ?>

@@ -67,13 +67,19 @@ try {
         case 'change_password':
             handleChangePassword($userController);
             break;
+        case 'forgot_password':
+            handleForgotPassword($userController, $pdo);
+            break;
+        case 'reset_password':
+            handleResetPassword($userController, $pdo);
+            break;
         default:
             http_response_code(400);
             echo json_encode([
                 'success' => false, 
                 'message' => 'Invalid action: ' . $action,
                 'code' => 'INVALID_ACTION',
-                'available_actions' => ['test', 'login', 'signup', 'logout', 'profile', 'update_profile', 'change_password']
+                'available_actions' => ['test', 'login', 'signup', 'logout', 'profile', 'update_profile', 'change_password', 'forgot_password', 'reset_password']
             ]);
             break;
     }
@@ -118,7 +124,7 @@ function handleTest($userController, $pdo)
                 'table_exists' => $table_exists,
                 'server_time' => date('Y-m-d H:i:s'),
                 'php_version' => PHP_VERSION,
-                'available_actions' => ['test', 'login', 'signup', 'logout', 'profile', 'update_profile', 'change_password']
+                'available_actions' => ['test', 'login', 'signup', 'logout', 'profile', 'update_profile', 'change_password', 'forgot_password', 'reset_password']
             ]
         ];
         
@@ -659,6 +665,258 @@ function validatePassword($password)
         preg_match('/[A-Z]/', $password) &&
         preg_match('/[a-z]/', $password) &&
         preg_match('/[0-9]/', $password);
+}
+
+/**
+ * Send email using PHPMailer SMTP if configured; fallback to mail()
+ */
+function sendEmailSmart($toEmail, $toName, $subject, $htmlMessage, $textMessage)
+{
+    // Access SMTP config from config.php
+    global $smtp_config;
+
+    // Try PHPMailer if enabled and autoloadable
+    if (!empty($smtp_config['enabled'])) {
+        // Attempt to include Composer autoloader
+        $autoloadPaths = [
+            __DIR__ . '/../vendor/autoload.php',
+            __DIR__ . '/vendor/autoload.php',
+            dirname(__DIR__) . '/vendor/autoload.php'
+        ];
+        foreach ($autoloadPaths as $autoload) {
+            if (file_exists($autoload)) {
+                require_once $autoload;
+                break;
+            }
+        }
+
+        if (class_exists('PHPMailer\\PHPMailer\\PHPMailer')) {
+            try {
+                $mailer = new PHPMailer\PHPMailer\PHPMailer(true);
+
+                $mailer->isSMTP();
+                $mailer->Host = $smtp_config['host'] ?? '';
+                $mailer->SMTPAuth = true;
+                $mailer->Username = $smtp_config['username'] ?? '';
+                $mailer->Password = $smtp_config['password'] ?? '';
+                $encryption = $smtp_config['encryption'] ?? '';
+                if ($encryption) {
+                    $mailer->SMTPSecure = $encryption; // 'tls' or 'ssl'
+                }
+                $mailer->Port = (int)($smtp_config['port'] ?? 587);
+                $mailer->CharSet = 'UTF-8';
+
+                $fromEmail = $smtp_config['from_email'] ?? ('no-reply@' . ($_SERVER['HTTP_HOST'] ?? 'localhost'));
+                $fromName = $smtp_config['from_name'] ?? 'ระบบ';
+                $mailer->setFrom($fromEmail, $fromName);
+                if (!empty($smtp_config['reply_to_email'])) {
+                    $mailer->addReplyTo($smtp_config['reply_to_email'], $smtp_config['reply_to_name'] ?? '');
+                }
+
+                $mailer->addAddress($toEmail, $toName);
+                $mailer->isHTML(true);
+                $mailer->Subject = $subject;
+                $mailer->Body = $htmlMessage;
+                $mailer->AltBody = $textMessage ?: strip_tags($htmlMessage);
+
+                $mailer->send();
+                return true;
+            } catch (Exception $e) {
+                error_log('PHPMailer send error: ' . $e->getMessage());
+                // Fallback to mail()
+            }
+        }
+    }
+
+    // mail() fallback
+    $headers  = "MIME-Version: 1.0\r\n";
+    $headers .= "Content-type: text/html; charset=UTF-8\r\n";
+    $headers .= 'From: ' . (($smtp_config['from_name'] ?? 'ระบบ') . ' <' . ($smtp_config['from_email'] ?? ('no-reply@' . ($_SERVER['HTTP_HOST'] ?? 'localhost'))) . ">\r\n");
+    return @mail($toEmail, $subject, $htmlMessage, $headers);
+}
+
+/**
+ * Handle forgot password - generate token and send email
+ */
+function handleForgotPassword($userController, $pdo)
+{
+    try {
+        $email = trim($_POST['email'] ?? '');
+
+        if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => 'กรุณากรอกอีเมลที่ถูกต้อง',
+                'code' => 'INVALID_EMAIL'
+            ]);
+            return;
+        }
+
+        // Find user by email (do not reveal if not exists)
+        $user = $userController->getByEmail($email);
+
+        // Always respond success to prevent user enumeration
+        $genericResponse = function () {
+            echo json_encode([
+                'success' => true,
+                'message' => 'หากอีเมลนี้อยู่ในระบบ เราได้ส่งลิงก์รีเซ็ตรหัสผ่านให้แล้ว'
+            ]);
+        };
+
+        if (!$user) {
+            $genericResponse();
+            return;
+        }
+
+        // Ensure reset table exists
+        $pdo->exec("CREATE TABLE IF NOT EXISTS PasswordResets (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id VARCHAR(50) NOT NULL,
+            email VARCHAR(255) NOT NULL,
+            token VARCHAR(128) NOT NULL,
+            expires_at DATETIME NOT NULL,
+            used TINYINT(1) NOT NULL DEFAULT 0,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            INDEX (email), INDEX (user_id), INDEX (token)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        // Generate secure token
+        $token = bin2hex(random_bytes(32));
+        $expiresAt = date('Y-m-d H:i:s', time() + 60 * 60); // 1 hour
+
+        // Invalidate previous tokens for this user
+        $stmt = $pdo->prepare("UPDATE PasswordResets SET used = 1 WHERE user_id = :user_id AND used = 0");
+        $stmt->execute([':user_id' => $user['user_id']]);
+
+        // Store token
+        $stmt = $pdo->prepare("INSERT INTO PasswordResets (user_id, email, token, expires_at) VALUES (:user_id, :email, :token, :expires_at)");
+        $stmt->execute([
+            ':user_id' => $user['user_id'],
+            ':email' => $email,
+            ':token' => $token,
+            ':expires_at' => $expiresAt
+        ]);
+
+        // Build reset URL (root-level reset_password.php)
+        $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        $resetUrl = $scheme . $host . '/steelproject/reset_password.php?token=' . urlencode($token);
+
+        // Send email via PHPMailer SMTP (fallback to mail())
+        $subject = 'รีเซ็ตรหัสผ่าน - ช้างเหล็กไทย';
+        $html = '<p>สวัสดีคุณ ' . htmlspecialchars($user['name']) . '</p>' .
+                '<p>กรุณาคลิกที่ลิงก์ด้านล่างเพื่อรีเซ็ตรหัสผ่านของคุณ:</p>' .
+                '<p><a href="' . htmlspecialchars($resetUrl) . '">' . htmlspecialchars($resetUrl) . '</a></p>' .
+                '<p>ลิงก์นี้จะหมดอายุใน 1 ชั่วโมง หากคุณไม่ได้ร้องขอ กรุณาเพิกเฉยอีเมลนี้</p>';
+        $text = "สวัสดีคุณ {$user['name']}\r\n\r\nกรุณาเข้าลิงก์เพื่อรีเซ็ตรหัสผ่าน: {$resetUrl}\r\n\r\nลิงก์หมดอายุใน 1 ชั่วโมง";
+        sendEmailSmart($email, $user['name'], $subject, $html, $text);
+
+        $genericResponse();
+    } catch (Exception $e) {
+        error_log('Forgot password error: ' . $e->getMessage());
+        // Always generic response
+        echo json_encode([
+            'success' => true,
+            'message' => 'หากอีเมลนี้อยู่ในระบบ เราได้ส่งลิงก์รีเซ็ตรหัสผ่านให้แล้ว'
+        ]);
+    }
+}
+
+/**
+ * Handle reset password - verify token and set new password
+ */
+function handleResetPassword($userController, $pdo)
+{
+    try {
+        $token = $_POST['token'] ?? '';
+        $new_password = $_POST['new_password'] ?? '';
+        $confirm_password = $_POST['confirm_password'] ?? '';
+
+        if (empty($token) || empty($new_password) || empty($confirm_password)) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => 'ข้อมูลไม่ครบถ้วน',
+                'code' => 'MISSING_FIELDS'
+            ]);
+            return;
+        }
+
+        if ($new_password !== $confirm_password) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => 'การยืนยันรหัสผ่านไม่ตรงกัน',
+                'code' => 'PASSWORD_MISMATCH'
+            ]);
+            return;
+        }
+
+        if (!validatePassword($new_password)) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => 'รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร ประกอบด้วยตัวอักษรพิมพ์เล็ก พิมพ์ใหญ่ และตัวเลข',
+                'code' => 'WEAK_PASSWORD'
+            ]);
+            return;
+        }
+
+        // Validate token
+        $stmt = $pdo->prepare("SELECT * FROM PasswordResets WHERE token = :token AND used = 0 LIMIT 1");
+        $stmt->execute([':token' => $token]);
+        $reset = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$reset) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => 'โทเคนไม่ถูกต้อง',
+                'code' => 'INVALID_TOKEN'
+            ]);
+            return;
+        }
+
+        if (strtotime($reset['expires_at']) < time()) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => 'โทเคนหมดอายุแล้ว',
+                'code' => 'TOKEN_EXPIRED'
+            ]);
+            return;
+        }
+
+        // Update password
+        $updated = $userController->updatePassword($reset['user_id'], $new_password);
+        if (!$updated) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'ไม่สามารถอัปเดตรหัสผ่านได้',
+                'code' => 'UPDATE_FAILED'
+            ]);
+            return;
+        }
+
+        // Mark token used
+        $stmt = $pdo->prepare("UPDATE PasswordResets SET used = 1 WHERE id = :id");
+        $stmt->execute([':id' => $reset['id']]);
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'รีเซ็ตรหัสผ่านสำเร็จ'
+        ]);
+    } catch (Exception $e) {
+        error_log('Reset password error: ' . $e->getMessage());
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'message' => 'เกิดข้อผิดพลาด',
+            'code' => 'SERVER_ERROR'
+        ]);
+    }
 }
 
 /**

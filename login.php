@@ -495,13 +495,6 @@
             }
             
             try {
-                // In a real application, you would call your forgot password API here
-                // For now, just show a success message
-                alert('ส่งลิงก์รีเซ็ตรหัสผ่านไปยังอีเมลของคุณแล้ว');
-                closeForgotPasswordModal();
-                
-                // You can implement the actual API call like this:
-                /*
                 const response = await fetch(API_BASE_URL, {
                     method: 'POST',
                     headers: {
@@ -512,15 +505,9 @@
                         email: email
                     })
                 });
-                
                 const data = await response.json();
-                if (data.success) {
-                    alert(data.message);
-                    closeForgotPasswordModal();
-                } else {
-                    alert(data.message || 'เกิดข้อผิดพลาด');
-                }
-                */
+                alert(data.message || 'หากอีเมลนี้อยู่ในระบบ เราได้ส่งลิงก์รีเซ็ตรหัสผ่านให้แล้ว');
+                closeForgotPasswordModal();
                 
             } catch (error) {
                 console.error('Forgot password error:', error);
