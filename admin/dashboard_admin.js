@@ -57,6 +57,11 @@ class DashboardManager {
         }
     }
 
+    // Setup event listeners (removed period selector and refresh button handlers)
+    setupEventListeners() {
+        this.setupSessionListeners();
+    }
+
     // Load dashboard data from API with retry logic
     async loadDashboardData() {
         if (this.isLoading) return;
@@ -405,96 +410,62 @@ class DashboardManager {
     }
 
     // Update recent orders with improved HTML generation
-  updateRecentOrders(orders) {
-    const container = document.getElementById('recent-orders-list');
-    if (!container) return;
-    
-    if (!Array.isArray(orders) || orders.length === 0) {
-        container.innerHTML = this.createEmptyState('ไม่มีคำสั่งซื้อล่าสุด');
-        return;
-    }
-    
-    // Create table structure
-    const tableHtml = `
-        <div class="table-responsive">
-            <table class="orders-table">
-                <thead>
-                    <tr>
-                        <th>หมายเลขคำสั่งซื้อ</th>
-                        <th>ลูกค้า</th>
-                        <th>สถานะ</th>
-                        <th>ยอดรวม</th>
-                        <th>เวลา</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${orders.map(order => {
-                        const timeAgo = this.getTimeAgo(order.created_at);
-                        const statusClass = this.getStatusClass(order.status_code);
-                        const customerName = this.escapeHtml(order.customer_name || 'ไม่ระบุ');
-                        const statusDesc = this.escapeHtml(order.status_desc || 'ไม่ระบุสถานะ');
-                        const amount = Number(order.total_amount) || 0;
-                        
-                        return `
-                            <tr class="order-row">
-                                <td class="order-id-cell">
-                                    <span class="order-id-badge">#${this.escapeHtml(order.order_id || '')}</span>
-                                </td>
-                                <td class="customer-cell">
-                                    <span class="customer-name">${customerName}</span>
-                                </td>
-                                <td class="status-cell">
-                                    <span class="order-status ${statusClass}">${statusDesc}</span>
-                                </td>
-                                <td class="amount-cell">
-                                    <span class="amount-value">฿${amount.toLocaleString()}</span>
-                                </td>
-                                <td class="time-cell">
-                                    <span class="time-ago">${timeAgo}</span>
-                                </td>
-                            </tr>
-                        `;
-                    }).join('')}
-                </tbody>
-            </table>
-        </div>
-    `;
-    
-    container.innerHTML = tableHtml;
-}
-
-    // Setup event listeners with better error handling
-    setupEventListeners() {
-        try {
-            // Period selector
-            const periodSelector = document.querySelector('.period-selector');
-            if (periodSelector) {
-                periodSelector.addEventListener('change', (e) => {
-                    this.currentPeriod = e.target.value;
-                    this.loadDashboardData();
-                });
-            }
-            
-            // Refresh button
-            const refreshButton = document.getElementById('refresh-dashboard');
-            if (refreshButton) {
-                refreshButton.addEventListener('click', () => {
-                    this.loadDashboardData();
-                });
-            }
-
-            // Session management
-            this.setupSessionListeners();
-
-            // Sidebar toggle
-            this.setupSidebarListeners();
-
-            // Keyboard shortcuts
-            this.setupKeyboardShortcuts();
-
-        } catch (error) {
-            console.error('Error setting up event listeners:', error);
+    updateRecentOrders(orders) {
+        const container = document.getElementById('recent-orders-list');
+        if (!container) return;
+        
+        if (!Array.isArray(orders) || orders.length === 0) {
+            container.innerHTML = this.createEmptyState('ไม่มีคำสั่งซื้อล่าสุด');
+            return;
         }
+        
+        // Create table structure
+        const tableHtml = `
+            <div class="table-responsive">
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th>หมายเลขคำสั่งซื้อ</th>
+                            <th>ลูกค้า</th>
+                            <th>สถานะ</th>
+                            <th>ยอดรวม</th>
+                            <th>เวลา</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${orders.map(order => {
+                            const timeAgo = this.getTimeAgo(order.created_at);
+                            const statusClass = this.getStatusClass(order.status_code);
+                            const customerName = this.escapeHtml(order.customer_name || 'ไม่ระบุ');
+                            const statusDesc = this.escapeHtml(order.status_desc || 'ไม่ระบุสถานะ');
+                            const amount = Number(order.total_amount) || 0;
+                            
+                            return `
+                                <tr class="order-row">
+                                    <td class="order-id-cell">
+                                        <span class="order-id-badge">#${this.escapeHtml(order.order_id || '')}</span>
+                                    </td>
+                                    <td class="customer-cell">
+                                        <span class="customer-name">${customerName}</span>
+                                    </td>
+                                    <td class="status-cell">
+                                        <span class="order-status ${statusClass}">${statusDesc}</span>
+                                    </td>
+                                    <td class="amount-cell">
+                                        <span class="amount-value">฿${amount.toLocaleString()}</span>
+                                    </td>
+                                    <td class="time-cell">
+                                        <span class="time-ago">${timeAgo}</span>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+        
+        container.innerHTML = tableHtml;
     }
 
     // Setup session-related event listeners
@@ -718,7 +689,6 @@ class DashboardManager {
         }
     }
 }
-
 
 function resetSessionTimeout() {
     if (window.dashboardManager) {

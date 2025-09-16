@@ -90,44 +90,6 @@ if (!$current_admin) {
             font-weight: 600;
         }
 
-        .header-controls {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .period-selector {
-            padding: 8px 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .period-selector:hover {
-            border-color: #007bff;
-        }
-
-        .refresh-btn {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .refresh-btn:hover {
-            background: #0056b3;
-            transform: translateY(-1px);
-        }
-
         .user-info {
             display: flex;
             align-items: center;
@@ -604,11 +566,6 @@ if (!$current_admin) {
                 text-align: center;
             }
 
-            .header-controls {
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-
             /* Table responsiveness on mobile */
             .orders-table {
                 font-size: 13px;
@@ -709,20 +666,6 @@ if (!$current_admin) {
         <main class="main-content">
             <div class="header">
                 <h1><i class="fas fa-tachometer-alt"></i> แดชบอร์ด</h1>
-                
-                <div class="header-controls">
-                    <select class="period-selector">
-                        <option value="7days">7 วันที่ผ่านมา</option>
-                        <option value="30days">30 วันที่ผ่านมา</option>
-                        <option value="90days">90 วันที่ผ่านมา</option>
-                        <option value="1year">1 ปีที่ผ่านมา</option>
-                    </select>
-                    
-                    <button class="refresh-btn" id="refresh-dashboard">
-                        <i class="fas fa-sync-alt"></i>
-                        รีเฟรช
-                    </button>
-                </div>
 
                 <div class="user-info">
                     <div>

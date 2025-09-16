@@ -95,7 +95,6 @@ function getDashboardOverview($pdo, $dateCondition) {
     $stmt = $pdo->prepare("
         SELECT COUNT(*) as total_orders 
         FROM Orders o
-        WHERE $dateCondition
     ");
     $stmt->execute();
     $totalOrders = $stmt->fetch()['total_orders'];
