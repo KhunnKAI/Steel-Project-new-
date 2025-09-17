@@ -362,9 +362,27 @@ function updateCategoryFilter() {
     }
 }
 
-// ฟิลเตอร์และค้นหา
-function applyCurrentFilters() {
+// เพิ่มฟังก์ชันสำหรับกรองราคา
+function applyPriceFilter() {
+    const minPrice = parseFloat(document.getElementById('minPrice').value) || 0;
+    const maxPrice = parseFloat(document.getElementById('maxPrice').value) || Infinity;
+    
+    console.log(`กรองราคา: ${minPrice} - ${maxPrice}`);
+    
+    // ตรวจสอบว่าราคาต่ำสุดไม่มากกว่าราคาสูงสุด
+    if (minPrice > maxPrice && maxPrice !== Infinity) {
+        alert('ราคาต่ำสุดไม่ควรมากกว่าราคาสูงสุด');
+        return;
+    }
+    
+    applyAllFilters();
+}
+
+// ปรับปรุงฟังก์ชัน applyCurrentFilters ให้รวมการกรองราคา
+function applyAllFilters() {
     let filtered = [...allProducts];
+    
+    // 1. กรองตามคำค้นหา
     const searchInput = document.getElementById('searchInput');
     const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
     if (searchTerm) {
@@ -376,6 +394,7 @@ function applyCurrentFilters() {
         );
     }
 
+    // 2. กรองตามหมวดหมู่
     const checkedCategories = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
         .map(checkbox => checkbox.value);
     if (checkedCategories.length > 0) {
@@ -384,22 +403,29 @@ function applyCurrentFilters() {
         );
     }
 
+    // 3. กรองตามราคา
+    const minPrice = parseFloat(document.getElementById('minPrice').value) || 0;
+    const maxPrice = parseFloat(document.getElementById('maxPrice').value) || Infinity;
+    
+    if (minPrice > 0 || maxPrice < Infinity) {
+        filtered = filtered.filter(product => {
+            const price = parseFloat(product.price) || 0;
+            return price >= minPrice && price <= maxPrice;
+        });
+    }
+
     filteredProducts = filtered;
+    console.log(`ผลการกรอง: เหลือ ${filteredProducts.length} จาก ${allProducts.length} รายการ`);
+    
+    // เรียงลำดับและแสดงผล
+    applySorting();
 }
 
-function filterByCategory() {
-    applyCurrentFilters();
-    sortProducts();
-}
-
-function searchProducts() {
-    applyCurrentFilters();
-    sortProducts();
-}
-
-function sortProducts() {
+// แยกฟังก์ชันการเรียงลำดับออกมา
+function applySorting() {
     const sortValue = document.getElementById('sortSelect')?.value || 'latest';
     currentSort = sortValue;
+    
     switch (sortValue) {
         case 'price-high':
             filteredProducts.sort((a, b) => b.price - a.price);
@@ -415,48 +441,87 @@ function sortProducts() {
             filteredProducts.sort((a, b) => b.date - a.date);
             break;
     }
+    
     displayProducts(filteredProducts);
 }
 
-// รีเซ็ตฟิลเตอร์
+// อัพเดทฟังก์ชันเดิมให้ใช้ระบบใหม่
+function filterByCategory() {
+    applyAllFilters();
+}
+
+function searchProducts() {
+    applyAllFilters();
+}
+
+function sortProducts() {
+    applySorting();
+}
+
+// ปรับปรุง clearAllFilters ให้ล้างช่องราคาด้วย
 function clearAllFilters() {
+    // ล้างช่องค้นหา
     const searchInput = document.getElementById('searchInput');
     if (searchInput) searchInput.value = '';
 
+    // ล้างหมวดหมู่
     document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
         checkbox.checked = false;
     });
 
+    // ล้างช่องราคา
+    const minPriceInput = document.getElementById('minPrice');
+    const maxPriceInput = document.getElementById('maxPrice');
+    if (minPriceInput) minPriceInput.value = '';
+    if (maxPriceInput) maxPriceInput.value = '';
+
+    // รีเซ็ตการเรียงลำดับ
     const sortSelect = document.getElementById('sortSelect');
     if (sortSelect) sortSelect.value = 'latest';
     currentSort = 'latest';
 
+    // แสดงสินค้าทั้งหมด
     filteredProducts = [...allProducts];
-    sortProducts();
+    applySorting();
 }
 
-function waitForDependencies(callback, attempts = 0, maxAttempts = 30) {
-    console.log(`Waiting for dependencies... attempt ${attempts + 1}`);
-    console.log('Cart Manager available:', typeof window.cartManager);
-    console.log('Cart Manager object:', window.cartManager);
-
-    if (typeof window.cartManager !== 'undefined') {
-        console.log("✅ Cart Manager loaded!");
-        callback();
-    } else if (attempts < maxAttempts) {
-        setTimeout(() => waitForDependencies(callback, attempts + 1, maxAttempts), 200);
-    } else {
-        console.warn("⚠️ Cart Manager not found after maximum attempts, proceeding anyway");
-        console.log("Available window objects:", Object.keys(window).filter(key => key.includes('cart')));
-        callback(); // เรียกต่อไปเพื่อให้โหลดสินค้า
+// เพิ่ม Event Listeners สำหรับช่องราคา (กดปุ่มเท่านั้น)
+function setupPriceFilterListeners() {
+    const minPriceInput = document.getElementById('minPrice');
+    const maxPriceInput = document.getElementById('maxPrice');
+    
+    // ให้กด Enter ได้ในช่องราคา
+    if (minPriceInput) {
+        minPriceInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                applyPriceFilter();
+            }
+        });
+    }
+    
+    if (maxPriceInput) {
+        maxPriceInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                applyPriceFilter();
+            }
+        });
+    }
+    
+    // Event listener สำหรับปุ่ม "ใช้ตัวกรอง"
+    const priceFilterBtn = document.querySelector('.filter-apply-btn');
+    if (priceFilterBtn) {
+        priceFilterBtn.addEventListener('click', applyPriceFilter);
     }
 }
 
-// แก้ไข DOMContentLoaded event listener
+// อัพเดท DOMContentLoaded event listener
 document.addEventListener('DOMContentLoaded', function () {
     console.log("=== DOM Content Loaded ===");
     console.log("Current URL:", window.location.href);
     console.log("Document ready state:", document.readyState);
+
+    // ตั้งค่า Event Listeners
+    setupPriceFilterListeners();
 
     // ลองโหลดสินค้าทันที (ไม่รอ cartManager)
     console.log("🔄 Starting immediate product fetch...");
@@ -503,3 +568,39 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 });
+
+// เพิ่มฟังก์ชันสำหรับใช้ preset ราคา (ถ้าต้องการ)
+function applyPricePreset(min, max) {
+    const minPriceInput = document.getElementById('minPrice');
+    const maxPriceInput = document.getElementById('maxPrice');
+    
+    if (minPriceInput) minPriceInput.value = min || '';
+    if (maxPriceInput) maxPriceInput.value = max || '';
+    
+    applyPriceFilter();
+}
+
+// ฟังก์ชันสำหรับแสดงราคาในรูปแบบที่อ่านง่าย
+function formatPrice(price) {
+    return new Intl.NumberFormat('th-TH', {
+        style: 'currency',
+        currency: 'THB',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+    }).format(price);
+}
+
+// เพิ่มฟังก์ชันตรวจสอบว่ามีตัวกรองใดทำงานอยู่หรือไม่
+function hasActiveFilters() {
+    const searchInput = document.getElementById('searchInput');
+    const minPrice = document.getElementById('minPrice');
+    const maxPrice = document.getElementById('maxPrice');
+    const checkedCategories = document.querySelectorAll('input[type="checkbox"]:checked');
+    
+    return (
+        (searchInput && searchInput.value.trim()) ||
+        (minPrice && minPrice.value) ||
+        (maxPrice && maxPrice.value) ||
+        checkedCategories.length > 0
+    );
+}

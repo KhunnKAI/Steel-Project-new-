@@ -83,7 +83,7 @@ error_log("Header Debug - COOKIE user_id: " . ($_COOKIE['user_id'] ?? 'not set')
                     <span>สวัสดี, <?php echo htmlspecialchars($userName); ?>!</span>
                 </div>
                 <a href="profile.php">โปรไฟล์</a>
-                <a href="myorders.php">คำสั่งซื้อของฉัน</a>
+                <a href="history.php">คำสั่งซื้อของฉัน</a>
                 <hr class="dropdown-divider">
                 <a href="logout.php">ออกจากระบบ</a>
                 <?php else: ?>
