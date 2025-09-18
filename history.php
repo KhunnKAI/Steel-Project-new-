@@ -119,7 +119,7 @@
     .filter-row {
         display: flex;
         gap: 20px;
-        align-items: center;
+        align-items: flex-end;
         flex-wrap: wrap;
     }
 
@@ -153,7 +153,7 @@
     .filter-buttons {
         display: flex;
         gap: 10px;
-        margin-top: 10px;
+        align-items: flex-end;
     }
 
     .btn-filter {
@@ -166,6 +166,7 @@
         font-size: 14px;
         font-weight: bold;
         transition: background-color 0.3s;
+        height: 42px;
     }
 
     .btn-filter:hover {
@@ -181,6 +182,7 @@
         cursor: pointer;
         font-size: 14px;
         transition: background-color 0.3s;
+        height: 42px;
     }
 
     .btn-clear:hover {
@@ -512,6 +514,12 @@
             min-width: 100%;
         }
 
+        .filter-buttons {
+            width: 100%;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
         .order-summary {
             flex-direction: column;
             gap: 15px;
@@ -604,10 +612,10 @@
                     <label for="dateTo">วันที่สิ้นสุด</label>
                     <input type="date" id="dateTo">
                 </div>
-            </div>
-            <div class="filter-buttons">
-                <button class="btn-filter" onclick="applyFilters()">กรองข้อมูล</button>
-                <button class="btn-clear" onclick="clearFilters()">ล้างตัวกรอง</button>
+                <div class="filter-buttons">
+                    <button class="btn-filter" onclick="applyFilters()">กรองข้อมูล</button>
+                    <button class="btn-clear" onclick="clearFilters()">ล้างตัวกรอง</button>
+                </div>
             </div>
         </div>
 

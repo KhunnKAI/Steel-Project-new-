@@ -413,28 +413,28 @@
                 <div class="timeline-item">
                     <div class="timeline-icon">⏳</div>
                     <div class="timeline-content">
-                        <div class="timeline-title">รอการชำระเงิน</div>
+                        <div class="timeline-title">รอตรวจสอบการการชำระเงิน</div>
                     </div>
                 </div>
 
                 <div class="timeline-item">
                     <div class="timeline-icon">📦</div>
                     <div class="timeline-content">
-                        <div class="timeline-title">ร้านยืนยันยอดเงินแล้ว</div>
+                        <div class="timeline-title">รอจัดส่ง</div>
                     </div>
                 </div>
 
                 <div class="timeline-item">
                     <div class="timeline-icon">🚚</div>
                     <div class="timeline-content">
-                        <div class="timeline-title">ระหว่างการจัดส่ง</div>
+                        <div class="timeline-title">กำลังจัดส่ง</div>
                     </div>
                 </div>
 
                 <div class="timeline-item">
                     <div class="timeline-icon">✅</div>
                     <div class="timeline-content">
-                        <div class="timeline-title">เสร็จเรียบร้อย</div>
+                        <div class="timeline-title">จัดส่งแล้ว</div>
                     </div>
                 </div>
             </div>
@@ -652,17 +652,17 @@
                 icon.classList.remove('active');
             });
 
-            // Set active status based on order status
+            // Set active status based on order status - updated to match new status mapping
             const statusMap = {
-                'pending_payment': 1,
-                'awaiting_shipment': 2,
-                'in_transit': 3,
-                'delivered': 4,
-                'cancelled': 0
+                'pending_payment': 0, // รอตรวจสอบการการชำระเงิน
+                'awaiting_shipment': 1, // รอจัดส่ง  
+                'in_transit': 2, // กำลังจัดส่ง
+                'delivered': 3, // จัดส่งแล้ว
+                'cancelled': -1 // ยกเลิก
             };
 
-            const activeIndex = statusMap[statusCode] || 0;
-            if (activeIndex > 0 && timelineItems[activeIndex]) {
+            const activeIndex = statusMap[statusCode];
+            if (activeIndex >= 0 && timelineItems[activeIndex]) {
                 timelineItems[activeIndex].querySelector('.timeline-icon').classList.add('active');
             }
         }
@@ -715,8 +715,9 @@
         }
 
         function getStatusText(statusCode) {
+            // Updated status mapping to match new requirements
             const statusMap = {
-                'pending_payment': 'รอการชำระเงิน',
+                'pending_payment': 'รอตรวจสอบการการชำระเงิน',
                 'awaiting_shipment': 'รอจัดส่ง',
                 'in_transit': 'กำลังจัดส่ง',
                 'delivered': 'จัดส่งแล้ว',
