@@ -361,24 +361,66 @@ function navigateToProduct(productId) {
     }
 }
 
-// Filter and search functions
+/// Helper function to normalize text for better Thai/English search
+function normalizeSearchText(text) {
+    if (!text) return '';
+    
+    return text
+        // Convert to lowercase
+        .toLowerCase()
+        // Remove extra whitespace
+        .trim()
+        // Replace multiple spaces with single space
+        .replace(/\s+/g, ' ')
+        // Remove special characters but keep Thai characters, English characters, numbers, and spaces
+        .replace(/[^\u0e00-\u0e7fa-z0-9\s]/g, '')
+        // Additional normalization for common Thai character variations
+        .replace(/ำ/g, 'ํา')  // Normalize sara am
+        .replace(/์/g, '');   // Remove mai taikhu (silent marker)
+}
+
+// Improved search function with better Thai/English support
 function applyCurrentFilters() {
     let filtered = [...allProducts];
     
-    // Search term filter
+    // Search term filter with improved Thai/English handling
     const searchInput = document.getElementById('searchInput');
-    const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    const searchTerm = searchInput ? searchInput.value.trim() : '';
+    
     if (searchTerm) {
-        filtered = filtered.filter(product =>
-            product.name.toLowerCase().includes(searchTerm) ||
-            product.description.toLowerCase().includes(searchTerm) ||
-            product.category.toLowerCase().includes(searchTerm) ||
-            product.supplier_name.toLowerCase().includes(searchTerm) ||
-            (product.specifications && product.specifications.toLowerCase().includes(searchTerm))
-        );
+        const normalizedSearchTerm = normalizeSearchText(searchTerm);
+        
+        // Split search term into individual words for better matching
+        const searchWords = normalizedSearchTerm.split(' ').filter(word => word.length > 0);
+        
+        filtered = filtered.filter(product => {
+            // Prepare searchable text fields
+            const searchableFields = [
+                product.name || '',
+                product.description || '',
+                product.category || '',
+                product.supplier_name || '',
+                product.specifications || '',
+                product.grade || '',
+                product.lot || ''
+            ];
+            
+            // Normalize all searchable text
+            const normalizedFields = searchableFields.map(field => normalizeSearchText(field));
+            const combinedText = normalizedFields.join(' ');
+            
+            // Check if all search words are found (AND logic)
+            return searchWords.every(word => {
+                return combinedText.includes(word) || 
+                       // Also check original text for exact matches
+                       searchableFields.some(field => 
+                           field.toLowerCase().includes(word.toLowerCase())
+                       );
+            });
+        });
     }
 
-    // Category filter
+    // Category filter (unchanged)
     const checkedCategories = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
         .map(checkbox => checkbox.value);
     if (checkedCategories.length > 0) {
@@ -387,7 +429,7 @@ function applyCurrentFilters() {
         );
     }
 
-    // Price range filter
+    // Price range filter (unchanged)
     const minPriceInput = document.getElementById('minPrice');
     const maxPriceInput = document.getElementById('maxPrice');
     const minPrice = minPriceInput ? (parseFloat(minPriceInput.value) || 0) : 0;
@@ -404,6 +446,69 @@ function applyCurrentFilters() {
 
     filteredProducts = filtered;
 }
+
+// Enhanced search with real-time suggestions (optional)
+function setupEnhancedSearch() {
+    const searchInput = document.getElementById('searchInput');
+    if (!searchInput) return;
+    
+    // Add input event for real-time search
+    searchInput.addEventListener('input', function(e) {
+        // Debounce the search to avoid too many calls
+        clearTimeout(searchInput.searchTimeout);
+        searchInput.searchTimeout = setTimeout(() => {
+            searchProducts();
+        }, 300); // Wait 300ms after user stops typing
+    });
+    
+    // Keep the original enter key functionality
+    searchInput.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            clearTimeout(searchInput.searchTimeout);
+            searchProducts();
+        }
+    });
+    
+    // Add placeholder text to help users understand search capabilities
+    if (!searchInput.placeholder) {
+        searchInput.placeholder = 'ค้นหาด้วยชื่อสินค้า, หมวดหมู่, ผู้จำหน่าย หรือรายละเอียดสินค้า...';
+    }
+}
+
+// Call this function in your DOMContentLoaded event
+document.addEventListener('DOMContentLoaded', function () {
+    console.log("=== DOM Content Loaded (All Products) ===");
+    loadProducts();
+    setupEventListeners();
+    setupEnhancedSearch(); // Add this line
+    
+    // Setup cart system check
+    waitForDependencies(() => {
+        console.log("Dependencies loaded for all products page");
+    });
+});
+
+// Test function to verify search functionality
+window.testSearch = function(testTerm) {
+    console.log(`Testing search with term: "${testTerm}"`);
+    
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.value = testTerm;
+        searchProducts();
+        console.log(`Search completed. Found ${filteredProducts.length} products.`);
+        
+        // Show first few results
+        if (filteredProducts.length > 0) {
+            console.log('First 3 results:');
+            filteredProducts.slice(0, 3).forEach((product, index) => {
+                console.log(`${index + 1}. ${product.name} - ${product.category}`);
+            });
+        }
+    } else {
+        console.error('Search input not found');
+    }
+};
 
 // Search products
 function searchProducts() {

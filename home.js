@@ -382,6 +382,7 @@ function applyPriceFilter() {
 function applyAllFilters() {
     let filtered = [...allProducts];
     
+    /*
     // 1. กรองตามคำค้นหา
     const searchInput = document.getElementById('searchInput');
     const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
@@ -393,6 +394,7 @@ function applyAllFilters() {
             product.supplier.toLowerCase().includes(searchTerm)
         );
     }
+    */
 
     // 2. กรองตามหมวดหมู่
     const checkedCategories = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
@@ -603,4 +605,257 @@ function hasActiveFilters() {
         (maxPrice && maxPrice.value) ||
         checkedCategories.length > 0
     );
+}
+
+
+// ฟังก์ชันตรวจสอบว่าข้อความมีคำค้นหาหรือไม่
+function containsSearchTerms(text, searchTokens) {
+    if (!text || !searchTokens || searchTokens.length === 0) return false;
+    
+    const normalizedText = normalizeSearchText(text);
+    
+    // ตรวจสอบว่าทุกคำค้นหามีอยู่ในข้อความหรือไม่
+    return searchTokens.every(token => normalizedText.includes(token));
+}
+
+// ฟังก์ชันคำนวณคะแนนความเกี่ยวข้อง
+function calculateRelevanceScore(product, searchTokens) {
+    let score = 0;
+    
+    // น้ำหนักการให้คะแนน
+    const weights = {
+        name: 10,        // ชื่อสินค้าสำคัญที่สุด
+        category: 5,     // หมวดหมู่
+        description: 3,  // คำอธิบาย
+        supplier: 2,     // ผู้จัดจำหน่าย
+        grade: 2         // เกรด
+    };
+    
+    searchTokens.forEach(token => {
+        // ตรวจสอบในชื่อสินค้า
+        if (containsSearchTerms(product.name, [token])) {
+            score += weights.name;
+            // ให้คะแนนเพิ่มถ้าตรงกันตั้งแต่ตัวแรก
+            if (normalizeSearchText(product.name).startsWith(token)) {
+                score += 5;
+            }
+        }
+        
+        // ตรวจสอบในหมวดหมู่
+        if (containsSearchTerms(product.category, [token])) {
+            score += weights.category;
+        }
+        
+        // ตรวจสอบในคำอธิบาย
+        if (containsSearchTerms(product.description, [token])) {
+            score += weights.description;
+        }
+        
+        // ตรวจสอบในผู้จัดจำหน่าย
+        if (containsSearchTerms(product.supplier, [token])) {
+            score += weights.supplier;
+        }
+        
+        // ตรวจสอบในเกรด
+        if (containsSearchTerms(product.grade, [token])) {
+            score += weights.grade;
+        }
+    });
+    
+    return score;
+}
+
+// ฟังก์ชันปรับปรุงการค้นหาให้รองรับไทยและอังกฤษได้ดีขึ้น
+function normalizeSearchText(text) {
+    if (!text) return '';
+    
+    return text
+        .toLowerCase()
+        .trim()
+        // ลบช่องว่างส่วนเกิน
+        .replace(/\s+/g, ' ')
+        // ลบเครื่องหมายพิเศษ
+        .replace(/[^\w\s\u0E00-\u0E7F]/g, '');
+}
+
+// ฟังก์ชันแยกคำค้นหา
+function tokenizeSearch(searchText) {
+    if (!searchText) return [];
+    
+    const normalized = normalizeSearchText(searchText);
+    // แยกคำด้วยช่องว่าง
+    const tokens = normalized.split(' ').filter(token => token.length > 0);
+    
+    return tokens;
+}
+
+// ฟังก์ชันตรวจสอบว่าข้อความมีคำค้นหาหรือไม่
+function containsSearchTerms(text, searchTokens) {
+    if (!text || !searchTokens || searchTokens.length === 0) return false;
+    
+    const normalizedText = normalizeSearchText(text);
+    
+    // ตรวจสอบว่าทุกคำค้นหามีอยู่ในข้อความหรือไม่
+    return searchTokens.every(token => normalizedText.includes(token));
+}
+
+// ฟังก์ชันคำนวณคะแนนความเกี่ยวข้อง
+function calculateRelevanceScore(product, searchTokens) {
+    let score = 0;
+    
+    // น้ำหนักการให้คะแนน
+    const weights = {
+        name: 10,        // ชื่อสินค้าสำคัญที่สุด
+        category: 5,     // หมวดหมู่
+        description: 3,  // คำอธิบาย
+        supplier: 2,     // ผู้จัดจำหน่าย
+        grade: 2         // เกรด
+    };
+    
+    searchTokens.forEach(token => {
+        // ตรวจสอบในชื่อสินค้า
+        if (containsSearchTerms(product.name, [token])) {
+            score += weights.name;
+            // ให้คะแนนเพิ่มถ้าตรงกันตั้งแต่ตัวแรก
+            if (normalizeSearchText(product.name).startsWith(token)) {
+                score += 5;
+            }
+        }
+        
+        // ตรวจสอบในหมวดหมู่
+        if (containsSearchTerms(product.category, [token])) {
+            score += weights.category;
+        }
+        
+        // ตรวจสอบในคำอธิบาย
+        if (containsSearchTerms(product.description, [token])) {
+            score += weights.description;
+        }
+        
+        // ตรวจสอบในผู้จัดจำหน่าย
+        if (containsSearchTerms(product.supplier, [token])) {
+            score += weights.supplier;
+        }
+        
+        // ตรวจสอบในเกรด
+        if (containsSearchTerms(product.grade, [token])) {
+            score += weights.grade;
+        }
+    });
+    
+    return score;
+}
+
+// 1. เพิ่มฟังก์ชันนี้ใต้ตัวแปร global (หลังบรรทัด let currentSort = 'latest';)
+function normalizeSearchText(text) {
+    if (!text) return '';
+    
+    return text
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, ' ')
+        .replace(/[^\w\s\u0E00-\u0E7F]/g, '');
+}
+
+// 2. แทนที่ฟังก์ชัน applyAllFilters ทั้งหมด (บรรทัด 375-424) ด้วยโค้ดนี้:
+function applyAllFilters() {
+    let filtered = [...allProducts];
+    
+    console.log('=== Search Debug ===');
+    console.log('Total products:', allProducts.length);
+    
+    // 1. กรองตามคำค้นหา (ปรับปรุงแล้ว)
+    const searchInput = document.getElementById('searchInput');
+    const searchTerm = searchInput ? searchInput.value.trim() : '';
+    
+    if (searchTerm && searchTerm.length > 0) {
+        console.log('Original search term:', searchTerm);
+        const normalizedSearch = normalizeSearchText(searchTerm);
+        console.log('Normalized search term:', normalizedSearch);
+        
+        // ใช้การค้นหาแบบเข้มงวดสำหรับคำสั้นๆ (1-2 ตัวอักษร)
+        if (searchTerm.length <= 2) {
+            console.log('Using strict search for short term');
+            
+            filtered = filtered.filter(product => {
+                const productName = normalizeSearchText(product.name || '');
+                const productCategory = normalizeSearchText(product.category || '');
+                const productDescription = normalizeSearchText(product.description || '');
+                const productSupplier = normalizeSearchText(product.supplier || '');
+                
+                // ตรวจสอบการขึ้นต้นหรือเป็นคำแยก
+                const nameMatch = productName.startsWith(normalizedSearch) || 
+                                productName.split(' ').some(word => word.startsWith(normalizedSearch));
+                                
+                const categoryMatch = productCategory.startsWith(normalizedSearch) || 
+                                    productCategory.split(' ').some(word => word.startsWith(normalizedSearch));
+                                    
+                const descMatch = productDescription.split(' ').some(word => word.startsWith(normalizedSearch));
+                const supplierMatch = productSupplier.split(' ').some(word => word.startsWith(normalizedSearch));
+                
+                const isMatch = nameMatch || categoryMatch || descMatch || supplierMatch;
+                
+                if (isMatch) {
+                    console.log(`✓ Match found: "${product.name}" (normalized: "${productName}")`);
+                }
+                
+                return isMatch;
+            });
+        } else {
+            console.log('Using flexible search for long term');
+            
+            // ใช้การค้นหาแบบ contains สำหรับคำยาว
+            filtered = filtered.filter(product => {
+                const productName = normalizeSearchText(product.name || '');
+                const productCategory = normalizeSearchText(product.category || '');
+                const productDescription = normalizeSearchText(product.description || '');
+                const productSupplier = normalizeSearchText(product.supplier || '');
+                
+                const isMatch = productName.includes(normalizedSearch) ||
+                              productCategory.includes(normalizedSearch) ||
+                              productDescription.includes(normalizedSearch) ||
+                              productSupplier.includes(normalizedSearch);
+                
+                if (isMatch) {
+                    console.log(`✓ Match found: "${product.name}" (normalized: "${productName}")`);
+                }
+                
+                return isMatch;
+            });
+        }
+        
+        console.log(`Search results: ${filtered.length} items found`);
+    }
+
+    // 2. กรองตามหมวดหมู่
+    const checkedCategories = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+        .map(checkbox => checkbox.value);
+    if (checkedCategories.length > 0) {
+        filtered = filtered.filter(product =>
+            checkedCategories.includes(product.category)
+        );
+        console.log(`After category filter: ${filtered.length} items`);
+    }
+
+    // 3. กรองตามราคา
+    const minPrice = parseFloat(document.getElementById('minPrice')?.value) || 0;
+    const maxPrice = parseFloat(document.getElementById('maxPrice')?.value) || Infinity;
+    
+    if (minPrice > 0 || maxPrice < Infinity) {
+        filtered = filtered.filter(product => {
+            const price = parseFloat(product.price) || 0;
+            return price >= minPrice && price <= maxPrice;
+        });
+        console.log(`After price filter: ${filtered.length} items`);
+    }
+
+    filteredProducts = filtered;
+    console.log(`Final filtered products: ${filteredProducts.length} จาก ${allProducts.length} รายการ`);
+    
+    // เรียงลำดับและแสดงผล
+    if (!searchTerm) {
+        applySorting();
+    } else {
+        displayProducts(filteredProducts);
+    }
 }
