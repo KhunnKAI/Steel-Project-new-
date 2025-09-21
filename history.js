@@ -167,11 +167,13 @@ function displayOrders() {
         // Action buttons based on status
         let actionButtons = `<a href="bill.php?order_id=${order.order_id}" class="btn-view">ดูรายละเอียด</a>`;
 
+        /*
         if (order.status.status_code === 'pending_payment') {
             actionButtons += `<button class="btn-cancel" onclick="cancelOrder('${order.order_id}')">ยกเลิกคำสั่งซื้อ</button>`;
         } else if (order.status.status_code === 'delivered') {
             actionButtons += `<button class="btn-reorder" onclick="reorder('${order.order_id}')">สั่งซื้ออีกครั้ง</button>`;
         }
+        */
 
         html += `
                     <div class="order-item">
