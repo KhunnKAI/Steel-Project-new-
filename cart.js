@@ -444,7 +444,7 @@ class CartManager {
                         <div style="font-size: 48px; margin-bottom: 20px;">🛒</div>
                         <h3 style="margin-bottom: 10px;">ตะกร้าสินค้าของคุณว่างเปล่า</h3>
                         <p>เพิ่มสินค้าลงในตะกร้า</p>
-                        <button onclick="window.location.href='home.php'" style="
+                        <button onclick="window.location.href='allproduct.php'" style="
                             margin-top: 20px; 
                             padding: 12px 24px; 
                             background: #051A37; 

@@ -339,7 +339,7 @@
                 <div class="product-stock"></div>
                 <div class="product-price">฿0.00 บาท/เส้น</div>
                 <div class="action-buttons">
-                    <button class="btn btn-secondary">ใส่ในตะกร้า</button>
+                    <button class="btn btn-secondary">เพิ่มใส่ตะกร้า</button>
                 </div>
             </div>
         </div>

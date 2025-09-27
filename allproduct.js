@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function () {
     console.log("=== DOM Content Loaded (All Products) ===");
     loadProducts();
     setupEventListeners();
+    setupEnhancedSearch(); // Add enhanced search setup
     
     // Setup cart system check
     waitForDependencies(() => {
@@ -361,7 +362,7 @@ function navigateToProduct(productId) {
     }
 }
 
-/// Helper function to normalize text for better Thai/English search
+/// Enhanced Helper function to normalize text for better Thai/English search
 function normalizeSearchText(text) {
     if (!text) return '';
     
@@ -374,50 +375,314 @@ function normalizeSearchText(text) {
         .replace(/\s+/g, ' ')
         // Remove special characters but keep Thai characters, English characters, numbers, and spaces
         .replace(/[^\u0e00-\u0e7fa-z0-9\s]/g, '')
-        // Additional normalization for common Thai character variations
+        // Thai character normalization
         .replace(/ำ/g, 'ํา')  // Normalize sara am
-        .replace(/์/g, '');   // Remove mai taikhu (silent marker)
+        .replace(/์/g, '')   // Remove mai taikhu (silent marker)
+        // Additional Thai normalizations
+        .replace(/เ([ก-ฮ])ะ/g, 'เ$1็') // เกะ -> เก็
+        .replace(/โ([ก-ฮ])ะ/g, 'โ$1็') // โกะ -> โก็
+        .replace(/([ก-ฮ])ั([ก-ฮ])/g, '$1ิ$2') // กัน -> กิน
+        // English character normalization
+        .replace(/ph/g, 'f')    // phone -> fone
+        .replace(/ck/g, 'k')    // black -> blak
+        .replace(/qu/g, 'kw')   // queen -> kween
+        // Remove common prefixes/suffixes for better matching
+        .replace(/^(the|a|an)\s+/g, '') // Remove English articles
+        .replace(/\s+(ltd|co|inc|corp)$/g, ''); // Remove company suffixes
 }
 
-// Improved search function with better Thai/English support
+// Enhanced function to create search variations
+function createSearchVariations(text) {
+    if (!text) return [];
+    
+    const variations = new Set();
+    const normalized = normalizeSearchText(text);
+    
+    // Add original and normalized versions
+    variations.add(text.toLowerCase());
+    variations.add(normalized);
+    
+    // Thai-specific variations
+    if (/[\u0e00-\u0e7f]/.test(text)) {
+        // Common Thai typos and variations
+        const thaiVariations = normalized
+            // ไ/ใ confusion
+            .replace(/ไ/g, 'ใ').replace(/ใ/g, 'ไ')
+            // อ/ออ confusion  
+            .replace(/ออ/g, 'อ').replace(/([ก-ฮ])อ([ก-ฮ])/g, '$1ออ$2')
+            // Short/long vowels
+            .replace(/า/g, '').replace(/([ก-ฮ])([ก-ฮ])/g, '$1า$2')
+            // Silent letters
+            .replace(/ห([ก-ฮ])/g, '$1').replace(/([ก-ฮ])/g, 'ห$1');
+        
+        variations.add(thaiVariations);
+        
+        // Add phonetic variations for common Thai words
+        const phoneticMap = {
+            'เหล็ก': ['เหลก', 'เลก', 'เล็ก'],
+            'เหล่า': ['เหลา', 'เลา'],
+            'เหลือ': ['เหลอ', 'เลอ'],
+            'สเตน': ['สเตนเลส', 'สเตนเลสส์', 'stainless', 'stain'],
+            'คาร์บอน': ['carbon', 'คารบอน', 'คาบอน'],
+            'อลูมิเนียม': ['aluminum', 'aluminium', 'อลูมินั่ม', 'อลูม'],
+            'ทองแดง': ['copper', 'คอปเปอร์', 'ทองแดง'],
+            'ทองเหลือง': ['brass', 'บราส', 'ทองเหลือง']
+        };
+        
+        Object.entries(phoneticMap).forEach(([thai, variants]) => {
+            if (normalized.includes(thai)) {
+                variants.forEach(variant => variations.add(normalized.replace(thai, variant)));
+            }
+        });
+    }
+    
+    // English-specific variations
+    if (/[a-z]/.test(text)) {
+        // Common English variations
+        const englishVariations = normalized
+            // Common typos
+            .replace(/ie/g, 'ei').replace(/ei/g, 'ie')
+            .replace(/c/g, 'k').replace(/k/g, 'c')
+            .replace(/f/g, 'ph').replace(/ph/g, 'f')
+            // Plural/singular
+            .replace(/s$/g, '').replace(/([^s])$/g, '$1s')
+            // Past tense
+            .replace(/ed$/g, '').replace(/([^e])$/g, '$1ed');
+        
+        variations.add(englishVariations);
+        
+        // Add common English-Thai material translations
+        const materialMap = {
+            'steel': ['เหล็ก', 'สตีล'],
+            'stainless': ['สเตนเลส', 'สเตนเลสส์', 'เหล็กกล้าไร้สนิม'],
+            'carbon': ['คาร์บอน', 'คารบอน'],
+            'aluminum': ['อลูมิเนียม', 'อลูมินัม'],
+            'copper': ['ทองแดง', 'คอปเปอร์'],
+            'brass': ['ทองเหลือง', 'บราส'],
+            'iron': ['เหล็ก', 'ไอรอน'],
+            'galvanized': ['ชุบสังกะสี', 'กัลวาไนซ์'],
+            'pipe': ['ท่อ', 'ไปป์'],
+            'sheet': ['แผ่น', 'ชีท'],
+            'plate': ['แผ่น', 'เพลท'],
+            'bar': ['แท่ง', 'บาร์'],
+            'rod': ['แกน', 'ร็อด'],
+            'wire': ['ลวด', 'ไวร์'],
+            'coil': ['ม้วน', 'คอยล์']
+        };
+        
+        Object.entries(materialMap).forEach(([eng, thaiVars]) => {
+            if (normalized.includes(eng)) {
+                thaiVars.forEach(thai => variations.add(normalized.replace(eng, thai)));
+            }
+        });
+    }
+    
+    return Array.from(variations).filter(v => v.length > 0);
+}
+
+// Enhanced fuzzy search function
+function fuzzyMatch(searchTerm, targetText, threshold = 0.6) {
+    if (!searchTerm || !targetText) return false;
+    
+    const search = searchTerm.toLowerCase();
+    const target = targetText.toLowerCase();
+    
+    // Exact match
+    if (target.includes(search)) return true;
+    
+    // Calculate Levenshtein distance for short terms
+    if (search.length <= 4) {
+        const distance = levenshteinDistance(search, target);
+        return distance <= 1; // Allow 1 character difference for short terms
+    }
+    
+    // For longer terms, use Jaro-Winkler similarity
+    const similarity = jaroWinklerSimilarity(search, target);
+    return similarity >= threshold;
+}
+
+// Levenshtein distance calculation
+function levenshteinDistance(str1, str2) {
+    const matrix = [];
+    
+    for (let i = 0; i <= str2.length; i++) {
+        matrix[i] = [i];
+    }
+    
+    for (let j = 0; j <= str1.length; j++) {
+        matrix[0][j] = j;
+    }
+    
+    for (let i = 1; i <= str2.length; i++) {
+        for (let j = 1; j <= str1.length; j++) {
+            if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+                matrix[i][j] = matrix[i - 1][j - 1];
+            } else {
+                matrix[i][j] = Math.min(
+                    matrix[i - 1][j - 1] + 1,
+                    matrix[i][j - 1] + 1,
+                    matrix[i - 1][j] + 1
+                );
+            }
+        }
+    }
+    
+    return matrix[str2.length][str1.length];
+}
+
+// Jaro-Winkler similarity calculation
+function jaroWinklerSimilarity(s1, s2) {
+    if (s1 === s2) return 1.0;
+    if (s1.length === 0 || s2.length === 0) return 0.0;
+    
+    const matchWindow = Math.floor(Math.max(s1.length, s2.length) / 2) - 1;
+    if (matchWindow < 0) return 0.0;
+    
+    const s1Matches = new Array(s1.length).fill(false);
+    const s2Matches = new Array(s2.length).fill(false);
+    
+    let matches = 0;
+    let transpositions = 0;
+    
+    // Identify matches
+    for (let i = 0; i < s1.length; i++) {
+        const start = Math.max(0, i - matchWindow);
+        const end = Math.min(i + matchWindow + 1, s2.length);
+        
+        for (let j = start; j < end; j++) {
+            if (s2Matches[j] || s1[i] !== s2[j]) continue;
+            s1Matches[i] = s2Matches[j] = true;
+            matches++;
+            break;
+        }
+    }
+    
+    if (matches === 0) return 0.0;
+    
+    // Count transpositions
+    let k = 0;
+    for (let i = 0; i < s1.length; i++) {
+        if (!s1Matches[i]) continue;
+        while (!s2Matches[k]) k++;
+        if (s1[i] !== s2[k]) transpositions++;
+        k++;
+    }
+    
+    const jaro = (matches / s1.length + matches / s2.length + 
+                  (matches - transpositions / 2) / matches) / 3.0;
+    
+    // Jaro-Winkler similarity
+    if (jaro < 0.7) return jaro;
+    
+    let prefix = 0;
+    for (let i = 0; i < Math.min(s1.length, s2.length); i++) {
+        if (s1[i] === s2[i]) prefix++;
+        else break;
+    }
+    
+    return jaro + (0.1 * prefix * (1 - jaro));
+}
+
+// Enhanced search function with scoring system
+function calculateSearchScore(product, searchTerms, searchVariations) {
+    let totalScore = 0;
+    let maxPossibleScore = searchTerms.length * 10; // Max score per term = 10
+    
+    // Prepare searchable fields with weights
+    const searchableFields = [
+        { text: product.name || '', weight: 10 },           // Highest weight for product name
+        { text: product.category || '', weight: 8 },        // High weight for category
+        { text: product.specifications || '', weight: 6 },   // Medium-high for specifications
+        { text: product.description || '', weight: 5 },     // Medium for description
+        { text: product.grade || '', weight: 4 },           // Medium-low for grade
+        { text: product.supplier_name || '', weight: 3 },   // Lower for supplier
+        { text: product.lot || '', weight: 2 }              // Lowest for lot
+    ];
+    
+    searchTerms.forEach(term => {
+        let termScore = 0;
+        let termMaxScore = 0;
+        
+        searchableFields.forEach(field => {
+            termMaxScore += field.weight;
+            const fieldText = normalizeSearchText(field.text);
+            
+            // Exact match in original text
+            if (field.text.toLowerCase().includes(term.toLowerCase())) {
+                termScore += field.weight * 1.0;
+            }
+            // Exact match in normalized text
+            else if (fieldText.includes(normalizeSearchText(term))) {
+                termScore += field.weight * 0.9;
+            }
+            // Fuzzy match
+            else if (fuzzyMatch(term, fieldText, 0.7)) {
+                termScore += field.weight * 0.7;
+            }
+            // Check variations
+            else {
+                const termVariations = searchVariations[term] || [];
+                for (const variation of termVariations) {
+                    if (fieldText.includes(variation)) {
+                        termScore += field.weight * 0.8;
+                        break;
+                    }
+                    if (fuzzyMatch(variation, fieldText, 0.6)) {
+                        termScore += field.weight * 0.6;
+                        break;
+                    }
+                }
+            }
+        });
+        
+        totalScore += (termScore / termMaxScore) * 10; // Normalize to 0-10 per term
+    });
+    
+    return totalScore / searchTerms.length; // Average score per term
+}
+
+// Completely rewritten applyCurrentFilters function with enhanced search
 function applyCurrentFilters() {
     let filtered = [...allProducts];
     
-    // Search term filter with improved Thai/English handling
+    // Enhanced search term filter
     const searchInput = document.getElementById('searchInput');
     const searchTerm = searchInput ? searchInput.value.trim() : '';
     
     if (searchTerm) {
-        const normalizedSearchTerm = normalizeSearchText(searchTerm);
+        console.log(`🔍 Searching for: "${searchTerm}"`);
         
-        // Split search term into individual words for better matching
-        const searchWords = normalizedSearchTerm.split(' ').filter(word => word.length > 0);
+        // Split search term into individual words
+        const searchWords = searchTerm.split(/\s+/).filter(word => word.length > 0);
+        console.log('Search words:', searchWords);
         
-        filtered = filtered.filter(product => {
-            // Prepare searchable text fields
-            const searchableFields = [
-                product.name || '',
-                product.description || '',
-                product.category || '',
-                product.supplier_name || '',
-                product.specifications || '',
-                product.grade || '',
-                product.lot || ''
-            ];
-            
-            // Normalize all searchable text
-            const normalizedFields = searchableFields.map(field => normalizeSearchText(field));
-            const combinedText = normalizedFields.join(' ');
-            
-            // Check if all search words are found (AND logic)
-            return searchWords.every(word => {
-                return combinedText.includes(word) || 
-                       // Also check original text for exact matches
-                       searchableFields.some(field => 
-                           field.toLowerCase().includes(word.toLowerCase())
-                       );
-            });
+        // Create variations for each search word
+        const searchVariations = {};
+        searchWords.forEach(word => {
+            searchVariations[word] = createSearchVariations(word);
+            console.log(`Variations for "${word}":`, searchVariations[word]);
         });
+        
+        // Filter products with scoring
+        const scoredProducts = filtered.map(product => ({
+            product,
+            score: calculateSearchScore(product, searchWords, searchVariations)
+        })).filter(item => item.score > 0); // Only keep products with some match
+        
+        // Sort by score (highest first) and extract products
+        filtered = scoredProducts
+            .sort((a, b) => b.score - a.score)
+            .map(item => item.product);
+        
+        console.log(`🎯 Found ${filtered.length} matching products`);
+        
+        // Debug: Show top 3 matches with scores
+        if (filtered.length > 0) {
+            console.log('Top matches:');
+            scoredProducts.slice(0, 3).forEach((item, index) => {
+                console.log(`${index + 1}. "${item.product.name}" (Score: ${item.score.toFixed(2)})`);
+            });
+        }
     }
 
     // Category filter (unchanged)
@@ -447,66 +712,78 @@ function applyCurrentFilters() {
     filteredProducts = filtered;
 }
 
-// Enhanced search with real-time suggestions (optional)
+// Enhanced search setup (manual search only)
 function setupEnhancedSearch() {
     const searchInput = document.getElementById('searchInput');
     if (!searchInput) return;
     
-    // Add input event for real-time search
-    searchInput.addEventListener('input', function(e) {
-        // Debounce the search to avoid too many calls
-        clearTimeout(searchInput.searchTimeout);
-        searchInput.searchTimeout = setTimeout(() => {
-            searchProducts();
-        }, 300); // Wait 300ms after user stops typing
-    });
-    
-    // Keep the original enter key functionality
+    // Only keep the enter key functionality for manual search
     searchInput.addEventListener('keypress', function (e) {
         if (e.key === 'Enter') {
-            clearTimeout(searchInput.searchTimeout);
             searchProducts();
         }
     });
     
-    // Add placeholder text to help users understand search capabilities
+    // Simple placeholder text
     if (!searchInput.placeholder) {
-        searchInput.placeholder = 'ค้นหาด้วยชื่อสินค้า, หมวดหมู่, ผู้จำหน่าย หรือรายละเอียดสินค้า...';
+        searchInput.placeholder = 'ค้นหาสินค้า...';
     }
 }
 
-// Call this function in your DOMContentLoaded event
-document.addEventListener('DOMContentLoaded', function () {
-    console.log("=== DOM Content Loaded (All Products) ===");
-    loadProducts();
-    setupEventListeners();
-    setupEnhancedSearch(); // Add this line
+// Enhanced test function with more comprehensive testing
+window.testEnhancedSearch = function(testTerms = ['เหล็ก', 'steel', 'สเตนเลส', 'stainless', 'แผ่น', 'sheet']) {
+    console.log('🧪 Testing Enhanced Search System');
+    console.log('================================');
     
-    // Setup cart system check
-    waitForDependencies(() => {
-        console.log("Dependencies loaded for all products page");
+    const searchInput = document.getElementById('searchInput');
+    if (!searchInput) {
+        console.error('❌ Search input not found');
+        return;
+    }
+    
+    testTerms.forEach((term, index) => {
+        console.log(`\n🔍 Test ${index + 1}: "${term}"`);
+        searchInput.value = term;
+        applyCurrentFilters();
+        sortProducts();
+        
+        console.log(`📊 Results: ${filteredProducts.length} products found`);
+        
+        if (filteredProducts.length > 0) {
+            console.log('🏆 Top 3 results:');
+            filteredProducts.slice(0, 3).forEach((product, idx) => {
+                console.log(`   ${idx + 1}. ${product.name} (${product.category})`);
+            });
+        } else {
+            console.log('❌ No results found');
+        }
     });
-});
+    
+    // Test variations
+    console.log('\n🔄 Testing search variations:');
+    const testVariations = createSearchVariations('เหล็กสเตนเลส');
+    console.log('Variations for "เหล็กสเตนเลส":', testVariations);
+    
+    console.log('\n✅ Enhanced search test completed');
+};
 
-// Test function to verify search functionality
-window.testSearch = function(testTerm) {
-    console.log(`Testing search with term: "${testTerm}"`);
+// Additional utility function for debugging search performance
+window.debugSearchPerformance = function(searchTerm) {
+    const startTime = performance.now();
+    
+    console.log(`⏱️  Performance test for: "${searchTerm}"`);
     
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
-        searchInput.value = testTerm;
-        searchProducts();
-        console.log(`Search completed. Found ${filteredProducts.length} products.`);
+        searchInput.value = searchTerm;
+        applyCurrentFilters();
         
-        // Show first few results
-        if (filteredProducts.length > 0) {
-            console.log('First 3 results:');
-            filteredProducts.slice(0, 3).forEach((product, index) => {
-                console.log(`${index + 1}. ${product.name} - ${product.category}`);
-            });
-        }
-    } else {
-        console.error('Search input not found');
+        const endTime = performance.now();
+        const duration = endTime - startTime;
+        
+        console.log(`🏁 Search completed in ${duration.toFixed(2)}ms`);
+        console.log(`📊 Found ${filteredProducts.length} results`);
+        console.log(`⚡ Performance: ${duration < 100 ? 'Excellent' : duration < 300 ? 'Good' : 'Needs optimization'}`);
     }
 };
 
@@ -882,3 +1159,162 @@ window.testAddToCart = function() {
         console.error('No products available for testing');
     }
 };
+
+// Sort products - แก้ไขแล้ว
+function sortProducts() {
+    const sortValue = document.getElementById('sortSelect')?.value || 'latest';
+    currentSort = sortValue;
+    
+    console.log('Sorting products by:', sortValue);
+    
+    switch (sortValue) {
+        case 'price-high':
+            // เรียงราคาจากสูงไปต่ำ
+            filteredProducts.sort((a, b) => {
+                const priceA = parseFloat(a.price) || 0;
+                const priceB = parseFloat(b.price) || 0;
+                return priceB - priceA;
+            });
+            console.log('Sorted by price (high to low)');
+            break;
+            
+        case 'price-low':
+            // เรียงราคาจากต่ำไปสูง
+            filteredProducts.sort((a, b) => {
+                const priceA = parseFloat(a.price) || 0;
+                const priceB = parseFloat(b.price) || 0;
+                return priceA - priceB;
+            });
+            console.log('Sorted by price (low to high)');
+            break;
+            
+        case 'name-az':
+            // เรียงชื่อ A-Z (รองรับภาษาไทยและภาษาอังกฤษ)
+            filteredProducts.sort((a, b) => {
+                const nameA = (a.name || '').toLowerCase();
+                const nameB = (b.name || '').toLowerCase();
+                
+                // ใช้ localeCompare เพื่อรองรับการเรียงภาษาไทย
+                return nameA.localeCompare(nameB, ['th', 'en'], {
+                    numeric: true,
+                    sensitivity: 'base'
+                });
+            });
+            console.log('Sorted by name (A-Z)');
+            break;
+            
+        case 'name-za':
+            // เรียงชื่อ Z-A (เพิ่มเติม)
+            filteredProducts.sort((a, b) => {
+                const nameA = (a.name || '').toLowerCase();
+                const nameB = (b.name || '').toLowerCase();
+                
+                // ใช้ localeCompare แล้วกลับผลลัพธ์
+                return nameB.localeCompare(nameA, ['th', 'en'], {
+                    numeric: true,
+                    sensitivity: 'base'
+                });
+            });
+            console.log('Sorted by name (Z-A)');
+            break;
+            
+        case 'latest':
+        default:
+            // เรียงวันที่จากใหม่ไปเก่า
+            filteredProducts.sort((a, b) => {
+                const dateA = new Date(a.date || 0);
+                const dateB = new Date(b.date || 0);
+                return dateB - dateA;
+            });
+            console.log('Sorted by latest');
+            break;
+    }
+    
+    console.log(`Total products after sorting: ${filteredProducts.length}`);
+    
+    // Debug: แสดงผลลัพธ์ 3 รายการแรกหลังจากเรียง
+    if (filteredProducts.length > 0) {
+        console.log('Top 3 products after sorting:');
+        filteredProducts.slice(0, 3).forEach((product, index) => {
+            console.log(`${index + 1}. ${product.name} - ราคา: ${product.price} บาท`);
+        });
+    }
+}
+
+// เพิ่มฟังก์ชันสำหรับเรียกใช้การเรียงลำดับ
+function applySorting() {
+    sortProducts();
+    displayProducts();
+}
+
+// แก้ไขฟังก์ชัน searchProducts ให้เรียกใช้การเรียงลำดับด้วย
+function searchProducts() {
+    console.log('Searching products...');
+    applyCurrentFilters();
+    sortProducts();  // เพิ่มการเรียงลำดับหลังค้นหา
+    displayProducts();
+}
+
+// แก้ไขฟังก์ชัน filterByCategory ให้เรียกใช้การเรียงลำดับด้วย
+function filterByCategory() {
+    console.log('Filtering by category...');
+    applyCurrentFilters();
+    sortProducts();  // เพิ่มการเรียงลำดับหลังกรอง
+    displayProducts();
+}
+
+// แก้ไขฟังก์ชัน applyPriceFilter ให้เรียกใช้การเรียงลำดับด้วย
+function applyPriceFilter() {
+    console.log('Applying price filter...');
+    applyCurrentFilters();
+    sortProducts();  // เพิ่มการเรียงลำดับหลังกรองราคา
+    displayProducts();
+}
+
+// เพิ่มฟังก์ชันทดสอบการเรียงลำดับ
+window.testSorting = function() {
+    console.log('=== Testing Sort Functions ===');
+    
+    const sortOptions = ['latest', 'price-high', 'price-low', 'name-az'];
+    const sortSelect = document.getElementById('sortSelect');
+    
+    if (!sortSelect) {
+        console.error('Sort select element not found!');
+        return;
+    }
+    
+    sortOptions.forEach((option, index) => {
+        console.log(`\n--- Test ${index + 1}: ${option} ---`);
+        sortSelect.value = option;
+        sortProducts();
+        
+        if (filteredProducts.length > 0) {
+            console.log('Top 3 results:');
+            filteredProducts.slice(0, 3).forEach((product, idx) => {
+                const price = formatPrice(product.price);
+                const date = product.date ? product.date.toLocaleDateString('th-TH') : 'ไม่ระบุ';
+                console.log(`  ${idx + 1}. ${product.name}`);
+                console.log(`     ราคา: ${price}, วันที่: ${date}`);
+            });
+        }
+    });
+    
+    console.log('\n=== Sort testing completed ===');
+};
+
+// เพิ่ม Event Listener สำหรับ sortSelect
+document.addEventListener('DOMContentLoaded', function() {
+    // รอให้ DOM โหลดเสร็จก่อน
+    setTimeout(() => {
+        const sortSelect = document.getElementById('sortSelect');
+        if (sortSelect) {
+            // ลบ event listener เก่าออกก่อน (ถ้ามี)
+            sortSelect.removeEventListener('change', applySorting);
+            // เพิ่ม event listener ใหม่
+            sortSelect.addEventListener('change', applySorting);
+            console.log('Sort select event listener attached');
+        } else {
+            console.warn('Sort select element not found during setup');
+        }
+    }, 1000);
+});

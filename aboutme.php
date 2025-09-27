@@ -15,13 +15,13 @@
     }
 
     body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-family: 'Inter';
         background: #f8f9fa;
     }
 
     /* Hero Section */
     .hero {
-        background: linear-gradient(135deg, #1e3a5f 0%, #2c5477 100%);
+        background: #051A37;
         color: white;
         padding: 60px 0;
         text-align: center;

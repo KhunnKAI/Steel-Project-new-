@@ -746,85 +746,206 @@ function calculateRelevanceScore(product, searchTokens) {
     return score;
 }
 
-// 1. เพิ่มฟังก์ชันนี้ใต้ตัวแปร global (หลังบรรทัด let currentSort = 'latest';)
+// 1. ปรับปรุงฟังก์ชัน normalizeSearchText ให้รองรับภาษาไทยและอังกฤษได้ดีขึ้น
 function normalizeSearchText(text) {
     if (!text) return '';
     
     return text
         .toLowerCase()
         .trim()
+        // ลบช่องว่างส่วนเกิน
         .replace(/\s+/g, ' ')
-        .replace(/[^\w\s\u0E00-\u0E7F]/g, '');
+        // ลบเครื่องหมายพิเศษ แต่คงไวยากรณ์ไทย
+        .replace(/[^\w\s\u0E00-\u0E7F\u0E80-\u0EFF]/g, '')
+        // แปลงตัวอักษรไทยที่คล้ายกัน
+        .replace(/[กข]/g, 'ก')
+        .replace(/[คฆ]/g, 'ค')
+        .replace(/[ฎด]/g, 'ด')
+        .replace(/[ตท]/g, 'ต')
+        .replace(/[บป]/g, 'ป')
+        .replace(/[ผพฟ]/g, 'พ')
+        .replace(/[สศษ]/g, 'ส')
+        .replace(/[หฮ]/g, 'ห')
+        // แปลงสระที่คล้ายกัน
+        .replace(/[ำาๅ]/g, 'า');
 }
 
-// 2. แทนที่ฟังก์ชัน applyAllFilters ทั้งหมด (บรรทัด 375-424) ด้วยโค้ดนี้:
+// 2. เพิ่มฟังก์ชันตรวจจับการพิมพ์ผิดภาษา (Eng-Thai keyboard)
+function detectTypingLanguage(text) {
+    const thaiChars = (text.match(/[\u0E00-\u0E7F]/g) || []).length;
+    const engChars = (text.match(/[a-zA-Z]/g) || []).length;
+    const totalChars = thaiChars + engChars;
+    
+    if (totalChars === 0) return 'mixed';
+    
+    return (thaiChars / totalChars) > 0.5 ? 'thai' : 'english';
+}
+
+// 3. เพิ่มการแปลงคีย์บอร์ดไทย-อังกฤษ
+function convertKeyboard(text) {
+    // แมป QWERTY -> ไทย
+    const qwertyToThai = {
+        'q': 'ๆ', 'w': 'ไ', 'e': 'ำ', 'r': 'พ', 't': 'ะ', 'y': 'ั', 'u': 'ี', 'i': 'ร', 'o': 'น', 'p': 'ย',
+        'a': 'ฟ', 's': 'ห', 'd': 'ก', 'f': 'ด', 'g': 'เ', 'h': '้', 'j': '่', 'k': 'า', 'l': 'ส',
+        'z': 'ผ', 'x': 'ป', 'c': 'แ', 'v': 'อ', 'b': 'ิ', 'n': 'ื', 'm': 'ท'
+    };
+    
+    // แมป ไทย -> QWERTY
+    const thaiToQwerty = {};
+    Object.keys(qwertyToThai).forEach(key => {
+        thaiToQwerty[qwertyToThai[key]] = key;
+    });
+    
+    const converted = [];
+    
+    // แปลง Eng -> Thai
+    const engToThai = text.replace(/[a-z]/g, char => qwertyToThai[char] || char);
+    if (engToThai !== text) converted.push(engToThai);
+    
+    // แปลง Thai -> Eng
+    const thaiToEng = text.replace(/[\u0E00-\u0E7F]/g, char => thaiToQwerty[char] || char);
+    if (thaiToEng !== text) converted.push(thaiToEng);
+    
+    return converted;
+}
+
+// 4. เพิ่มฟังก์ชันสำหรับ fuzzy matching
+function calculateStringDistance(str1, str2) {
+    const len1 = str1.length;
+    const len2 = str2.length;
+    const matrix = [];
+    
+    for (let i = 0; i <= len2; i++) {
+        matrix[i] = [i];
+    }
+    
+    for (let j = 0; j <= len1; j++) {
+        matrix[0][j] = j;
+    }
+    
+    for (let i = 1; i <= len2; i++) {
+        for (let j = 1; j <= len1; j++) {
+            if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+                matrix[i][j] = matrix[i - 1][j - 1];
+            } else {
+                matrix[i][j] = Math.min(
+                    matrix[i - 1][j - 1] + 1,
+                    matrix[i][j - 1] + 1,
+                    matrix[i - 1][j] + 1
+                );
+            }
+        }
+    }
+    
+    return matrix[len2][len1];
+}
+
+// 5. ปรับปรุงฟังก์ชันค้นหาหลัก
+function advancedSearch(products, searchTerm) {
+    if (!searchTerm || searchTerm.trim() === '') {
+        return products;
+    }
+    
+    const normalizedSearch = normalizeSearchText(searchTerm);
+    const keyboardVariants = convertKeyboard(normalizedSearch);
+    
+    console.log('=== Advanced Search Debug ===');
+    console.log('Original search:', searchTerm);
+    console.log('Normalized search:', normalizedSearch);
+    console.log('Keyboard variants:', keyboardVariants);
+    
+    return products.filter(product => {
+        const productName = normalizeSearchText(product.name || '');
+        const productCategory = normalizeSearchText(product.category || '');
+        const productDescription = normalizeSearchText(product.description || '');
+        const productSupplier = normalizeSearchText(product.supplier || '');
+        const productGrade = normalizeSearchText(product.grade || '');
+        
+        // สร้างรายการข้อความที่จะค้นหา
+        const searchableTexts = [productName, productCategory, productDescription, productSupplier, productGrade];
+        const allSearchTerms = [normalizedSearch, ...keyboardVariants];
+        
+        // 1. ตรวจสอบการตรงกันแบบตรง
+        const exactMatch = allSearchTerms.some(term =>
+            searchableTexts.some(text =>
+                text.includes(term) || text.split(' ').some(word => word.includes(term))
+            )
+        );
+        
+        if (exactMatch) {
+            console.log(`✓ Exact match: "${product.name}"`);
+            return true;
+        }
+        
+        // 2. ตรวจสอบการค้นหาแบบเริ่มต้นคำ
+        const wordStartMatch = allSearchTerms.some(term =>
+            searchableTexts.some(text =>
+                text.split(' ').some(word => word.startsWith(term))
+            )
+        );
+        
+        if (wordStartMatch) {
+            console.log(`✓ Word start match: "${product.name}"`);
+            return true;
+        }
+        
+        // 3. ตรวจสอบการค้นหาแบบ fuzzy (สำหรับคำยาว > 3 ตัวอักษร)
+        if (searchTerm.length > 3) {
+            const fuzzyMatch = allSearchTerms.some(term =>
+                searchableTexts.some(text => {
+                    const words = text.split(' ');
+                    return words.some(word => {
+                        if (word.length < 3) return false;
+                        const distance = calculateStringDistance(term, word);
+                        const threshold = Math.floor(word.length * 0.3); // ยอมให้ผิด 30%
+                        return distance <= threshold;
+                    });
+                })
+            );
+            
+            if (fuzzyMatch) {
+                console.log(`✓ Fuzzy match: "${product.name}"`);
+                return true;
+            }
+        }
+        
+        // 4. ตรวจสอบการค้นหาแบบย่อย (abbreviation)
+        if (searchTerm.length <= 3) {
+            const abbreviationMatch = searchableTexts.some(text => {
+                const words = text.split(' ');
+                if (words.length >= searchTerm.length) {
+                    const firstLetters = words.slice(0, searchTerm.length)
+                        .map(word => word.charAt(0))
+                        .join('');
+                    return firstLetters === normalizedSearch;
+                }
+                return false;
+            });
+            
+            if (abbreviationMatch) {
+                console.log(`✓ Abbreviation match: "${product.name}"`);
+                return true;
+            }
+        }
+        
+        return false;
+    });
+}
+
+// 6. อัพเดทฟังก์ชัน applyAllFilters ให้ใช้ระบบค้นหาใหม่
 function applyAllFilters() {
     let filtered = [...allProducts];
     
-    console.log('=== Search Debug ===');
+    console.log('=== Enhanced Search Debug ===');
     console.log('Total products:', allProducts.length);
     
-    // 1. กรองตามคำค้นหา (ปรับปรุงแล้ว)
+    // 1. กรองตามคำค้นหา (ใช้ระบบใหม่)
     const searchInput = document.getElementById('searchInput');
     const searchTerm = searchInput ? searchInput.value.trim() : '';
     
     if (searchTerm && searchTerm.length > 0) {
-        console.log('Original search term:', searchTerm);
-        const normalizedSearch = normalizeSearchText(searchTerm);
-        console.log('Normalized search term:', normalizedSearch);
-        
-        // ใช้การค้นหาแบบเข้มงวดสำหรับคำสั้นๆ (1-2 ตัวอักษร)
-        if (searchTerm.length <= 2) {
-            console.log('Using strict search for short term');
-            
-            filtered = filtered.filter(product => {
-                const productName = normalizeSearchText(product.name || '');
-                const productCategory = normalizeSearchText(product.category || '');
-                const productDescription = normalizeSearchText(product.description || '');
-                const productSupplier = normalizeSearchText(product.supplier || '');
-                
-                // ตรวจสอบการขึ้นต้นหรือเป็นคำแยก
-                const nameMatch = productName.startsWith(normalizedSearch) || 
-                                productName.split(' ').some(word => word.startsWith(normalizedSearch));
-                                
-                const categoryMatch = productCategory.startsWith(normalizedSearch) || 
-                                    productCategory.split(' ').some(word => word.startsWith(normalizedSearch));
-                                    
-                const descMatch = productDescription.split(' ').some(word => word.startsWith(normalizedSearch));
-                const supplierMatch = productSupplier.split(' ').some(word => word.startsWith(normalizedSearch));
-                
-                const isMatch = nameMatch || categoryMatch || descMatch || supplierMatch;
-                
-                if (isMatch) {
-                    console.log(`✓ Match found: "${product.name}" (normalized: "${productName}")`);
-                }
-                
-                return isMatch;
-            });
-        } else {
-            console.log('Using flexible search for long term');
-            
-            // ใช้การค้นหาแบบ contains สำหรับคำยาว
-            filtered = filtered.filter(product => {
-                const productName = normalizeSearchText(product.name || '');
-                const productCategory = normalizeSearchText(product.category || '');
-                const productDescription = normalizeSearchText(product.description || '');
-                const productSupplier = normalizeSearchText(product.supplier || '');
-                
-                const isMatch = productName.includes(normalizedSearch) ||
-                              productCategory.includes(normalizedSearch) ||
-                              productDescription.includes(normalizedSearch) ||
-                              productSupplier.includes(normalizedSearch);
-                
-                if (isMatch) {
-                    console.log(`✓ Match found: "${product.name}" (normalized: "${productName}")`);
-                }
-                
-                return isMatch;
-            });
-        }
-        
-        console.log(`Search results: ${filtered.length} items found`);
+        filtered = advancedSearch(filtered, searchTerm);
+        console.log(`After advanced search: ${filtered.length} items found`);
     }
 
     // 2. กรองตามหมวดหมู่
@@ -852,10 +973,142 @@ function applyAllFilters() {
     filteredProducts = filtered;
     console.log(`Final filtered products: ${filteredProducts.length} จาก ${allProducts.length} รายการ`);
     
-    // เรียงลำดับและแสดงผล
-    if (!searchTerm) {
-        applySorting();
-    } else {
+    // แสดงผลแบบเรียงลำดับตามความเกี่ยวข้องถ้ามีการค้นหา
+    if (searchTerm) {
         displayProducts(filteredProducts);
+    } else {
+        applySorting();
     }
 }
+
+// 7. เพิ่มฟังก์ชันให้คำแนะนำเมื่อไม่พบผลการค้นหา
+function showSearchSuggestions(originalTerm) {
+    const suggestions = [];
+    
+    // หาคำที่คล้ายกัน
+    allProducts.forEach(product => {
+        const productWords = normalizeSearchText(product.name).split(' ');
+        productWords.forEach(word => {
+            if (word.length > 2 && calculateStringDistance(normalizeSearchText(originalTerm), word) <= 2) {
+                if (!suggestions.includes(word) && suggestions.length < 5) {
+                    suggestions.push(word);
+                }
+            }
+        });
+    });
+    
+    // หาหมวดหมู่ที่คล้ายกัน
+    const categories = [...new Set(allProducts.map(p => p.category))];
+    categories.forEach(category => {
+        const normalizedCategory = normalizeSearchText(category);
+        if (normalizedCategory.includes(normalizeSearchText(originalTerm)) && !suggestions.includes(category)) {
+            suggestions.push(category);
+        }
+    });
+    
+    return suggestions;
+}
+
+// 8. ปรับปรุงฟังก์ชัน showNoProductsMessage ให้แสดงคำแนะนำ
+function showNoProductsMessage(message, searchTerm = '') {
+    const grid = document.getElementById('productsGrid');
+    if (!grid) return;
+    
+    let content = `
+        <div class="no-products" style="text-align: center; padding: 40px; grid-column: 1 / -1;">
+            <h3 style="color: #666; margin-bottom: 10px;">${message}</h3>
+    `;
+    
+    if (searchTerm) {
+        const suggestions = showSearchSuggestions(searchTerm);
+        const keyboardVariants = convertKeyboard(normalizeSearchText(searchTerm));
+        
+        if (suggestions.length > 0) {
+            content += `
+                <div style="margin: 20px 0;">
+                    <p style="color: #888; margin-bottom: 10px;">คำแนะนำการค้นหา:</p>
+                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        ${suggestions.map(suggestion => `
+                            <button onclick="searchSuggestion('${suggestion}')" 
+                                    style="padding: 5px 15px; border: 1px solid #ddd; background: #f8f9fa; 
+                                           border-radius: 20px; cursor: pointer; color: #007bff;">
+                                ${suggestion}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        
+        if (keyboardVariants.length > 0) {
+            content += `
+                <div style="margin: 20px 0;">
+                    <p style="color: #888; margin-bottom: 10px;">หรือคุณหมายถึง:</p>
+                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        ${keyboardVariants.map(variant => `
+                            <button onclick="searchSuggestion('${variant}')" 
+                                    style="padding: 5px 15px; border: 1px solid #ddd; background: #fff3cd; 
+                                           border-radius: 20px; cursor: pointer; color: #856404;">
+                                ${variant}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+    }
+    
+    content += `
+            <p style="color: #888;">กรุณาลองใช้คำค้นหาอื่น หรือเปลี่ยนตัวกรอง</p>
+        </div>
+    `;
+    
+    grid.innerHTML = content;
+}
+
+// 9. เพิ่มฟังก์ชันสำหรับคลิกคำแนะนำ
+function searchSuggestion(suggestion) {
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.value = suggestion;
+        applyAllFilters();
+    }
+}
+
+// 10. ปรับปรุง event listener สำหรับการค้นหาแบบ manual เท่านั้น
+function setupAdvancedSearchListeners() {
+    const searchInput = document.getElementById('searchInput');
+    if (!searchInput) return;
+    
+    // ค้นหาเฉพาะเมื่อกด Enter เท่านั้น
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault(); // ป้องกันการ submit form
+            applyAllFilters();
+        }
+    });
+    
+    // หากมีปุ่มค้นหา ให้เพิ่ม event listener
+    const searchButton = document.getElementById('searchButton') || document.querySelector('[onclick="searchProducts()"]');
+    if (searchButton) {
+        searchButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            applyAllFilters();
+        });
+    }
+    
+    // ล้างผลการค้นหาเมื่อลบข้อความหมด (กด Enter หรือคลิกปุ่มค้นหา)
+    // ไม่ทำอะไรอัตโนมัติ ต้องกดค้นหาเสมอ
+    console.log('✅ Advanced search listeners setup (manual search only)');
+}
+
+// ฟังก์ชันสำหรับปุ่มค้นหา (ใช้แทน searchProducts เดิม)
+function searchProducts() {
+    console.log('🔍 Manual search triggered');
+    applyAllFilters();
+}
+
+// เรียกใช้งานเมื่อ DOM โหลดเสร็จ
+document.addEventListener('DOMContentLoaded', function() {
+    setupAdvancedSearchListeners();
+});
