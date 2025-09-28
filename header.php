@@ -54,10 +54,12 @@ error_log("Header Debug - COOKIE user_id: " . ($_COOKIE['user_id'] ?? 'not set')
 
     <div class="header-icons">
         <!-- Cart Icon -->
+        <?php if ($isLoggedIn): ?>
         <div class="icon" id="cartIcon">
             🛒
             <div class="cart-badge" id="cartBadge">0</div>
         </div>
+        <?php endif; ?>
 
         <!---
         Notification Icon - แสดงเฉพาะเมื่อล็อกอินแล้ว
@@ -142,7 +144,7 @@ if (typeof window.headerScriptInitialized === 'undefined') {
 
         // Global variables
         let cartCount = loadCartCountFromStorage();
-        
+
         const cartIcon = document.getElementById('cartIcon');
         const cartBadge = document.getElementById('cartBadge');
         const notificationIcon = document.getElementById('notificationIcon');
@@ -166,7 +168,7 @@ if (typeof window.headerScriptInitialized === 'undefined') {
         // Utility function to show toast notifications
         function showToast(message, type = 'success') {
             console.log('Showing toast:', message, 'Type:', type);
-            
+
             const toast = document.createElement('div');
             const bgColor = type === 'success' ? 'linear-gradient(135deg, #4caf50, #45a049)' :
                 type === 'warning' ? 'linear-gradient(135deg, #ff9800, #f57c00)' :
@@ -216,7 +218,9 @@ if (typeof window.headerScriptInitialized === 'undefined') {
             cartIcon.addEventListener('click', function(e) {
                 e.preventDefault();
                 this.style.animation = 'shake 0.5s';
-                setTimeout(() => { this.style.animation = ''; }, 500);
+                setTimeout(() => {
+                    this.style.animation = '';
+                }, 500);
 
                 if (isLoggedIn) {
                     cartCount = loadCartCountFromStorage();
@@ -224,7 +228,9 @@ if (typeof window.headerScriptInitialized === 'undefined') {
                     window.location.href = 'cart.php';
                 } else {
                     showToast('กรุณาเข้าสู่ระบบก่อนดูตะกร้าสินค้า', 'warning');
-                    setTimeout(() => { window.location.href = 'login.php'; }, 1500);
+                    setTimeout(() => {
+                        window.location.href = 'login.php';
+                    }, 1500);
                 }
             });
         }
@@ -322,7 +328,8 @@ if (typeof window.headerScriptInitialized === 'undefined') {
                     return;
                 }
 
-                if (href && !href.startsWith('#') && (href.includes('.php') || href.includes('.html'))) {
+                if (href && !href.startsWith('#') && (href.includes('.php') || href.includes(
+                        '.html'))) {
                     const linkText = this.textContent.trim();
                     showToast(`กำลังไปที่ ${linkText}...`, 'info');
                     return true;
@@ -367,7 +374,9 @@ if (typeof window.headerScriptInitialized === 'undefined') {
 
         // Listen for cart updates
         window.addEventListener('cartUpdated', function(e) {
-            const { totalItems } = e.detail;
+            const {
+                totalItems
+            } = e.detail;
             cartCount = totalItems;
             updateCartBadge();
             console.log('Cart updated via event:', totalItems);
@@ -394,14 +403,14 @@ if (typeof window.headerScriptInitialized === 'undefined') {
 
         if (isLoggedIn && userName && userName.trim() !== '') {
             console.log('User is logged in and has name, checking welcome message...');
-            
+
             // ใช้ key ที่แตกต่างกันสำหรับแต่ละผู้ใช้
             const welcomeKey = `welcome_message_shown_${userName.trim()}`;
             const welcomeShown = sessionStorage.getItem(welcomeKey);
-            
+
             console.log('Welcome key:', welcomeKey);
             console.log('Welcome shown:', welcomeShown);
-            
+
             if (!welcomeShown) {
                 console.log('Showing welcome message for:', userName.trim());
                 setTimeout(() => {
@@ -415,11 +424,12 @@ if (typeof window.headerScriptInitialized === 'undefined') {
         } else if (!isLoggedIn) {
             console.log('User not logged in, checking guest welcome...');
             const guestWelcomeShown = sessionStorage.getItem('guest_welcome_shown');
-            
+
             if (!guestWelcomeShown) {
                 console.log('Showing guest welcome message');
                 setTimeout(() => {
-                    showToast('ยินดีต้อนรับสู่ร้านค้าออนไลน์! กรุณาเข้าสู่ระบบเพื่อใช้งานเต็มรูปแบบ', 'info');
+                    showToast('ยินดีต้อนรับสู่ร้านค้าออนไลน์! กรุณาเข้าสู่ระบบเพื่อใช้งานเต็มรูปแบบ',
+                        'info');
                     sessionStorage.setItem('guest_welcome_shown', 'true');
                 }, 2000);
             }

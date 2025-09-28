@@ -947,12 +947,12 @@
                         </div>
                         <div class="form-row two-cols">
                             <div class="form-group">
-                                <label>อีเมล <span class="required">*จำเป็น</span></label>
-                                <input type="email" id="email" name="email" required placeholder="example@email.com">
-                            </div>
-                            <div class="form-group">
                                 <label>เบอร์โทรศัพท์ <span class="required">*จำเป็น</span></label>
                                 <input type="text" name="phone" id="phone" required placeholder="กรอกเบอร์โทรศัพท์">
+                            </div>
+                            <div class="form-group">
+                                <label>อีเมล <span class="required">*จำเป็น</span></label>
+                                <input type="email" id="email" name="email" required placeholder="example@email.com">
                             </div>
                         </div>
                     </div>

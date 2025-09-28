@@ -605,11 +605,11 @@
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label for="dateFrom">วันที่เริ่มต้น</label>
+                    <label for="dateFrom">วันที่เริ่มดำเนินการ</label>
                     <input type="date" id="dateFrom">
                 </div>
                 <div class="filter-group">
-                    <label for="dateTo">วันที่สิ้นสุด</label>
+                    <label for="dateTo">วันที่สิ้นสุดดำเนินการ</label>
                     <input type="date" id="dateTo">
                 </div>
                 <div class="filter-buttons">

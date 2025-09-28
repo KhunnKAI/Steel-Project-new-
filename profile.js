@@ -395,7 +395,7 @@ function displayOrders(orders) {
 
 function getStatusText(statusCode) {
     const statusMap = {
-        'pending_payment': 'รอการชำระเงิน',
+        'pending_payment': 'รอตรวจสอบการการชำระเงิน',
         'awaiting_shipment': 'รอจัดส่ง',
         'in_transit': 'กำลังจัดส่ง',
         'delivered': 'จัดส่งแล้ว',
