@@ -668,7 +668,7 @@ class AddressController
         $length_limits = [
             'recipient_name' => 255,
             'phone' => 20,
-            'address_line' => 100,
+            'address_line' => 1000,
             'subdistrict' => 100,
             'district' => 100,
             'postal_code' => 10
