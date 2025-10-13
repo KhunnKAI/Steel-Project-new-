@@ -34,11 +34,6 @@ if ($isLoggedIn) {
     $userName = $_SESSION['name'] ?? $_COOKIE['name'] ?? '';
 }
 
-// Debug - เพิ่มการตรวจสอบข้อมูล
-error_log("Header Debug - isLoggedIn: " . ($isLoggedIn ? 'true' : 'false'));
-error_log("Header Debug - userName: " . $userName);
-error_log("Header Debug - SESSION user_id: " . ($_SESSION['user_id'] ?? 'not set'));
-error_log("Header Debug - COOKIE user_id: " . ($_COOKIE['user_id'] ?? 'not set'));
 ?>
 
 <div class="header">
@@ -108,15 +103,6 @@ if (typeof window.headerScriptInitialized === 'undefined') {
     window.phpIsLoggedIn = <?php echo $isLoggedIn ? 'true' : 'false'; ?>;
     window.phpUserName = <?php echo json_encode($userName, JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 
-    // Debug log สำหรับตรวจสอบ
-    console.log('=== PHP Data loaded ===');
-    console.log('- Login Status:', window.phpIsLoggedIn);
-    console.log('- User Name:', window.phpUserName);
-    console.log('- Session user_id:', '<?php echo $_SESSION['user_id'] ?? 'not set'; ?>');
-    console.log('- Cookie user_id:', '<?php echo $_COOKIE['user_id'] ?? 'not set'; ?>');
-    console.log('- User Name Length:', window.phpUserName.length);
-    console.log('========================');
-
     // Header Script - แก้ไขปัญหาตะกร้าขึ้น 0 หลังรีเฟรช
     document.addEventListener('DOMContentLoaded', function() {
         // ป้องกันการรันซ้ำ
@@ -125,8 +111,6 @@ if (typeof window.headerScriptInitialized === 'undefined') {
             return;
         }
         window.headerDOMLoaded = true;
-
-        console.log('=== Header DOM Content Loaded ===');
 
         // ฟังก์ชันโหลดจำนวนสินค้าจาก localStorage
         function loadCartCountFromStorage() {
@@ -155,20 +139,19 @@ if (typeof window.headerScriptInitialized === 'undefined') {
         // ตรวจสอบสถานะการล็อกอินจาก PHP
         const isLoggedIn = typeof window.phpIsLoggedIn !== 'undefined' ? window.phpIsLoggedIn : false;
         const userName = typeof window.phpUserName !== 'undefined' ? window.phpUserName : '';
-
-        // Debug log สำหรับตรวจสอบ
-        console.log('=== JavaScript Variables ===');
-        console.log('Cart Count from localStorage:', cartCount);
-        console.log('Login Status:', isLoggedIn);
-        console.log('User Name:', userName);
-        console.log('User Name Type:', typeof userName);
-        console.log('User Name Trimmed:', userName.trim());
-        console.log('============================');
+        const trimmedUserName = typeof userName === 'string' ? userName.trim() : '';
 
         // Utility function to show toast notifications
-        function showToast(message, type = 'success') {
-            console.log('Showing toast:', message, 'Type:', type);
+        function ensureStyleElement(id, cssText) {
+            if (!document.querySelector(`#${id}`)) {
+                const style = document.createElement('style');
+                style.id = id;
+                style.textContent = cssText;
+                document.head.appendChild(style);
+            }
+        }
 
+        function showToast(message, type = 'success') {
             const toast = document.createElement('div');
             const bgColor = type === 'success' ? 'linear-gradient(135deg, #4caf50, #45a049)' :
                 type === 'warning' ? 'linear-gradient(135deg, #ff9800, #f57c00)' :
@@ -193,17 +176,12 @@ if (typeof window.headerScriptInitialized === 'undefined') {
             toast.textContent = message;
 
             // เพิ่ม CSS animation
-            if (!document.querySelector('#toast-styles')) {
-                const style = document.createElement('style');
-                style.id = 'toast-styles';
-                style.textContent = `
-                    @keyframes slideInRight {
-                        from { transform: translateX(100%); opacity: 0; }
-                        to { transform: translateX(0); opacity: 1; }
-                    }
-                `;
-                document.head.appendChild(style);
-            }
+            ensureStyleElement('toast-styles', `
+                @keyframes slideInRight {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+            `);
 
             document.body.appendChild(toast);
 
@@ -249,7 +227,6 @@ if (typeof window.headerScriptInitialized === 'undefined') {
                 window.cartCount = cartCount;
             }
 
-            console.log('Updated cart badge:', cartCount);
         }
 
 
@@ -257,12 +234,17 @@ if (typeof window.headerScriptInitialized === 'undefined') {
         window.updateCartBadge = updateCartBadge;
         window.showToast = showToast;
 
+        function hideAllDropdowns() {
+            if (notificationDropdown) notificationDropdown.classList.remove('show');
+            if (profileDropdown) profileDropdown.classList.remove('show');
+        }
+
         // Notification dropdown (เฉพาะเมื่อล็อกอินแล้ว)
         if (notificationIcon && notificationDropdown) {
             notificationIcon.addEventListener('click', function(e) {
                 e.stopPropagation();
                 notificationDropdown.classList.toggle('show');
-                if (profileDropdown) {
+                if (notificationDropdown.classList.contains('show') && profileDropdown) {
                     profileDropdown.classList.remove('show');
                 }
 
@@ -278,7 +260,7 @@ if (typeof window.headerScriptInitialized === 'undefined') {
             profileIcon.addEventListener('click', function(e) {
                 e.stopPropagation();
                 profileDropdown.classList.toggle('show');
-                if (notificationDropdown) {
+                if (profileDropdown.classList.contains('show') && notificationDropdown) {
                     notificationDropdown.classList.remove('show');
                 }
             });
@@ -313,7 +295,6 @@ if (typeof window.headerScriptInitialized === 'undefined') {
                         }
                     })
                     .catch(error => {
-                        console.error('Logout error:', error);
                         window.location.href = 'login.php';
                     });
             }
@@ -339,12 +320,7 @@ if (typeof window.headerScriptInitialized === 'undefined') {
                 const linkText = this.textContent.trim();
                 showToast(`เปิดหน้า: ${linkText}`, 'info');
 
-                if (notificationDropdown) {
-                    notificationDropdown.classList.remove('show');
-                }
-                if (profileDropdown) {
-                    profileDropdown.classList.remove('show');
-                }
+                hideAllDropdowns();
             });
         });
 
@@ -379,13 +355,11 @@ if (typeof window.headerScriptInitialized === 'undefined') {
             } = e.detail;
             cartCount = totalItems;
             updateCartBadge();
-            console.log('Cart updated via event:', totalItems);
         });
 
         // Listen for localStorage changes
         window.addEventListener('storage', function(e) {
             if (e.key === 'shopping_cart') {
-                console.log('localStorage changed, updating cart badge...');
                 updateCartBadge();
             }
         });
@@ -394,66 +368,38 @@ if (typeof window.headerScriptInitialized === 'undefined') {
         updateCartBadge();
         checkNotifications();
 
-        // Welcome message - แก้ไขและเพิ่ม debug
-        console.log('=== Welcome Message Check ===');
-        console.log('isLoggedIn:', isLoggedIn);
-        console.log('userName:', userName);
-        console.log('userName length:', userName ? userName.length : 0);
-        console.log('userName trimmed:', userName ? userName.trim() : '');
-
-        if (isLoggedIn && userName && userName.trim() !== '') {
-            console.log('User is logged in and has name, checking welcome message...');
-
+        if (isLoggedIn && trimmedUserName !== '') {
             // ใช้ key ที่แตกต่างกันสำหรับแต่ละผู้ใช้
-            const welcomeKey = `welcome_message_shown_${userName.trim()}`;
+            const welcomeKey = `welcome_message_shown_${trimmedUserName}`;
             const welcomeShown = sessionStorage.getItem(welcomeKey);
 
-            console.log('Welcome key:', welcomeKey);
-            console.log('Welcome shown:', welcomeShown);
-
             if (!welcomeShown) {
-                console.log('Showing welcome message for:', userName.trim());
                 setTimeout(() => {
-                    showToast(`ยินดีต้อนรับ ${userName.trim()}!`, 'success');
+                    showToast(`ยินดีต้อนรับ ${trimmedUserName}!`, 'success');
                     sessionStorage.setItem(welcomeKey, 'true');
-                    console.log('Welcome message shown and flag set');
                 }, 1000);
-            } else {
-                console.log('Welcome message already shown for this user');
             }
         } else if (!isLoggedIn) {
-            console.log('User not logged in, checking guest welcome...');
             const guestWelcomeShown = sessionStorage.getItem('guest_welcome_shown');
 
             if (!guestWelcomeShown) {
-                console.log('Showing guest welcome message');
                 setTimeout(() => {
                     showToast('ยินดีต้อนรับสู่ร้านค้าออนไลน์! กรุณาเข้าสู่ระบบเพื่อใช้งานเต็มรูปแบบ',
                         'info');
                     sessionStorage.setItem('guest_welcome_shown', 'true');
                 }, 2000);
             }
-        } else {
-            console.log('User logged in but no name available');
         }
-
-        console.log('==============================');
 
         // เพิ่ม CSS สำหรับ animations
-        if (!document.querySelector('#header-animations')) {
-            const style = document.createElement('style');
-            style.id = 'header-animations';
-            style.textContent = `
-                @keyframes shake {
-                    0%, 100% { transform: translateX(0); }
-                    25% { transform: translateX(-5px) rotate(-5deg); }
-                    75% { transform: translateX(5px) rotate(5deg); }
-                }
-            `;
-            document.head.appendChild(style);
-        }
+        ensureStyleElement('header-animations', `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-5px) rotate(-5deg); }
+                75% { transform: translateX(5px) rotate(5deg); }
+            }
+        `);
 
-        console.log('Header script initialized with cart count:', cartCount);
     });
 }
 </script>
