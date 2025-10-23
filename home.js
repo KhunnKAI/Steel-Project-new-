@@ -220,7 +220,7 @@ function handleAddToCart(product, event) {
         if (typeof showToast === 'function') {
             showToast(`เพิ่ม "${product.name}" ลงในตะกร้าแล้ว!`);
         } else {
-            alert(`เพิ่ม "${product.name}" ลงในตะกร้าแล้ว!`);
+            showToast(`เพิ่ม "${product.name}" ลงในตะกร้าแล้ว!`);
         }
 
         // เอฟเฟกต์ปุ่ม
@@ -279,7 +279,7 @@ function fallbackAddToCart(product, event) {
         if (typeof showToast === 'function') {
             showToast(`เพิ่ม "${product.name}" ลงในตะกร้าแล้ว!`);
         } else {
-            alert(`เพิ่ม "${product.name}" ลงในตะกร้าแล้ว!`);
+            showToast(`เพิ่ม "${product.name}" ลงในตะกร้าแล้ว!`);
         }
 
         // เอฟเฟกต์ปุ่ม
@@ -299,7 +299,7 @@ function fallbackAddToCart(product, event) {
 
     } catch (error) {
         console.error('Fallback add to cart failed:', error);
-        alert('เกิดข้อผิดพลาดในการเพิ่มสินค้า กรุณาลองใหม่อีกครั้ง');
+        showToast('เกิดข้อผิดพลาดในการเพิ่มสินค้า กรุณาลองใหม่อีกครั้ง', 'error');
     }
 }
 
@@ -338,7 +338,7 @@ function showNoProductsMessage(message) {
 // ฟังก์ชันเปิดหน้าสินค้า
 function viewProduct(productId) {
     if (!productId) {
-        alert('ไม่พบรหัสสินค้า กรุณาลองใหม่อีกครั้ง');
+        showToast('ไม่พบรหัสสินค้า กรุณาลองใหม่อีกครั้ง', 'error');
         return;
     }
     const cleanProductId = String(productId).trim();
@@ -371,7 +371,7 @@ function applyPriceFilter() {
     
     // ตรวจสอบว่าราคาต่ำสุดไม่มากกว่าราคาสูงสุด
     if (minPrice > maxPrice && maxPrice !== Infinity) {
-        alert('ราคาต่ำสุดไม่ควรมากกว่าราคาสูงสุด');
+        showToast('ราคาต่ำสุดไม่ควรมากกว่าราคาสูงสุด', 'warning');
         return;
     }
     
@@ -948,13 +948,29 @@ function applyAllFilters() {
         console.log(`After advanced search: ${filtered.length} items found`);
     }
 
-    // 2. กรองตามหมวดหมู่
+    // 2. กรองตามหมวดหมู่ - แก้ไขให้รองรับหมวดหมู่ "อื่นๆ"
     const checkedCategories = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
         .map(checkbox => checkbox.value);
     if (checkedCategories.length > 0) {
-        filtered = filtered.filter(product =>
-            checkedCategories.includes(product.category)
-        );
+        filtered = filtered.filter(product => {
+            const productCategory = product.category || 'ไม่ระบุ';
+            
+            // ถ้าเลือกหมวดหมู่ "อื่นๆ" ให้แสดงสินค้าที่ไม่ใช่หมวดหมู่หลัก
+            if (checkedCategories.includes('อื่นๆ')) {
+                const mainCategories = ['เหล็กเส้น', 'เหล็กแผ่น', 'เหล็กรูปพรรณ', 'เหล็กตะแกรง/ตาข่าย'];
+                const isOtherCategory = !mainCategories.includes(productCategory) || 
+                                      productCategory === 'อื่นๆ' || 
+                                      productCategory === 'ไม่ระบุ' ||
+                                      productCategory === 'อื่น ๆ' ||
+                                      productCategory === 'อื่นๆ';
+                
+                console.log(`Product: ${product.name}, Category: ${productCategory}, Is Other: ${isOtherCategory}`);
+                return isOtherCategory;
+            }
+            
+            // สำหรับหมวดหมู่อื่นๆ ให้ตรวจสอบตรงๆ
+            return checkedCategories.includes(productCategory);
+        });
         console.log(`After category filter: ${filtered.length} items`);
     }
 
@@ -1107,6 +1123,132 @@ function searchProducts() {
     console.log('🔍 Manual search triggered');
     applyAllFilters();
 }
+
+// ฟังก์ชัน debug สำหรับตัวกรองหมวดหมู่
+function debugCategoryFilter() {
+    console.log('=== Home Category Filter Debug ===');
+    
+    // ตรวจสอบ checkbox ที่ถูกเลือก
+    const checkedCategories = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+        .map(checkbox => checkbox.value);
+    console.log('Checked categories:', checkedCategories);
+    
+    // ตรวจสอบหมวดหมู่ทั้งหมดที่มีในระบบ
+    const allCategories = [...new Set(allProducts.map(p => p.category))];
+    console.log('All available categories:', allCategories);
+    
+    // ตรวจสอบหมวดหมู่หลัก
+    const mainCategories = ['เหล็กเส้น', 'เหล็กแผ่น', 'เหล็กรูปพรรณ', 'เหล็กตะแกรง/ตาข่าย'];
+    console.log('Main categories:', mainCategories);
+    
+    // ตรวจสอบสินค้าที่ควรแสดงเมื่อเลือก "อื่นๆ"
+    if (checkedCategories.includes('อื่นๆ')) {
+        const otherProducts = allProducts.filter(product => {
+            const productCategory = product.category || 'ไม่ระบุ';
+            const isOtherCategory = !mainCategories.includes(productCategory) || 
+                                  productCategory === 'อื่นๆ' || 
+                                  productCategory === 'ไม่ระบุ' ||
+                                  productCategory === 'อื่น ๆ' ||
+                                  productCategory === 'อื่นๆ';
+            return isOtherCategory;
+        });
+        
+        console.log(`Products that should show for "อื่นๆ": ${otherProducts.length}`);
+        otherProducts.forEach((product, index) => {
+            console.log(`${index + 1}. ${product.name} (${product.category})`);
+        });
+    }
+    
+    console.log('========================');
+}
+
+// ฟังก์ชันทดสอบตัวกรองหมวดหมู่ "อื่นๆ" ในหน้า home
+function testOtherCategoryFilter() {
+    console.log('=== Testing "อื่นๆ" Category Filter (Home) ===');
+    
+    // ตรวจสอบ checkbox "อื่นๆ"
+    const othersCheckbox = document.getElementById('others');
+    if (!othersCheckbox) {
+        console.error('Checkbox "อื่นๆ" not found!');
+        return;
+    }
+    
+    // ล้างตัวกรองทั้งหมดก่อน
+    clearAllFilters();
+    console.log('Cleared all filters');
+    
+    // เลือก checkbox "อื่นๆ"
+    othersCheckbox.checked = true;
+    console.log('Selected "อื่นๆ" checkbox');
+    
+    // เรียกใช้ตัวกรอง
+    applyAllFilters();
+    console.log(`Filtered products count: ${filteredProducts.length}`);
+    
+    // แสดงผลลัพธ์
+    if (filteredProducts.length > 0) {
+        console.log('Products found for "อื่นๆ" category:');
+        filteredProducts.forEach((product, index) => {
+            console.log(`${index + 1}. ${product.name} (Category: ${product.category})`);
+        });
+    } else {
+        console.log('No products found for "อื่นๆ" category');
+    }
+    
+    // ตรวจสอบหมวดหมู่ทั้งหมดที่มีในระบบ
+    const allCategories = [...new Set(allProducts.map(p => p.category))];
+    console.log('All available categories:', allCategories);
+    
+    console.log('=== Test completed ===');
+}
+
+// ฟังก์ชันทดสอบตัวกรองหมวดหมู่ทั้งหมดในหน้า home
+function testAllCategoryFilters() {
+    console.log('=== Testing All Category Filters (Home) ===');
+    
+    const categories = ['เหล็กเส้น', 'เหล็กแผ่น', 'เหล็กรูปพรรณ', 'เหล็กตะแกรง/ตาข่าย', 'อื่นๆ'];
+    const categoryIds = ['steel-bar', 'steel-sheet', 'steel-shape', 'steel-mesh', 'others'];
+    
+    categories.forEach((category, index) => {
+        console.log(`\n--- Testing category: ${category} ---`);
+        
+        // ล้างตัวกรองทั้งหมดก่อน
+        clearAllFilters();
+        
+        // เลือกหมวดหมู่ที่ต้องการทดสอบ
+        const checkbox = document.getElementById(categoryIds[index]);
+        if (checkbox) {
+            checkbox.checked = true;
+            console.log(`Selected ${category} checkbox`);
+            
+            // เรียกใช้ตัวกรอง
+            applyAllFilters();
+            console.log(`Filtered products count: ${filteredProducts.length}`);
+            
+            // แสดงผลลัพธ์
+            if (filteredProducts.length > 0) {
+                console.log(`Products found for ${category}:`);
+                filteredProducts.slice(0, 5).forEach((product, idx) => {
+                    console.log(`  ${idx + 1}. ${product.name} (Category: ${product.category})`);
+                });
+                if (filteredProducts.length > 5) {
+                    console.log(`  ... and ${filteredProducts.length - 5} more products`);
+                }
+            } else {
+                console.log(`No products found for ${category}`);
+            }
+        } else {
+            console.error(`Checkbox for ${category} not found!`);
+        }
+    });
+    
+    console.log('\n=== All category filter tests completed ===');
+}
+
+// เพิ่มฟังก์ชัน debug ลงใน window object
+window.debugCategoryFilter = debugCategoryFilter;
+window.testOtherCategoryFilter = testOtherCategoryFilter;
+window.testAllCategoryFilters = testAllCategoryFilters;
 
 // เรียกใช้งานเมื่อ DOM โหลดเสร็จ
 document.addEventListener('DOMContentLoaded', function() {

@@ -361,7 +361,7 @@
         function goBack() {
             if (confirm('คุณต้องการกลับสู่หน้าหลักหรือไม่?')) {
                 // In a real application, this would redirect to the main page
-                alert('กลับสู่หน้าหลัก');
+                showToast('กลับสู่หน้าหลัก', 'info');
             }
         }
 

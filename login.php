@@ -506,12 +506,12 @@
                     })
                 });
                 const data = await response.json();
-                alert(data.message || 'หากอีเมลนี้อยู่ในระบบ เราได้ส่งลิงก์รีเซ็ตรหัสผ่านให้แล้ว');
+                showAlert(data.message || 'หากอีเมลนี้อยู่ในระบบ เราได้ส่งลิงก์รีเซ็ตรหัสผ่านให้แล้ว', 'success');
                 closeForgotPasswordModal();
                 
             } catch (error) {
                 console.error('Forgot password error:', error);
-                alert('เกิดข้อผิดพลาดในการส่งอีเมล');
+                showAlert('เกิดข้อผิดพลาดในการส่งอีเมล', 'error');
             }
         }
 

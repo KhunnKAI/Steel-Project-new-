@@ -164,7 +164,7 @@ function showError(message) {
             errorDiv.style.display = 'none';
         }, 8000);
     } else {
-        alert(Array.isArray(message) ? message.join('\n') : message);
+        showError(Array.isArray(message) ? message.join('\n') : message);
     }
 }
 
@@ -1102,22 +1102,22 @@ async function confirmPasswordChange() {
 
     // Validation
     if (!currentPassword.trim() || !newPassword.trim() || !confirmPassword.trim()) {
-        alert('กรุณากรอกรหัสผ่านให้ครบถ้วน');
+        showError('กรุณากรอกรหัสผ่านให้ครบถ้วน');
         return;
     }
 
     if (newPassword.length < 8) {
-        alert('รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร');
+        showError('รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร');
         return;
     }
 
     if (newPassword === currentPassword) {
-        alert('รหัสผ่านใหม่ต้องแตกต่างจากรหัสผ่านเดิม');
+        showError('รหัสผ่านใหม่ต้องแตกต่างจากรหัสผ่านเดิม');
         return;
     }
 
     if (newPassword !== confirmPassword) {
-        alert('รหัสผ่านใหม่ไม่ตรงกัน กรุณาตรวจสอบอีกครั้ง');
+        showError('รหัสผ่านใหม่ไม่ตรงกัน กรุณาตรวจสอบอีกครั้ง');
         return;
     }
 

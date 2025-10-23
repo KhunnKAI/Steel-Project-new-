@@ -1,3 +1,68 @@
+// Toast notification function
+function showToast(message, type = 'success') {
+    const existingToast = document.querySelector('.toast');
+    if (existingToast) {
+        existingToast.remove();
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    
+    if (!document.querySelector('#toast-styles')) {
+        const style = document.createElement('style');
+        style.id = 'toast-styles';
+        style.textContent = `
+            .toast {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                color: white;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                z-index: 10000;
+                font-size: 14px;
+                max-width: 300px;
+                word-wrap: break-word;
+                animation: slideInRight 0.3s ease-out;
+            }
+            .toast-success {
+                background: #27ae60;
+            }
+            .toast-error {
+                background: #e74c3c;
+            }
+            .toast-warning {
+                background: #f39c12;
+            }
+            .toast-info {
+                background: #3498db;
+            }
+            @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOutRight {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.animation = 'slideOutRight 0.3s ease-in';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 3000);
+}
+
 // ดึง product ID จาก URL
 function getProductIdFromURL() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -460,10 +525,10 @@ function addButtonListeners(product) {
     if (buyButton) {
         buyButton.addEventListener('click', function () {
             if (product.stock <= 0) {
-                alert('ขออภัย สินค้านี้หมดสต็อค');
+                showToast('ขออภัย สินค้านี้หมดสต็อค', 'warning');
                 return;
             }
-            alert(`กำลังดำเนินการสั่งซื้อ "${product.name}"`);
+            showToast(`กำลังดำเนินการสั่งซื้อ "${product.name}"`, 'info');
         });
     }
 
@@ -472,7 +537,7 @@ function addButtonListeners(product) {
     if (cartButton) {
         cartButton.addEventListener('click', async function () {
             if (product.stock <= 0) {
-                alert('ขออภัย สินค้านี้หมดสต็อค');
+                showToast('ขออภัย สินค้านี้หมดสต็อค', 'warning');
                 return;
             }
 
@@ -505,7 +570,7 @@ function addButtonListeners(product) {
 
             const ready = await ensureCartReady();
             if (!ready) {
-                alert('ไม่สามารถเพิ่มลงตะกร้าได้ กรุณารีเฟรชหน้าแล้วลองใหม่');
+                showToast('ไม่สามารถเพิ่มลงตะกร้าได้ กรุณารีเฟรชหน้าแล้วลองใหม่', 'error');
                 return;
             }
 
@@ -521,7 +586,7 @@ function addButtonListeners(product) {
                 if (typeof window.showToast === 'function') {
                     window.showToast(`เพิ่ม "${name}" ลงตะกร้าแล้ว`);
                 } else {
-                    alert(`เพิ่ม "${name}" ลงตะกร้าแล้ว`);
+                    showToast(`เพิ่ม "${name}" ลงตะกร้าแล้ว`);
                 }
             }
         });

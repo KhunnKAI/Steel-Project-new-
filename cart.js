@@ -849,7 +849,7 @@ class CartManager {
 
         const items = this.getCartItems();
         if (!items || items.length === 0) {
-            alert('ตะกร้าสินค้าว่างเปล่า');
+            this.showStockAlert('ตะกร้าสินค้าว่างเปล่า', 'warning');
             console.warn('Cart is empty');
             return;
         }
@@ -964,7 +964,7 @@ class CartManager {
 
             } else if (result.redirect) {
                 console.warn('User needs to login:', result.message);
-                alert(result.message || 'กรุณาล็อกอินก่อนสั่งซื้อ');
+                this.showStockAlert(result.message || 'กรุณาล็อกอินก่อนสั่งซื้อ', 'warning');
                 window.location.href = result.redirect;
 
             } else {
