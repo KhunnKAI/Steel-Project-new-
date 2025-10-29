@@ -12,6 +12,17 @@ if (!$current_admin) {
     header("Location: controllers/logout.php");
     exit();
 }
+
+$allowed_roles = ['manager', 'super', 'accounting'];
+
+if (!isset($current_admin['position']) || !in_array($current_admin['position'], $allowed_roles)) {
+    // Set error message
+    $_SESSION['error'] = "คุณไม่มีสิทธิ์เข้าถึงหน้านี้";
+    
+    // Redirect to access denied page
+    header("Location: accessdenied_admin.html");
+    exit();
+}
 ?>
 
 <!DOCTYPE html>
@@ -154,7 +165,7 @@ if (!$current_admin) {
             border-radius: 8px;
             font-size: 14px;
             transition: all 0.3s ease;
-            font-family: 'Prompt', Arial, sans-serif;
+            font-family: 'Inter';
         }
 
         .filter-group select:focus,
@@ -181,7 +192,7 @@ if (!$current_admin) {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            font-family: 'Prompt', Arial, sans-serif;
+            font-family: 'Inter';
         }
 
         .btn-primary {
@@ -238,7 +249,7 @@ if (!$current_admin) {
             justify-content: center;
             gap: 8px;
             min-width: 150px;
-            font-family: 'Prompt', Arial, sans-serif;
+            font-family: 'Inter';
         }
 
         .tab-button.active {
@@ -366,7 +377,7 @@ if (!$current_admin) {
             border: 2px solid #e0e0e0;
             border-radius: 8px;
             font-size: 14px;
-            font-family: 'Prompt', Arial, sans-serif;
+            font-family: 'Inter';
         }
 
         /* Data Table */
@@ -532,17 +543,6 @@ if (!$current_admin) {
                     <div class="filter-group">
                         <label>วันที่สิ้นสุด</label>
                         <input type="date" id="endDate">
-                    </div>
-                    <div class="filter-group">
-                        <label>ประเภทสินค้า</label>
-                        <select id="productCategory">
-                            <option value="all">ทั้งหมด</option>
-                            <option value="rb">เหล็กเส้น</option>
-                            <option value="sp">เหล็กแผ่น</option>
-                            <option value="ss">เหล็กรูปพรรณ</option>
-                            <option value="wm">เหล็กตะแกรง/ตาข่าย</option>
-                            <option value="ot">อื่นๆ</option>
-                        </select>
                     </div>
                 </div>
                 <div class="filter-buttons">

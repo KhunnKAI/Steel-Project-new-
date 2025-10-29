@@ -98,28 +98,41 @@ function hasPermissionForStatus(statusCode, action = 'update') {
 }
 
 function initializeEventListeners() {
-    // Search input
+    // Search input - ลบการค้นหา real-time
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
-        let searchTimeout;
-        searchInput.addEventListener('input', function() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
+        // ลบการเรียก applyFilters() ที่นี่
+        // เก็บไว้เฉพาะเพื่ออนุญาต Enter key
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
                 applyFilters();
-            }, 300);
+            }
         });
     }
 
-    // Filter controls
+    // Filter controls - ลบการเรียก applyFilters() แบบอัตโนมัติ
     const statusFilter = document.getElementById('statusFilter');
     const dateFromFilter = document.getElementById('dateFromFilter');
     const dateToFilter = document.getElementById('dateToFilter');
+    const searchBtn = document.getElementById('searchBtn');
+    const resetBtn = document.getElementById('resetBtn');
 
-    [statusFilter, dateFromFilter, dateToFilter].forEach(filter => {
-        if (filter) {
-            filter.addEventListener('change', applyFilters);
-        }
-    });
+    // ลบการเรียก applyFilters() ที่นี่
+    // [statusFilter, dateFromFilter, dateToFilter].forEach(filter => {
+    //     if (filter) {
+    //         filter.addEventListener('change', applyFilters);
+    //     }
+    // });
+
+    // Search button - กดปุ่มค้นหา
+    if (searchBtn) {
+        searchBtn.addEventListener('click', applyFilters);
+    }
+
+    // Reset button
+    if (resetBtn) {
+        resetBtn.addEventListener('click', resetFilters);
+    }
 
     // Modal close events
     window.addEventListener('click', function(event) {
@@ -230,6 +243,21 @@ function applyFilters() {
     displayOrders(filteredOrders, filteredOrders.length);
 }
 
+function resetFilters() {
+    // Clear all filter inputs
+    document.getElementById('searchInput').value = '';
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('dateFromFilter').value = '';
+    document.getElementById('dateToFilter').value = '';
+
+    // Reset to show all orders
+    currentPage = 1;
+    displayOrders(allOrders, allOrders.length);
+    
+    showNotification('ตัวกรองถูกรีเซ็ตเรียบร้อย', 'success');
+}
+
+
 function updateStatistics(statistics) {
     const stats = {
         pending_payment: 0,
@@ -312,7 +340,8 @@ function createOrderRow(order) {
 function createStatusBadge(status) {
     if (!status) return '<span class="status-badge status-unknown">ไม่ทราบ</span>';
     
-    const statusClass = `status-${status.status_code}`;
+    // แปลง underscore เป็น hyphen เพื่อให้ match กับ CSS class names
+    const statusClass = `status-${status.status_code.replace(/_/g, '-')}`;
     return `<span class="status-badge ${statusClass}">${escapeHtml(status.description)}</span>`;
 }
 

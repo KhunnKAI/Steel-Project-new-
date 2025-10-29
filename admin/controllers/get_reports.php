@@ -65,43 +65,152 @@ try {
     echo json_encode(['error' => $e->getMessage()]);
 }
 
-// Sales Summary - แก้ให้ return object แทน array
+// Sales Summary - แก้ให้ return object แทน array และแยบคิวรี่ยอดขายกับคำสั่งซื้อ
 function getSalesSummary($pdo, $start_date, $end_date, $category = 'all') {
-    $sql = "
+    $date_end_param = $end_date . ' 23:59:59';
+    $params = [$start_date, $date_end_param];
+
+    // --- 1. Query for Sales and Averages (Current Period) ---
+    $sales_sql = "
         SELECT 
-            COUNT(DISTINCT o.order_id) as total_orders,
             COALESCE(SUM(o.total_amount), 0) as total_sales,
             COALESCE(SUM(o.total_novat), 0) as total_sales_no_vat,
             COALESCE(SUM(o.shipping_fee), 0) as total_shipping,
             COALESCE(AVG(o.total_amount), 0) as avg_order_value,
-            COUNT(DISTINCT o.user_id) as unique_customers,
-            0 as growth_rate
+            COUNT(DISTINCT o.user_id) as unique_customers
         FROM Orders o
     ";
     
-    $params = [$start_date, $end_date . ' 23:59:59'];
-    
+    $sales_where = "WHERE o.created_at BETWEEN ? AND ? AND o.status NOT IN ('status05','status01')";
+    $sales_params = $params;
+
     if ($category !== 'all') {
-        $sql .= "
+        $sales_sql = "
+            SELECT
+                COALESCE(SUM(sub.total_amount), 0) as total_sales,
+                COALESCE(SUM(sub.total_novat), 0) as total_sales_no_vat,
+                COALESCE(SUM(sub.shipping_fee), 0) as total_shipping,
+                COALESCE(AVG(sub.total_amount), 0) as avg_order_value,
+                COUNT(DISTINCT sub.user_id) as unique_customers
+            FROM (
+                SELECT 
+                    o.order_id, 
+                    o.total_amount, 
+                    o.total_novat, 
+                    o.shipping_fee, 
+                    o.user_id 
+                FROM Orders o
+                INNER JOIN OrderItem oi ON o.order_id = oi.order_id
+                INNER JOIN Product p ON oi.product_id = p.product_id
+                WHERE o.created_at BETWEEN ? AND ? 
+                AND o.status NOT IN ('status05','status01')
+                AND p.category_id = ?
+                GROUP BY o.order_id 
+            ) sub
+        ";
+        $sales_params = [$start_date, $date_end_param, $category];
+    } else {
+        $sales_sql = "
+            SELECT 
+                COALESCE(SUM(o.total_amount), 0) as total_sales,
+                COALESCE(SUM(o.total_novat), 0) as total_sales_no_vat,
+                COALESCE(SUM(o.shipping_fee), 0) as total_shipping,
+                COALESCE(AVG(o.total_amount), 0) as avg_order_value,
+                COUNT(DISTINCT o.user_id) as unique_customers
+            FROM Orders o
+            WHERE o.created_at BETWEEN ? AND ? 
+            AND o.status NOT IN ('status05','status01')
+        ";
+        $sales_params = $params;
+    }
+
+    $sales_stmt = $pdo->prepare($sales_sql);
+    $sales_stmt->execute($sales_params);
+    $sales_result = $sales_stmt->fetch(PDO::FETCH_ASSOC);
+    
+    // --- 2. Query for Total Orders (Current Period) ---
+    $orders_sql = "
+        SELECT 
+            COUNT(DISTINCT o.order_id) as total_orders
+        FROM Orders o
+    ";
+    
+    $orders_where = "WHERE o.created_at BETWEEN ? AND ? AND o.status NOT IN ('status05')";
+    $orders_params = $params;
+
+    if ($category !== 'all') {
+        $orders_sql .= "
             INNER JOIN OrderItem oi ON o.order_id = oi.order_id
             INNER JOIN Product p ON oi.product_id = p.product_id
-            WHERE o.created_at BETWEEN ? AND ? 
-            AND o.status NOT IN ('status05')
-            AND p.category_id = ?
+            $orders_where AND p.category_id = ?
         ";
-        $params[] = $category;
+        $orders_params[] = $category;
     } else {
-        $sql .= "
-            WHERE o.created_at BETWEEN ? AND ? 
-            AND o.status NOT IN ('status05')
-        ";
+        $orders_sql .= $orders_where;
     }
     
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute($params);
-    $result = $stmt->fetch();
+    $orders_stmt = $pdo->prepare($orders_sql);
+    $orders_stmt->execute($orders_params);
+    $orders_result = $orders_stmt->fetch(PDO::FETCH_ASSOC);
+
+    // --- 3. Calculate Growth Rate ---
+    // คำนวนจำนวนวันของช่วงเวลา
+    $date1 = new DateTime($start_date);
+    $date2 = new DateTime($end_date);
+    $interval = $date1->diff($date2);
+    $days = $interval->days;
     
-    return $result ?: [
+    // คำนวนช่วงเวลาก่อนหน้า (ระยะเวลาเท่ากัน)
+    $prev_end_date = date('Y-m-d', strtotime($start_date . ' -1 day'));
+    $prev_start_date = date('Y-m-d', strtotime($prev_end_date . " -$days days"));
+    
+    // Query ยอดขายช่วงก่อนหน้า
+    if ($category !== 'all') {
+        $prev_sales_sql = "
+            SELECT COALESCE(SUM(sub.total_amount), 0) as prev_total_sales
+            FROM (
+                SELECT o.order_id, o.total_amount
+                FROM Orders o
+                INNER JOIN OrderItem oi ON o.order_id = oi.order_id
+                INNER JOIN Product p ON oi.product_id = p.product_id
+                WHERE o.created_at BETWEEN ? AND ?
+                AND o.status NOT IN ('status05','status01')
+                AND p.category_id = ?
+                GROUP BY o.order_id
+            ) sub
+        ";
+        $prev_params = [$prev_start_date, $prev_end_date . ' 23:59:59', $category];
+    } else {
+        $prev_sales_sql = "
+            SELECT COALESCE(SUM(o.total_amount), 0) as prev_total_sales
+            FROM Orders o
+            WHERE o.created_at BETWEEN ? AND ?
+            AND o.status NOT IN ('status05','status01')
+        ";
+        $prev_params = [$prev_start_date, $prev_end_date . ' 23:59:59'];
+    }
+    
+    $prev_stmt = $pdo->prepare($prev_sales_sql);
+    $prev_stmt->execute($prev_params);
+    $prev_result = $prev_stmt->fetch(PDO::FETCH_ASSOC);
+    
+    // คำนวน Growth Rate
+    $current_sales = $sales_result['total_sales'] ?? 0;
+    $previous_sales = $prev_result['prev_total_sales'] ?? 0;
+    
+    $growth_rate = 0;
+    if ($previous_sales > 0) {
+        $growth_rate = round((($current_sales - $previous_sales) / $previous_sales) * 100, 2);
+    } elseif ($current_sales > 0) {
+        $growth_rate = 100; // เติบโต 100% ถ้าไม่มียอดขายช่วงก่อน
+    }
+
+    // --- 4. Combine and Return ---
+    if ($sales_result && $orders_result) {
+        return array_merge($orders_result, $sales_result, ['growth_rate' => $growth_rate]);
+    }
+
+    return [
         'total_orders' => 0,
         'total_sales' => 0,
         'total_sales_no_vat' => 0,
@@ -129,7 +238,7 @@ function getSalesByProduct($pdo, $start_date, $end_date, $category = 'all') {
         INNER JOIN Product p ON oi.product_id = p.product_id
         LEFT JOIN Category c ON p.category_id = c.category_id
         WHERE o.created_at BETWEEN ? AND ? 
-        AND o.status NOT IN ('status05')
+        AND o.status NOT IN ('status05','status01')
     ";
     
     $params = [$start_date, $end_date . ' 23:59:59'];

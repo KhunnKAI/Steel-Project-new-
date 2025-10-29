@@ -1,21 +1,16 @@
 // Admin Dashboard JavaScript - Improved Version
-// Session management and UI interactions with API integration
+// UI interactions with API integration
 
 class DashboardManager {
     constructor() {
         this.salesChart = null;
-        this.sessionTimeout = null;
-        this.warningTimeout = null;
         this.currentPeriod = '7days';
         this.isLoading = false;
         this.retryCount = 0;
         this.maxRetries = 3;
         
         // Constants
-        this.SESSION_DURATION = 30 * 60 * 1000; // 30 minutes
-        this.WARNING_TIME = 5 * 60 * 1000; // 5 minutes before expiry
         this.REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
-        this.THROTTLE_LIMIT = 30000; // 30 seconds for mouse movement
         
         this.init();
     }
@@ -33,10 +28,8 @@ class DashboardManager {
     async onDOMLoaded() {
         try {
             await this.initializeDashboard();
-            this.setupEventListeners();
             this.startPeriodicUpdates();
             this.updateCurrentTime();
-            this.resetSessionTimeout();
             
             // Start time update interval
             setInterval(() => this.updateCurrentTime(), 1000);
@@ -55,11 +48,6 @@ class DashboardManager {
             console.error('Dashboard initialization error:', error);
             throw new Error('ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง');
         }
-    }
-
-    // Setup event listeners (removed period selector and refresh button handlers)
-    setupEventListeners() {
-        this.setupSessionListeners();
     }
 
     // Load dashboard data from API with retry logic
@@ -225,13 +213,11 @@ class DashboardManager {
                 if (!isNaN(value)) {
                     const num = Number.parseFloat(value);
                     if (isMoney) {
-                        // ✅ Fixed: Use proper Thai locale formatting with decimals
                         formattedValue = num.toLocaleString('th-TH', {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2
                         });
                     } else {
-                        // For non-money values, no decimals needed
                         formattedValue = num.toLocaleString('th-TH', {
                             minimumFractionDigits: 0,
                             maximumFractionDigits: 0
@@ -468,22 +454,6 @@ class DashboardManager {
         container.innerHTML = tableHtml;
     }
 
-    // Setup session-related event listeners
-    setupSessionListeners() {
-        const events = ['click', 'keypress', 'scroll'];
-        const throttledReset = this.throttle(() => this.resetSessionTimeout(), 1000);
-        
-        events.forEach(event => {
-            document.addEventListener(event, throttledReset, { passive: true });
-        });
-
-        // Mouse movement with longer throttle
-        document.addEventListener('mousemove', 
-            this.throttle(() => this.resetSessionTimeout(), this.THROTTLE_LIMIT), 
-            { passive: true }
-        );
-    }
-
     // Utility functions
     createEmptyState(message) {
         return `<div style="text-align: center; color: #666; padding: 20px;">${message}</div>`;
@@ -530,19 +500,6 @@ class DashboardManager {
         } catch (error) {
             console.error('Error calculating time ago:', error);
             return 'ไม่ทราบเวลา';
-        }
-    }
-
-    throttle(func, limit) {
-        let inThrottle;
-        return function() {
-            const args = arguments;
-            const context = this;
-            if (!inThrottle) {
-                func.apply(context, args);
-                inThrottle = true;
-                setTimeout(() => inThrottle = false, limit);
-            }
         }
     }
 
@@ -618,57 +575,6 @@ class DashboardManager {
         }
     }
 
-    // Session Management
-    resetSessionTimeout() {
-        clearTimeout(this.sessionTimeout);
-        clearTimeout(this.warningTimeout);
-        this.hideSessionWarning();
-        
-        this.warningTimeout = setTimeout(() => this.showSessionWarning(), 
-            this.SESSION_DURATION - this.WARNING_TIME);
-        this.sessionTimeout = setTimeout(() => this.handleSessionExpiry(), 
-            this.SESSION_DURATION);
-    }
-
-    showSessionWarning() {
-        const warning = document.getElementById('sessionWarning');
-        if (warning) {
-            warning.style.display = 'block';
-            this.startWarningCountdown();
-        }
-    }
-
-    startWarningCountdown() {
-        let timeLeft = this.WARNING_TIME / 1000;
-        const countdownInterval = setInterval(() => {
-            timeLeft--;
-            const minutes = Math.floor(timeLeft / 60);
-            const seconds = timeLeft % 60;
-            
-            const timeElement = document.getElementById('timeRemaining');
-            if (timeElement) {
-                timeElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-            }
-            
-            if (timeLeft <= 0) {
-                clearInterval(countdownInterval);
-            }
-        }, 1000);
-    }
-
-    hideSessionWarning() {
-        const warning = document.getElementById('sessionWarning');
-        if (warning) {
-            warning.style.display = 'none';
-        }
-    }
-
-    handleSessionExpiry() {
-        alert('เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบใหม่');
-        this.cleanup();
-        window.location.href = 'controllers/logout.php';
-    }
-
     // Periodic Updates
     startPeriodicUpdates() {
         setInterval(() => {
@@ -680,19 +586,10 @@ class DashboardManager {
 
     // Cleanup
     cleanup() {
-        clearTimeout(this.sessionTimeout);
-        clearTimeout(this.warningTimeout);
-        
         if (this.salesChart) {
             this.salesChart.destroy();
             this.salesChart = null;
         }
-    }
-}
-
-function resetSessionTimeout() {
-    if (window.dashboardManager) {
-        window.dashboardManager.resetSessionTimeout();
     }
 }
 
@@ -701,7 +598,6 @@ window.dashboardManager = new DashboardManager();
 
 // Export for external use
 window.dashboardUtils = {
-    resetSessionTimeout,
     updateDashboardData: () => window.dashboardManager?.loadDashboardData(),
     loadDashboardData: () => window.dashboardManager?.loadDashboardData()
 };

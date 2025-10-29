@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ไม่มีสิทธิ์เข้าถึง</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: #051A37;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Inter';
+        }
+        
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 60px 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+        }
+        
+        .container h1 {
+            color: #051A37;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        
+        .message {
+            font-size: 1.5em;
+            background: #940606;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        
+        .decoration {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .dot1 { background-color: #051A37; }
+        .dot2 { background-color: #940606; }
+        .dot3 { background-color: #FFFFFF; border: 1px solid #051A37; }
+        
+        .btn {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 12px 30px;
+            background-color: #940606;
+            color: #FFFFFF;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 1em;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn:hover {
+            background-color: #051A37;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⛔</h1>
+        <div class="message">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</div>
+        <p style="color: #666; margin-top: 20px;">กรุณาติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์การเข้าถึง</p>
+        <a href="login_admin.html" class="btn">กลับไป Login</a>
+    </div>
+</body>
+</html>

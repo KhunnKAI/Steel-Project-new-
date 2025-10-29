@@ -114,21 +114,19 @@ async function loadReport(reportType) {
     showLoading();
     
     try {
-        // Get filter values with null checks
+        // Get filter values with null checks (ลบ categoryId)
         const startDateElement = document.getElementById('startDate');
         const endDateElement = document.getElementById('endDate');
-        const categoryElement = document.getElementById('productCategory');
         
         const startDate = startDateElement ? startDateElement.value : formatDate(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
         const endDate = endDateElement ? endDateElement.value : formatDate(new Date());
-        const categoryId = categoryElement ? categoryElement.value : 'all';
 
         switch(reportType) {
             case 'sales':
-                await loadSalesReport(startDate, endDate, categoryId);
+                await loadSalesReport(startDate, endDate);
                 break;
             case 'stock':
-                await loadStockReport(categoryId);
+                await loadStockReport();
                 break;
             case 'movement':
                 await loadMovementReport(startDate, endDate);
@@ -206,11 +204,10 @@ async function apiCall(reportType, params = {}) {
 // Sales Report - Fixed to handle proper data structure (removed period parameter)
 async function loadSalesReport(startDate, endDate, categoryId) {
     try {
-        // Load all sales data with proper error handling
         const [summaryData, productData, topProductsData] = await Promise.allSettled([
-            apiCall('sales_summary', { start_date: startDate, end_date: endDate, category: categoryId }),
-            apiCall('sales_by_product', { start_date: startDate, end_date: endDate, category: categoryId }),
-            apiCall('top_products', { start_date: startDate, end_date: endDate, category: categoryId })
+            apiCall('sales_summary', { start_date: startDate, end_date: endDate, include_all: '1' }),
+            apiCall('sales_by_product', { start_date: startDate, end_date: endDate }),
+            apiCall('top_products', { start_date: startDate, end_date: endDate })
         ]);
         
         // Handle summary data
@@ -310,9 +307,9 @@ function populateBestSellingTable(data) {
 async function loadStockReport(categoryId) {
     try {
         const [stockData, reorderData, stockValueData] = await Promise.allSettled([
-            apiCall('stock_summary', { category: categoryId }),
-            apiCall('reorder_point', { category: categoryId }),
-            apiCall('stock_value', { category: categoryId })
+            apiCall('stock_summary', {}),
+            apiCall('reorder_point', {}),
+            apiCall('stock_value', {})
         ]);
         
         // Handle stock summary
@@ -764,12 +761,10 @@ function resetFilters() {
     
     const startDateEl = document.getElementById('startDate');
     const endDateEl = document.getElementById('endDate');
-    const categoryEl = document.getElementById('productCategory');
     const reportTypeEl = document.getElementById('reportType');
     
     if (startDateEl) startDateEl.value = formatDate(startDate);
     if (endDateEl) endDateEl.value = formatDate(endDate);
-    if (categoryEl) categoryEl.value = 'all';
     if (reportTypeEl) reportTypeEl.value = 'sales';
     
     showReport('sales');

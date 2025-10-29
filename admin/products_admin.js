@@ -204,19 +204,34 @@ function renderImagePreviews() {
     if (!container) return;
 
     container.innerHTML = productImages.map((image, index) => `
-        <div class="image-preview">
+        <div class="image-preview" data-index="${index}">
             <img src="${image}" alt="Product Image ${index + 1}" loading="lazy">
-            ${index === 0 ? '<div class="main-image-indicator"><i class="fas fa-star"></i> หลัก</div>' : ''}
+            ${index === 0 ? '<div class="main-image-indicator"><i class="fas fa-star"></i>หลัก</div>' : ''}
             <div class="image-preview-overlay">
-                <button class="preview-action-btn preview-view-btn" onclick="viewImage(${index})">
+                <button class="preview-action-btn preview-view-btn" data-action="view" data-index="${index}">
                     <i class="fas fa-eye"></i>
                 </button>
-                <button class="preview-action-btn preview-delete-btn" onclick="removeImage(${index})">
+                <button class="preview-action-btn preview-delete-btn" data-action="delete" data-index="${index}">
                     <i class="fas fa-trash"></i>
                 </button>
             </div>
         </div>
     `).join('');
+
+    // Add event listeners to buttons
+    container.querySelectorAll('.preview-action-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            const action = btn.dataset.action;
+            const index = parseInt(btn.dataset.index);
+            if (action === 'view') {
+                viewImage(index);
+            } else if (action === 'delete') {
+                removeImage(index);
+            }
+        });
+    });
 }
 
 // Product operations
@@ -573,6 +588,28 @@ function viewProduct(id) {
         categoryBadge.setAttribute('data-category', product.category);
     }
 
+    const dimensionsGrid = document.getElementById('viewDimensionsGrid');
+    if (dimensionsGrid) {
+        const dims = product.dimensions || {};
+        const dimData = [
+            { label: 'ความกว้าง', value: dims.width?.value, unit: dims.width?.unit },
+            { label: 'ความยาว', value: dims.length?.value, unit: dims.length?.unit },
+            { label: 'ส่วนสูง/ความหนา', value: dims.height?.value, unit: dims.height?.unit },
+            { label: 'น้ำหนัก', value: dims.weight?.value, unit: dims.weight?.unit }
+        ];
+        
+        dimensionsGrid.innerHTML = dimData.map(dim => {
+            const hasValue = dim.value && dim.value > 0;
+            return `
+                <div class="dimension-item">
+                    <div class="dimension-label">${dim.label}</div>
+                    <div class="dimension-value">${hasValue ? dim.value : '-'}</div>
+                    <div class="dimension-unit">${hasValue ? dim.unit : ''}</div>
+                </div>
+            `;
+        }).join('');
+    }
+
     // Handle images
     const mainImageContainer = document.getElementById('viewMainImageContainer');
     const thumbnailGallery = document.getElementById('viewThumbnailGallery');
@@ -780,20 +817,18 @@ function setupDragAndDrop() {
 
 let searchTimeout;
 function setupEventListeners() {
-    // Search with debounce
+    // ปิดการใช้งาน auto-apply filters
+    // Search with debounce - ยกเลิกการค้นหาอัตโนมัติ
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
-        searchInput.addEventListener('input', () => {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(applyFilters, 300);
-        });
+        // ลบ event listener ที่เก่า ทำให้ต้องกดปุ่มค้นหาแทน
     }
 
-    // Filters
-    ['categoryFilter', 'stockFilter', 'startDateFilter', 'endDateFilter'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener('change', applyFilters);
-    });
+    // Filters - ยกเลิกการเปลี่ยนแปลงอัตโนมัติ
+    // ['categoryFilter', 'stockFilter', 'startDateFilter', 'endDateFilter'].forEach(id => {
+    //     const el = document.getElementById(id);
+    //     if (el) el.addEventListener('change', applyFilters);
+    // });
 
     const sortFilter = document.getElementById('sortFilter');
     if (sortFilter) sortFilter.addEventListener('change', () => { applySorting(); renderProducts(); });
@@ -807,7 +842,14 @@ function setupEventListeners() {
 
     modals.forEach(({ id, close }) => {
         const modal = document.getElementById(id);
-        if (modal) modal.addEventListener('click', e => { if (e.target === modal) close(); });
+        if (modal) {
+            modal.addEventListener('click', e => {
+                const modalContent = modal.querySelector('.modal-content');
+                if (e.target === modal && !modalContent?.contains(e.target)) {
+                    close();
+                }
+            });
+        }
     });
 
     // Keyboard shortcuts
@@ -826,9 +868,15 @@ function setupEventListeners() {
             if (e.key === 'ArrowRight') { e.preventDefault(); navigateImage(1); }
         }
 
-        // Shortcuts
+        // Shortcuts - เพิ่ม Enter สำหรับค้นหา
         if ((e.ctrlKey || e.metaKey) && e.key === 'n') { e.preventDefault(); openAddModal(); }
         if ((e.ctrlKey || e.metaKey) && e.key === 'f') { e.preventDefault(); searchInput?.focus(); }
+        
+        // เพิ่มการค้นหาด้วย Enter
+        if (e.key === 'Enter' && searchInput === document.activeElement) {
+            e.preventDefault();
+            applyFilters();
+        }
     });
 }
 

@@ -510,34 +510,6 @@ if (!$current_admin) {
             border: 1px solid #f5c6cb;
         }
 
-        /* Session timeout warning */
-        .session-warning {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #f59e0b;
-            color: white;
-            padding: 15px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            z-index: 1002;
-            display: none;
-        }
-
-        .session-warning button {
-            background: transparent;
-            border: 1px solid white;
-            color: white;
-            padding: 5px 10px;
-            margin-left: 10px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .session-warning button:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
         @media screen and (max-width: 768px) {
             .navbar-toggle {
                 display: block;
@@ -649,13 +621,6 @@ if (!$current_admin) {
 </head>
 
 <body>
-
-    <!-- Session timeout warning -->
-    <div id="sessionWarning" class="session-warning">
-        <i class="fas fa-clock"></i> เซสชันจะหมดอายุใน <span id="timeRemaining"></span> นาที
-        <button onclick="resetSessionTimeout()">ขยายเวลา</button>
-    </div>
-
     <div class="navbar-toggle" onclick="toggleSidebar()">
         <i class="fas fa-bars"></i>
     </div>

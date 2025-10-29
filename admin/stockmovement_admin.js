@@ -17,30 +17,42 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // Setup event listeners
 function setupEventListeners() {
-    // Filter event listeners
-    document.getElementById('searchInput').addEventListener('input', () => {
-        currentPage = 1;
-        loadMovements();
-    });
+    // Search button listener (instead of real-time search)
+    const searchBtn = document.getElementById('searchBtn');
+    if (searchBtn) {
+        searchBtn.addEventListener('click', () => {
+            currentPage = 1;
+            loadMovements();
+        });
+    }
+
+    // Allow Enter key to trigger search
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                currentPage = 1;
+                loadMovements();
+            }
+        });
+    }
     
+    // *** เปลี่ยนจากการค้นหาแบบเรียลไทม์ให้เป็นเฉพาะการอัปเดต UI เท่านั้น ***
+    // ไม่เรียก loadMovements() เมื่อเปลี่ยนค่าตัวกรอง
     document.getElementById('movementTypeFilter').addEventListener('change', () => {
-        currentPage = 1;
-        loadMovements();
+        // เพียงอัปเดต UI หากจำเป็น
     });
     
     document.getElementById('startDateFilter').addEventListener('change', () => {
-        currentPage = 1;
-        loadMovements();
+        // เพียงอัปเดต UI หากจำเป็น
     });
     
     document.getElementById('endDateFilter').addEventListener('change', () => {
-        currentPage = 1;
-        loadMovements();
+        // เพียงอัปเดต UI หากจำเป็น
     });
     
     document.getElementById('userFilter').addEventListener('input', () => {
-        currentPage = 1;
-        loadMovements();
+        // เพียงอัปเดต UI หากจำเป็น
     });
 
     // Modal form event listeners (only if elements exist)
@@ -481,6 +493,11 @@ function resetForm() {
     if (currentStockInput) currentStockInput.value = '';
     if (newStockInput) newStockInput.value = '';
     if (performedByInput) performedByInput.value = 'Admin';
+}
+
+function applyFilters() {
+    currentPage = 1;
+    loadMovements();
 }
 
 // Reset all filters

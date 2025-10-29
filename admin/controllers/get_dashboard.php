@@ -18,29 +18,42 @@ header('Cache-Control: no-cache, must-revalidate');
 try {
     // รับพารามิเตอร์จาก GET request
     $type = isset($_GET['type']) ? $_GET['type'] : 'overview';
-    $period = isset($_GET['period']) ? $_GET['period'] : '7days';
+    
+    // *** แก้ไข: บังคับให้ period เป็น '7days' เสมอ เพื่อจำกัดข้อมูลทั้งหมด ***
+    $period = '7days'; 
+    // $period = isset($_GET['period']) ? $_GET['period'] : '7days'; // โค้ดเดิมถูกยกเลิก
     
     // กำหนดช่วงวันที่ตาม period
     $dateCondition = getDateCondition($period);
     
     switch($type) {
         case 'overview':
+            // ข้อมูลภาพรวม (บางส่วนไม่ขึ้นกับช่วงเวลา, แต่ยอดขาย/คำสั่งซื้อใช้ $dateCondition)
             $data = getDashboardOverview($pdo, $dateCondition);
             break;
         case 'sales':
-            $data = getSalesData($pdo, $dateCondition);
+            // ข้อมูลยอดขาย (ใช้เงื่อนไขวันที่ 7 วัน)
+            $data = getSalesData($pdo, $dateCondition, $period);
             break;
         case 'orders':
+            // ข้อมูลคำสั่งซื้อ (ใช้เงื่อนไขวันที่ 7 วัน)
             $data = getOrdersData($pdo, $dateCondition);
             break;
         case 'recent_activity':
-            $data = getRecentActivity($pdo);
+            // กิจกรรมล่าสุด (ใช้เงื่อนไขวันที่ 7 วัน)
+            $data = getRecentActivity($pdo, $dateCondition);
             break;
         case 'recent_orders':
+            // คำสั่งซื้อล่าสุด (ดึง 10 รายการล่าสุด ไม่ขึ้นกับช่วงเวลา - เก็บไว้ตามเดิม)
             $data = getRecentOrders($pdo);
             break;
         case 'top_products':
+            // สินค้ายอดนิยม (ใช้เงื่อนไขวันที่ 7 วัน)
             $data = getTopProducts($pdo, $dateCondition);
+            break;
+        case 'stock':
+            // ข้อมูลสต็อก (ไม่ขึ้นกับช่วงเวลา)
+            $data = getStockData($pdo, $dateCondition);
             break;
         default:
             throw new Exception('Invalid data type requested');
@@ -49,7 +62,8 @@ try {
     echo json_encode([
         'success' => true,
         'data' => $data,
-        'timestamp' => date('Y-m-d H:i:s')
+        'timestamp' => date('Y-m-d H:i:s'),
+        'period_used' => $period // แสดงช่วงเวลาที่ใช้ (7days)
     ]);
     
 } catch(Exception $e) {
@@ -60,58 +74,48 @@ try {
     ]);
 }
 
-// ฟังก์ชันสร้าง date condition
+// *** แก้ไข: ฟังก์ชันสร้าง date condition ให้ส่งคืนเงื่อนไข 7 วันเท่านั้น ***
 function getDateCondition($period) {
-    switch($period) {
-        case '24hours':
-            return "DATE(o.created_at) >= CURDATE()";
-        case '7days':
-            return "DATE(o.created_at) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)";
-        case '30days':
-            return "DATE(o.created_at) >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)";
-        case '3months':
-            return "DATE(o.created_at) >= DATE_SUB(CURDATE(), INTERVAL 3 MONTH)";
-        case '1year':
-            return "DATE(o.created_at) >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)";
-        default:
-            return "DATE(o.created_at) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)";
-    }
+    // บังคับให้ใช้เงื่อนไข 7 วันเสมอ โดยไม่สนใจค่า $period ที่ส่งเข้ามา
+    return "DATE(o.created_at) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)";
 }
 
-// ฟังก์ชันดึงข้อมูลภาพรวมแดชบอร์ด
+// ฟังก์ชันดึงข้อมูลภาพรวมแดชบอร์ด (ไม่มีการเปลี่ยนแปลง)
 function getDashboardOverview($pdo, $dateCondition) {
-    // ยอดขายรวม - Only count completed orders (delivered/shipped)
+    // ยอดขายรวมตามช่วงเวลาที่กำหนด (ตอนนี้ถูกจำกัดที่ 7 วัน)
     $stmt = $pdo->prepare("
         SELECT COALESCE(SUM(o.total_amount), 0) as total_sales 
         FROM Orders o
         JOIN Status s ON o.status = s.status_id
         WHERE s.status_code IN ('awaiting_shipment', 'in_transit', 'delivered')
+        AND $dateCondition
     ");
-
     $stmt->execute();
     $totalSales = $stmt->fetch()['total_sales'];
     
-    // จำนวนคำสั่งซื้อทั้งหมด (รวมทุกสถานะ)
+    // จำนวนคำสั่งซื้อตามช่วงเวลาที่กำหนด (ตอนนี้ถูกจำกัดที่ 7 วัน)
     $stmt = $pdo->prepare("
         SELECT COUNT(*) as total_orders 
         FROM Orders o
+        WHERE o.status NOT IN ('status05')
+        AND $dateCondition 
     ");
     $stmt->execute();
     $totalOrders = $stmt->fetch()['total_orders'];
     
-    // จำนวนสินค้าทั้งหมด
+    // จำนวนสินค้าทั้งหมด (ไม่ขึ้นกับช่วงเวลา)
     $stmt = $pdo->query("SELECT COUNT(*) as total_products FROM Product");
     $totalProducts = $stmt->fetch()['total_products'];
     
-    // จำนวนผู้ใช้ทั้งหมด
+    // จำนวนผู้ใช้ทั้งหมด (ไม่ขึ้นกับช่วงเวลา)
     $stmt = $pdo->query("SELECT COUNT(*) as total_users FROM Users");
     $totalUsers = $stmt->fetch()['total_users'];
     
-    // สินค้าที่มีสต็อกต่ำ (น้อยกว่า 10)
+    // สินค้าที่มีสต็อกต่ำ (น้อยกว่า 10) - ไม่ขึ้นกับช่วงเวลา
     $stmt = $pdo->query("SELECT COUNT(*) as low_stock_count FROM Product WHERE stock < 10");
     $lowStockCount = $stmt->fetch()['low_stock_count'];
     
-    // คำสั่งซื้อรอดำเนินการ
+    // คำสั่งซื้อรอดำเนินการ - ไม่ขึ้นกับช่วงเวลา (สถานะปัจจุบัน)
     $stmt = $pdo->prepare("
         SELECT COUNT(*) as pending_orders 
         FROM Orders o
@@ -131,27 +135,27 @@ function getDashboardOverview($pdo, $dateCondition) {
     ];
 }
 
-// ฟังก์ชันดึงข้อมูลยอดขาย - FIXED VERSION
-function getSalesData($pdo, $dateCondition) {
+// ฟังก์ชันดึงข้อมูลยอดขาย (ไม่มีการเปลี่ยนแปลงการทำงาน แต่ใช้ $dateCondition 7 วัน)
+function getSalesData($pdo, $dateCondition, $period) {
     error_log("Checking sales data with date condition: $dateCondition");
     
-    // Fixed query - separate sales (completed orders) and order counts (all orders)
+    // ปรับปรุง query ให้ใช้ $dateCondition แทนการกำหนด 7 วันตายตัว
     $stmt = $pdo->prepare("
         SELECT 
             DATE(o.created_at) as sale_date,
             COALESCE(SUM(CASE 
-                WHEN s.status_code IN ('delivered', 'awaiting_shipment') 
+                WHEN s.status_code IN ('delivered', 'awaiting_shipment', 'in_transit') 
                 THEN o.total_amount 
                 ELSE 0 
             END), 0) as daily_sales,
             COUNT(o.order_id) as daily_orders,
             COUNT(CASE 
-                WHEN s.status_code IN ('delivered', 'awaiting_shipment') 
+                WHEN s.status_code IN ('delivered', 'awaiting_shipment', 'in_transit') 
                 THEN 1 
             END) as completed_orders
         FROM Orders o
         JOIN Status s ON o.status = s.status_id
-        WHERE DATE(o.created_at) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+        WHERE $dateCondition 
         GROUP BY DATE(o.created_at)
         ORDER BY sale_date ASC
     ");
@@ -160,44 +164,62 @@ function getSalesData($pdo, $dateCondition) {
     
     error_log("Raw sales data: " . json_encode($dailySales));
     
-    // เติมวันที่ขาดหายไป
-    $salesData = [];
-    for($i = 6; $i >= 0; $i--) {
-        $date = date('Y-m-d', strtotime("-$i days"));
-        $found = false;
-        
-        foreach($dailySales as $sale) {
-            if($sale['sale_date'] === $date) {
+    // การเติมวันที่ขาดหายไปจะทำได้ง่ายสำหรับ 7 วันเท่านั้น 
+    // เนื่องจาก $period ถูกบังคับเป็น '7days' เสมอ ส่วนนี้จึงทำงานได้อย่างถูกต้อง
+    if ($period === '7days') {
+        $salesData = [];
+        for($i = 6; $i >= 0; $i--) {
+            $date = date('Y-m-d', strtotime("-$i days"));
+            $found = false;
+            
+            foreach($dailySales as $sale) {
+                if($sale['sale_date'] === $date) {
+                    $salesData[] = [
+                        'date' => $date,
+                        'sales' => floatval($sale['daily_sales']),
+                        'orders' => intval($sale['daily_orders']),
+                        'completed_orders' => intval($sale['completed_orders']),
+                        'day_name' => date('l', strtotime($date))
+                    ];
+                    $found = true;
+                    break;
+                }
+            }
+            
+            if(!$found) {
                 $salesData[] = [
                     'date' => $date,
-                    'sales' => floatval($sale['daily_sales']),
-                    'orders' => intval($sale['daily_orders']),
-                    'completed_orders' => intval($sale['completed_orders']),
+                    'sales' => 0,
+                    'orders' => 0,
+                    'completed_orders' => 0,
                     'day_name' => date('l', strtotime($date))
                 ];
-                $found = true;
-                break;
             }
         }
-        
-        if(!$found) {
-            $salesData[] = [
-                'date' => $date,
-                'sales' => 0,
-                'orders' => 0,
-                'completed_orders' => 0,
-                'day_name' => date('l', strtotime($date))
-            ];
+        $dailySales = $salesData;
+    }
+
+    // แปลงค่าให้เป็นชนิดที่ถูกต้อง (ส่วนนี้ถูกเรียกใช้เฉพาะเมื่อ $period ไม่ใช่ 7days ซึ่งตอนนี้จะไม่เกิดขึ้น)
+    if ($period !== '7days') {
+        foreach ($dailySales as &$sale) {
+            $sale['sales'] = floatval($sale['daily_sales']);
+            unset($sale['daily_sales']);
+            $sale['orders'] = intval($sale['daily_orders']);
+            unset($sale['daily_orders']);
+            $sale['completed_orders'] = intval($sale['completed_orders']);
+            $sale['day_name'] = date('l', strtotime($sale['sale_date']));
+            $sale['date'] = $sale['sale_date'];
+            unset($sale['sale_date']);
         }
     }
     
-    error_log("Final sales data: " . json_encode($salesData));
-    return $salesData;
+    error_log("Final sales data: " . json_encode($dailySales));
+    return $dailySales;
 }
 
-// ฟังก์ชันดึงข้อมูลคำสั่งซื้อ
+// ฟังก์ชันดึงข้อมูลคำสั่งซื้อ (ไม่มีการเปลี่ยนแปลง)
 function getOrdersData($pdo, $dateCondition) {
-    // สถิติคำสั่งซื้อตามสถานะ
+    // สถิติคำสั่งซื้อตามสถานะ - ใช้ $dateCondition ในการ JOIN (ตอนนี้ถูกจำกัดที่ 7 วัน)
     $stmt = $pdo->prepare("
         SELECT 
             s.status_code,
@@ -211,7 +233,7 @@ function getOrdersData($pdo, $dateCondition) {
     $stmt->execute();
     $ordersByStatus = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // คำสั่งซื้อล่าสุด
+    // คำสั่งซื้อล่าสุด (ยังคงดึง 10 รายการล่าสุด ไม่ขึ้นกับช่วงเวลา - เก็บไว้ตามเดิม)
     $stmt = $pdo->prepare("
         SELECT 
             o.order_id,
@@ -234,7 +256,7 @@ function getOrdersData($pdo, $dateCondition) {
     ];
 }
 
-// Recent orders function - corrected
+// Recent orders function (ไม่มีการเปลี่ยนแปลง)
 function getRecentOrders($pdo) {
     try {
         $stmt = $pdo->prepare("
@@ -259,11 +281,11 @@ function getRecentOrders($pdo) {
     }
 }
 
-// ฟังก์ชันดึงกิจกรรมล่าสุด
-function getRecentActivity($pdo) {
+// ฟังก์ชันดึงกิจกรรมล่าสุด (ไม่มีการเปลี่ยนแปลงการทำงาน แต่ใช้ $dateCondition 7 วัน)
+function getRecentActivity($pdo, $dateCondition) {
     $activities = [];
     
-    // คำสั่งซื้อใหม่
+    // คำสั่งซื้อใหม่ - ใช้ $dateCondition (ตอนนี้ถูกจำกัดที่ 7 วัน)
     $stmt = $pdo->prepare("
         SELECT 
             'new_order' as activity_type,
@@ -272,14 +294,17 @@ function getRecentActivity($pdo) {
             o.total_amount as amount
         FROM Orders o
         LEFT JOIN Users u ON o.user_id = u.user_id
-        WHERE DATE(o.created_at) >= DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+        WHERE $dateCondition 
         ORDER BY o.created_at DESC
         LIMIT 5
     ");
     $stmt->execute();
     $activities = array_merge($activities, $stmt->fetchAll(PDO::FETCH_ASSOC));
     
-    // การชำระเงิน/สถานะเปลี่ยนเป็นจัดส่งสำเร็จ
+    // การชำระเงิน/สถานะเปลี่ยนเป็นจัดส่งสำเร็จ (ตอนนี้ถูกจำกัดที่ 7 วัน)
+    // NOTE: $dateCondition ถูกสร้างจาก o.created_at เราจึงเปลี่ยนเป็น o.updated_at สำหรับการอัปเดต
+    $updateDateCondition = str_replace('o.created_at', 'o.updated_at', $dateCondition);
+
     $stmt = $pdo->prepare("
         SELECT 
             'payment' as activity_type,
@@ -289,14 +314,16 @@ function getRecentActivity($pdo) {
         FROM Orders o
         JOIN Status s ON o.status = s.status_id
         WHERE s.status_code = 'delivered'
-        AND DATE(o.updated_at) >= DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+        AND $updateDateCondition
         ORDER BY o.updated_at DESC
         LIMIT 5
     ");
     $stmt->execute();
     $activities = array_merge($activities, $stmt->fetchAll(PDO::FETCH_ASSOC));
     
-    // สินค้าใหม่
+    // สินค้าใหม่ (ตอนนี้ถูกจำกัดที่ 7 วัน)
+    $productDateCondition = str_replace('o.created_at', 'created_at', $dateCondition);
+    
     $stmt = $pdo->prepare("
         SELECT 
             'new_product' as activity_type,
@@ -304,7 +331,7 @@ function getRecentActivity($pdo) {
             created_at as activity_time,
             price as amount
         FROM Product
-        WHERE DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 3 DAY)
+        WHERE $productDateCondition
         ORDER BY created_at DESC
         LIMIT 3
     ");
@@ -319,7 +346,7 @@ function getRecentActivity($pdo) {
     return array_slice($activities, 0, 10);
 }
 
-// ฟังก์ชันดึงสินค้ายอดนิยม
+// ฟังก์ชันดึงสินค้ายอดนิยม (ไม่มีการเปลี่ยนแปลงการทำงาน แต่ใช้ $dateCondition 7 วัน)
 function getTopProducts($pdo, $dateCondition) {
     $stmt = $pdo->prepare("
         SELECT 
@@ -336,7 +363,7 @@ function getTopProducts($pdo, $dateCondition) {
         JOIN Status s ON o.status = s.status_id
         LEFT JOIN Category c ON p.category_id = c.category_id
         WHERE $dateCondition 
-        AND s.status_code IN ('delivered', 'awaiting_shipment')
+        AND s.status_code IN ('delivered', 'awaiting_shipment', 'in_transit')
         GROUP BY p.product_id, p.name, p.price, p.stock, c.name
         ORDER BY total_sold DESC
         LIMIT 10
@@ -345,9 +372,9 @@ function getTopProducts($pdo, $dateCondition) {
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-// ฟังก์ชันดึงข้อมูลสต็อก
-function getStockData($pdo) {
-    // สินค้าที่มีสต็อกต่ำ
+// ฟังก์ชันดึงข้อมูลสต็อก (ไม่มีการเปลี่ยนแปลง)
+function getStockData($pdo, $dateCondition) {
+    // สินค้าที่มีสต็อกต่ำ (ไม่ขึ้นกับช่วงเวลา)
     $stmt = $pdo->prepare("
         SELECT 
             p.product_id,
@@ -364,7 +391,7 @@ function getStockData($pdo) {
     $stmt->execute();
     $lowStockProducts = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // สถิติสต็อกตามหมวดหมู่
+    // สถิติสต็อกตามหมวดหมู่ (ไม่ขึ้นกับช่วงเวลา)
     $stmt = $pdo->prepare("
         SELECT 
             c.name as category_name,
@@ -385,31 +412,4 @@ function getStockData($pdo) {
     ];
 }
 
-// Additional function to debug order statuses
-function getOrderStatusDebug($pdo) {
-    try {
-        // Get all orders with their statuses for debugging
-        $stmt = $pdo->prepare("
-            SELECT 
-                o.order_id,
-                o.total_amount,
-                o.created_at,
-                s.status_code,
-                s.description as status_desc
-            FROM Orders o
-            JOIN Status s ON o.status = s.status_id
-            WHERE DATE(o.created_at) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-            ORDER BY o.created_at DESC
-        ");
-        $stmt->execute();
-        $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
-        error_log("Debug - All recent orders: " . json_encode($orders));
-        
-        return $orders;
-    } catch(Exception $e) {
-        error_log("Error in getOrderStatusDebug: " . $e->getMessage());
-        return [];
-    }
-}
 ?>

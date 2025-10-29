@@ -1,5 +1,4 @@
 <?php
-// Remove session_start() from here since config.php handles it properly
 require_once 'controllers/config.php';
 
 // Require login to access this page
@@ -8,8 +7,18 @@ requireLogin();
 // Get current admin information
 $current_admin = getCurrentAdmin();
 if (!$current_admin) {
-    // If admin not found in database, logout
     header("Location: controllers/logout.php");
+    exit();
+}
+
+$allowed_roles = ['manager', 'super'];
+
+if (!isset($current_admin['position']) || !in_array($current_admin['position'], $allowed_roles)) {
+    // Set error message
+    $_SESSION['error'] = "คุณไม่มีสิทธิ์เข้าถึงหน้านี้";
+    
+    // Redirect to access denied page
+    header("Location: accessdenied_admin.html");
     exit();
 }
 ?>
@@ -203,8 +212,6 @@ if (!$current_admin) {
         .stat-card.total::before { background: linear-gradient(90deg, #007bff, #0056b3); }
         .stat-card.active::before { background: linear-gradient(90deg, #28a745, #20c997); }
         .stat-card.inactive::before { background: linear-gradient(90deg, #dc3545, #c82333); }
-        .stat-card.manager::before { background: linear-gradient(90deg, #6f42c1, #5a2d91); }
-        .stat-card.sales::before { background: linear-gradient(90deg, #fd7e14, #e55100); }
 
         .stat-number {
             font-size: 24px;
@@ -306,7 +313,7 @@ if (!$current_admin) {
         .role-warehouse { background: #cce5ff; color: #004085; }
         .role-shipping { background: #d4edda; color: #155724; }
         .role-accounting { background: #f8d7da; color: #721c24; }
-        .role-super { background: #e7e3ff; color: #6f42c1; }
+        .role-super { background: #ffe7f2ff; color: #e83e8c; }
 
         .status-badge {
             padding: 6px 12px;
@@ -801,17 +808,9 @@ if (!$current_admin) {
                     <div class="stat-number" id="activeStaff">0</div>
                     <div class="stat-label">ใช้งานอยู่</div>
                 </div>
-                <div class="stat-card manager">
-                    <div class="stat-number" id="managerCount">0</div>
-                    <div class="stat-label">ผู้จัดการ</div>
-                </div>
-                <div class="stat-card sales">
-                    <div class="stat-number" id="salesCount">0</div>
-                    <div class="stat-label">พนักงานขาย</div>
-                </div>
                 <div class="stat-card inactive">
-                    <div class="stat-number" id="warehouseCount">0</div>
-                    <div class="stat-label">พนักงานคลัง</div>
+                    <div class="stat-number" id="inactiveStaff">0</div>
+                    <div class="stat-label">ไม่ได้ใช้งาน</div>
                 </div>
             </div>
 
@@ -898,8 +897,8 @@ if (!$current_admin) {
                         <input type="text" id="staffName" required>
                     </div>
                     <div class="form-group">
-                        <label>เบอร์โทรศัพท์</label>
-                        <input type="tel" id="staffPhone" placeholder="08X-XXX-XXXX">
+                        <label>เบอร์โทรศัพท์ *</label>
+                        <input type="tel" id="staffPhone" required placeholder="08X-XXX-XXXX">
                     </div>
                 </div>
                 

@@ -145,7 +145,7 @@ if (!$current_admin) {
             border: 2px solid #e9ecef;
             font-size: 14px;
             transition: all 0.3s ease;
-            font-family: 'Prompt', sans-serif;
+            font-family: 'Inter';
         }
 
         .search-container input[type="text"]:focus {
@@ -196,7 +196,7 @@ if (!$current_admin) {
             border-radius: 8px;
             font-size: 14px;
             min-width: 150px;
-            font-family: 'Prompt', sans-serif;
+            font-family: 'Inter';
         }
 
         .filter-group select:focus,
@@ -316,7 +316,7 @@ if (!$current_admin) {
         }
 
         .order-id {
-            font-family: 'Courier New', monospace;
+            font-family: 'Inter';
             font-weight: 600;
             color: #007bff;
             font-size: 13px;
@@ -460,7 +460,7 @@ if (!$current_admin) {
             white-space: nowrap;
             min-height: 28px;
             line-height: 1;
-            font-family: 'Prompt', sans-serif;
+            font-family: 'Inter';
         }
 
         .actions .btn:hover:not(.btn-disabled) {
@@ -571,7 +571,7 @@ if (!$current_admin) {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            font-family: 'Prompt', sans-serif;
+            font-family: 'Inter';
         }
 
         .btn-primary:hover {
@@ -591,7 +591,7 @@ if (!$current_admin) {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            font-family: 'Prompt', sans-serif;
+            font-family: 'Inter';
         }
 
         .btn-success:hover {
@@ -615,7 +615,7 @@ if (!$current_admin) {
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-family: 'Prompt', sans-serif;
+            font-family: 'Inter';
         }
 
         .pagination button:hover:not(:disabled),
@@ -764,7 +764,7 @@ if (!$current_admin) {
             border: 2px solid #e9ecef;
             border-radius: 8px;
             font-size: 14px;
-            font-family: 'Prompt', sans-serif;
+            font-family: 'Inter';
             resize: vertical;
             min-height: 100px;
         }
@@ -789,7 +789,7 @@ if (!$current_admin) {
             cursor: pointer;
             font-weight: 600;
             transition: all 0.3s ease;
-            font-family: 'Prompt', sans-serif;
+            font-family: 'Inter';
         }
 
         .save-btn {
@@ -896,7 +896,7 @@ if (!$current_admin) {
             display: flex;
             align-items: center;
             gap: 8px;
-            font-family: 'Prompt', sans-serif;
+            font-family: 'Inter';
         }
 
         .approve-payment-btn {
@@ -1040,6 +1040,79 @@ if (!$current_admin) {
             font-size: 14px;
         }
 
+        .btn-filter-search,
+        .btn-filter-reset {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'Inter';
+            font-size: 14px;
+            min-height: 36px;
+        }
+
+        .btn-filter-search {
+            background: linear-gradient(45deg, #990000, #cc0000);
+            color: white;
+            border: 2px solid #990000;
+        }
+
+        .btn-filter-search:hover {
+            background: linear-gradient(45deg, #770000, #990000);
+            box-shadow: 0 4px 12px rgba(153, 0, 0, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .btn-filter-search:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(153, 0, 0, 0.2);
+        }
+
+        .btn-filter-reset {
+            background: linear-gradient(45deg, #6c757d, #868e96);
+            color: white;
+            border: 2px solid #6c757d;
+        }
+
+        .btn-filter-reset:hover {
+            background: linear-gradient(45deg, #5a6268, #6c757d);
+            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .btn-filter-reset:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(108, 117, 125, 0.2);
+        }
+
+        /* Responsive adjustments */
+        @media screen and (max-width: 768px) {
+            .filters-row {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .filter-group {
+                width: 100%;
+            }
+            
+            .filter-group select,
+            .filter-group input {
+                width: 100%;
+            }
+            
+            .btn-filter-search,
+            .btn-filter-reset {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
         /* Notification styles */
         .notification {
             position: fixed;
@@ -1052,7 +1125,7 @@ if (!$current_admin) {
             z-index: 3000;
             max-width: 350px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            font-family: 'Prompt', sans-serif;
+            font-family: 'Inter';
             cursor: pointer;
         }
 
@@ -1258,6 +1331,14 @@ if (!$current_admin) {
                     <div class="filter-group">
                         <label for="dateToFilter">ถึงวันที่</label>
                         <input type="date" id="dateToFilter">
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: flex-end;">
+                        <button id="searchBtn" class="btn-filter-search" type="button">
+                            <i class="fas fa-search"></i> ค้นหา
+                        </button>
+                        <button id="resetBtn" class="btn-filter-reset" type="button">
+                            <i class="fas fa-redo"></i> รีเซ็ต
+                        </button>
                     </div>
                 </div>
             </div>

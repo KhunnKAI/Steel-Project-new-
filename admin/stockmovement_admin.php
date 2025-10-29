@@ -13,6 +13,17 @@ if (!$current_admin) {
     header("Location: controllers/logout.php");
     exit();
 }
+
+$allowed_roles = ['manager', 'super', 'sales', 'warehouse'];
+
+if (!isset($current_admin['position']) || !in_array($current_admin['position'], $allowed_roles)) {
+    // Set error message
+    $_SESSION['error'] = "คุณไม่มีสิทธิ์เข้าถึงหน้านี้";
+    
+    // Redirect to access denied page
+    header("Location: accessdenied_admin.html");
+    exit();
+}
 ?>
 
 <!DOCTYPE html>
@@ -220,6 +231,13 @@ if (!$current_admin) {
             transform: translateY(-1px);
         }
 
+        .filter-all {
+            grid-column: span 1;
+            display: flex;
+            gap: 10px;
+            align-self: end;
+        }
+
         .reset-all-btn {
             padding: 12px 20px;
             background: linear-gradient(45deg, #dc3545, #c82333);
@@ -245,6 +263,32 @@ if (!$current_admin) {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
         }
+
+        .search-filter-btn {
+        padding: 12px 20px;
+        background: linear-gradient(45deg, #28a745, #20c997);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        flex: 1;
+        justify-content: center;
+    }
+
+    .search-filter-btn:hover {
+        background: linear-gradient(45deg, #20c997, #17a2b8);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+    }
 
         .table-container {
             background: white;
@@ -464,10 +508,13 @@ if (!$current_admin) {
                     <label><i class="fas fa-user"></i> ผู้ดำเนินการ</label>
                     <input type="text" id="userFilter" placeholder="ชื่อผู้ดำเนินการ">
                 </div>
-                <div class="filter-group">
+                <div class="filter-all">
                     <button class="reset-all-btn" onclick="resetAllFilters()">
                         <i class="fas fa-undo"></i>
-                        รีเซ็ตทั้งหมด
+                        รีเซ็ต
+                    </button>
+                    <button class="search-filter-btn" onclick="applyFilters()">
+                        <i class="fas fa-search"></i> ค้นหา
                     </button>
                 </div>
             </div>

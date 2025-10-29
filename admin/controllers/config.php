@@ -3,12 +3,16 @@
 ini_set('session.gc_maxlifetime', 14400); // 4 hours = 14400 seconds
 session_set_cookie_params(14400); // 4 hours cookie lifetime
 
+// ini_set('session.gc_maxlifetime', 300); // 5 minutes = 300 seconds
+// session_set_cookie_params(300); // 5 minutes cookie lifetime
+
 // Start session if not already started
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
 // การตั้งค่าฐานข้อมูล
+
 $host = '26.94.44.21:3307';
 $username = 'user';
 $password = '12345678';
@@ -19,8 +23,8 @@ $db_name = 'SteelShop';
 // $password = '';
 // $db_name = 'teststeel';
 
-
 try {
+    // สร้าง PDO connection พร้อมตั้งค่า charset
     $pdo = new PDO("mysql:host=$host;dbname=$db_name;charset=utf8mb4", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
@@ -28,15 +32,15 @@ try {
     die("Connection failed: " . $e->getMessage());
 }
 
-// Function to check if user is logged in
+// ฟังก์ชันตรวจสอบว่า admin login หรือไม่
 function isLoggedIn() {
     if (!isset($_SESSION['admin_id']) || !isset($_SESSION['login_time'])) {
         return false;
     }
     
-    // Check if session has expired (4 hours)
+    // ตรวจสอบว่า session หมดอายุหรือไม่ (4 ชั่วโมง)
     if (time() - $_SESSION['login_time'] > 14400) {
-        // Session expired, destroy it
+        // หมดอายุ ล้าง session
         session_unset();
         session_destroy();
         return false;
@@ -45,13 +49,13 @@ function isLoggedIn() {
     return true;
 }
 
-// Function to require login
+// ฟังก์ชันบังคับ login
 function requireLogin() {
     if (!isLoggedIn()) {
-        // Check if it's timeout
+        // ตรวจสอบว่า session หมดอายุหรือไม่
         $redirect_params = isset($_SESSION['login_time']) && (time() - $_SESSION['login_time'] > 14400) ? '?timeout=1' : '?access=denied';
         
-        // Destroy session if exists
+        // ล้าง session หากยัง active
         if (session_status() === PHP_SESSION_ACTIVE) {
             session_unset();
             session_destroy();
@@ -61,11 +65,11 @@ function requireLogin() {
         exit();
     }
     
-    // Update last activity time
+    // อัปเดตเวลา last_activity
     $_SESSION['last_activity'] = time();
 }
 
-// Function to get current admin info
+// ฟังก์ชันดึงข้อมูล admin ปัจจุบัน
 function getCurrentAdmin() {
     global $pdo;
     

@@ -21,7 +21,7 @@ class AdminManager {
             'warehouse': { class: 'role-warehouse', text: 'พนักงานคลัง', avatar: '#007bff' },
             'shipping': { class: 'role-shipping', text: 'พนักงานขนส่ง', avatar: '#28a745' },
             'accounting': { class: 'role-accounting', text: 'พนักงานบัญชี', avatar: '#dc3545' },
-            'super': { class: 'role-super', text: 'ผู้ดูแลระบบ', avatar: '#6f42c1' }
+            'super': { class: 'role-super', text: 'ผู้ดูแลระบบ', avatar: '#e83e8c' }
         };
 
         // Department mapping with Thai translations
