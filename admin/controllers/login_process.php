@@ -1,13 +1,18 @@
 <?php
-// login_process.php - Enhanced version with better error handling
+// ========================
+// LOGIN PROCESS
+// ========================
+// ตรวจสอบและทำการเข้าสู่ระบบของผู้ใช้งาน
+
 error_reporting(0);
 ini_set('display_errors', 0);
-
 session_start();
 
 header('Content-Type: application/json; charset=utf-8');
 
-// Enhanced error logging function
+// ========================
+// FUNCTION: บันทึกข้อผิดพลาด
+// ========================
 function logError($message, $context = []) {
     $timestamp = date('Y-m-d H:i:s');
     $contextStr = empty($context) ? '' : ' Context: ' . json_encode($context);
@@ -15,24 +20,24 @@ function logError($message, $context = []) {
 }
 
 try {
-    // Test config file exists
+    // ตรวจสอบไฟล์ config
     if (!file_exists('config.php')) {
         logError('Config file not found');
         throw new Exception('Config file not found');
     }
-    
+
     require_once 'config.php';
 
     if (!isset($pdo)) {
-        logError('PDO object not initialized in config.php');
-        throw new Exception('Database connection failed - PDO not initialized');
+        logError('PDO object not initialized');
+        throw new Exception('Database connection failed');
     }
-    
-    // Test database connection
+
+    // ทดสอบการเชื่อมต่อ
     $pdo->query('SELECT 1');
-    
+
 } catch (PDOException $e) {
-    logError('Database connection test failed', ['error' => $e->getMessage()]);
+    logError('Database connection failed', ['error' => $e->getMessage()]);
     echo json_encode([
         'success' => false,
         'message' => 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้'
@@ -42,12 +47,12 @@ try {
     logError('Config loading failed', ['error' => $e->getMessage()]);
     echo json_encode([
         'success' => false,
-        'message' => 'ระบบไม่พร้อมใช้งาน: ' . $e->getMessage()
+        'message' => 'ระบบมีข้อผิดพลาด'
     ], JSON_UNESCAPED_UNICODE);
     exit();
 }
 
-// Only allow POST
+// ตรวจสอบ Method
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode([
@@ -57,128 +62,131 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
-// Read JSON input
+// ========================
+// FUNCTION: ตรวจสอบและตรวจสอบข้อมูลเข้า
+// ========================
+function validateInput($data) {
+    if (!$data || !isset($data['username']) || !isset($data['password'])) {
+        return ['valid' => false, 'message' => 'ข้อมูลไม่สมบูรณ์'];
+    }
+
+    $username = trim($data['username']);
+    $password = trim($data['password']);
+
+    if (empty($username)) {
+        return ['valid' => false, 'message' => 'กรุณากรอกรหัสผู้ใช้งาน'];
+    }
+
+    if (empty($password)) {
+        return ['valid' => false, 'message' => 'กรุณากรอกรหัสผ่าน'];
+    }
+
+    return ['valid' => true, 'username' => $username, 'password' => $password];
+}
+
+// อ่านข้อมูล JSON
 $input = file_get_contents('php://input');
 $data = json_decode($input, true);
 
-// Validate input
-if (!$data || !isset($data['username']) || !isset($data['password'])) {
-    logError('Invalid JSON input', ['input' => substr($input, 0, 100)]);
+// ตรวจสอบข้อมูล
+$validation = validateInput($data);
+if (!$validation['valid']) {
     echo json_encode([
         'success' => false,
-        'message' => 'กรุณากรอกข้อมูลให้ครบถ้วน'
+        'message' => $validation['message']
     ], JSON_UNESCAPED_UNICODE);
     exit();
 }
 
-$username = trim($data['username']);
-$password = trim($data['password']);
-
-// Basic validation
-if (empty($username)) {
-    echo json_encode([
-        'success' => false,
-        'message' => 'กรุณากรอกรหัสพนักงาน'
-    ], JSON_UNESCAPED_UNICODE);
-    exit();
-}
-
-if (empty($password)) {
-    echo json_encode([
-        'success' => false,
-        'message' => 'กรุณากรอกรหัสผ่าน'
-    ], JSON_UNESCAPED_UNICODE);
-    exit();
-}
+$username = $validation['username'];
+$password = $validation['password'];
 
 try {
-    // Check if admin table exists and has records
-    $checkTable = $pdo->query("SELECT COUNT(*) as count FROM Admin");
-    $tableInfo = $checkTable->fetch();
-    
-    if ($tableInfo['count'] == 0) {
-        logError('Admin table is empty');
-        echo json_encode([
-            'success' => false,
-            'message' => 'ไม่พบข้อมูลผู้ดูแลระบบ'
-        ], JSON_UNESCAPED_UNICODE);
-        exit();
+    // ========================
+    // FUNCTION: ตรวจสอบและค้นหา Admin
+    // ========================
+    function findAdmin($pdo, $username) {
+        $checkTable = $pdo->query("SELECT COUNT(*) as count FROM Admin");
+        $tableInfo = $checkTable->fetch();
+
+        if ($tableInfo['count'] == 0) {
+            logError('Admin table is empty');
+            throw new Exception('ไม่พบข้อมูลผู้ดูแลระบบ');
+        }
+
+        $stmt = $pdo->prepare("
+            SELECT admin_id, fullname, password, position, department, status
+            FROM Admin
+            WHERE admin_id = ? AND status = 'active'
+        ");
+        $stmt->execute([$username]);
+        return $stmt->fetch();
     }
-    
-    // Query admin
-    $stmt = $pdo->prepare("
-        SELECT admin_id, fullname, password, position, department, status 
-        FROM Admin 
-        WHERE admin_id = ? AND status = 'active'
-    ");
-    $stmt->execute([$username]);
-    $admin = $stmt->fetch();
+
+    // ค้นหา Admin
+    $admin = findAdmin($pdo, $username);
 
     if (!$admin) {
         logError('Admin not found or inactive', ['username' => $username]);
         echo json_encode([
             'success' => false,
-            'message' => 'รหัสพนักงานหรือรหัสผ่านไม่ถูกต้อง'
+            'message' => 'รหัสผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง'
         ], JSON_UNESCAPED_UNICODE);
         exit();
     }
 
-    // Check password hash format
-    if (empty($admin['password']) || strlen($admin['password']) < 60) {
-        logError('Invalid password hash format', [
-            'username' => $username,
-            'hash_length' => strlen($admin['password'])
-        ]);
-        echo json_encode([
-            'success' => false,
-            'message' => 'ข้อมูลรหัสผ่านไม่ถูกต้อง กรุณาติดต่อผู้ดูแลระบบ'
-        ], JSON_UNESCAPED_UNICODE);
-        exit();
+    // ========================
+    // FUNCTION: ตรวจสอบรหัสผ่าน
+    // ========================
+    function verifyPassword($password, $hashPassword, $username) {
+        if (empty($hashPassword) || strlen($hashPassword) < 60) {
+            logError('Invalid password hash', ['username' => $username, 'hash_length' => strlen($hashPassword)]);
+            throw new Exception('ข้อมูลรหัสผ่านไม่ถูกต้อง');
+        }
+
+        if (!password_verify($password, $hashPassword)) {
+            logError('Password verification failed', ['username' => $username]);
+            throw new Exception('รหัสผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
+        }
+
+        return true;
     }
 
-    // Verify password
-    if (!password_verify($password, $admin['password'])) {
-        logError('Password verification failed', [
-            'username' => $username,
-            'hash_starts_with' => substr($admin['password'], 0, 10)
-        ]);
-        echo json_encode([
-            'success' => false,
-            'message' => 'รหัสพนักงานหรือรหัสผ่านไม่ถูกต้อง'
-        ], JSON_UNESCAPED_UNICODE);
-        exit();
+    // ตรวจสอบรหัสผ่าน
+    verifyPassword($password, $admin['password'], $username);
+
+    // ========================
+    // FUNCTION: สร้างเซสชั่น
+    // ========================
+    function createSession($admin) {
+        session_regenerate_id(true);
+        $_SESSION['admin_id'] = $admin['admin_id'];
+        $_SESSION['fullname'] = $admin['fullname'];
+        $_SESSION['position'] = $admin['position'];
+        $_SESSION['department'] = $admin['department'];
+        $_SESSION['login_time'] = time();
+        $_SESSION['last_activity'] = time();
     }
 
-    // Additional status check
-    if ($admin['status'] !== 'active') {
-        logError('Account not active', ['username' => $username, 'status' => $admin['status']]);
-        echo json_encode([
-            'success' => false,
-            'message' => 'บัญชีผู้ใช้ถูกระงับ กรุณาติดต่อผู้ดูแลระบบ'
-        ], JSON_UNESCAPED_UNICODE);
-        exit();
+    // สร้างเซสชั่น
+    createSession($admin);
+
+    // ========================
+    // FUNCTION: อัปเดตเวลา Login
+    // ========================
+    function updateLastLogin($pdo, $adminId) {
+        try {
+            $stmt = $pdo->prepare("UPDATE Admin SET updated_at = NOW() WHERE admin_id = ?");
+            $stmt->execute([$adminId]);
+        } catch (PDOException $e) {
+            logError('Failed to update last login', ['error' => $e->getMessage()]);
+        }
     }
 
-    // Success - create session
-    session_regenerate_id(true);
-    $_SESSION['admin_id'] = $admin['admin_id'];
-    $_SESSION['fullname'] = $admin['fullname'];
-    $_SESSION['position'] = $admin['position'];
-    $_SESSION['department'] = $admin['department'];
-    $_SESSION['login_time'] = time();
-    $_SESSION['last_activity'] = time();
+    // อัปเดตเวลา login
+    updateLastLogin($pdo, $admin['admin_id']);
 
-    // Update last login time
-    try {
-        $update_stmt = $pdo->prepare("UPDATE admin SET updated_at = NOW() WHERE admin_id = ?");
-        $update_stmt->execute([$admin['admin_id']]);
-    } catch (PDOException $e) {
-        logError('Failed to update last login time', ['error' => $e->getMessage()]);
-        // Don't fail login for this
-    }
-
-    // Log successful login
-    error_log("Successful login for username: " . $username . " at " . date('Y-m-d H:i:s'));
+    error_log("Successful login: " . $username . " at " . date('Y-m-d H:i:s'));
 
     echo json_encode([
         'success' => true,
@@ -193,23 +201,16 @@ try {
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (PDOException $e) {
-    logError('Database error during authentication', [
-        'error' => $e->getMessage(),
-        'code' => $e->getCode(),
-        'username' => $username ?? 'unknown'
-    ]);
+    logError('Database error', ['error' => $e->getMessage(), 'username' => $username]);
     echo json_encode([
         'success' => false,
         'message' => 'เกิดข้อผิดพลาดในระบบฐานข้อมูล'
     ], JSON_UNESCAPED_UNICODE);
 } catch (Exception $e) {
-    logError('General error during authentication', [
-        'error' => $e->getMessage(),
-        'username' => $username ?? 'unknown'
-    ]);
+    logError('General error', ['error' => $e->getMessage(), 'username' => $username]);
     echo json_encode([
         'success' => false,
-        'message' => 'เกิดข้อผิดพลาดที่ไม่คาดคิด'
+        'message' => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
 }
 ?>

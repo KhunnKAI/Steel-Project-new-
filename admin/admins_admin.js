@@ -953,11 +953,19 @@ function updateDepartmentAndPermissions() {
 }
 
 function toggleSidebar() {
-    if (adminManager) adminManager.toggleSidebar();
+    const sidebar = document.getElementById("sidebar");
+    const main = document.querySelector(".main-content");
+
+    if (sidebar) {
+        sidebar.classList.toggle("show");
+        if (main) {
+            main.classList.toggle("overlay");
+        }
+    }
 }
 
 function showSection(section) {
-    if (adminManager) adminManager.showSection(section);
+    // Implement if needed or leave empty
 }
 
 // Export for module usage

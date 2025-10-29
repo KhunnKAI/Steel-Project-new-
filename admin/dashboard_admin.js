@@ -1,21 +1,27 @@
-// Admin Dashboard JavaScript - Improved Version
-// UI interactions with API integration
+// ========================
+// DASHBOARD MANAGER CLASS
+// ========================
 
 class DashboardManager {
     constructor() {
         this.salesChart = null;
         this.currentPeriod = '7days';
         this.isLoading = false;
-        this.retryCount = 0;
         this.maxRetries = 3;
-        
-        // Constants
+
+        // ========================
+        // CONSTANTS
+        // ========================
         this.REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
-        
+
         this.init();
     }
 
-    // Initialize dashboard
+    // ========================
+    // INITIALIZATION
+    // ========================
+
+    // FUNCTION: เริ่มต้นระบบ
     init() {
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => this.onDOMLoaded());
@@ -24,51 +30,47 @@ class DashboardManager {
         }
     }
 
-    // Handle DOM loaded event
+    // FUNCTION: จัดการเมื่อ DOM โหลดเสร็จ
     async onDOMLoaded() {
         try {
             await this.initializeDashboard();
             this.startPeriodicUpdates();
             this.updateCurrentTime();
-            
-            // Start time update interval
             setInterval(() => this.updateCurrentTime(), 1000);
-            
         } catch (error) {
             console.error('Dashboard initialization failed:', error);
             this.showErrorMessage('ไม่สามารถเริ่มต้นแดชบอร์ดได้ กรุณาลองใหม่อีกครั้ง');
         }
     }
 
-    // Initialize dashboard components
+    // FUNCTION: เริ่มต้นส่วนประกอบของแดชบอร์ด
     async initializeDashboard() {
         try {
             await this.loadDashboardData();
         } catch (error) {
             console.error('Dashboard initialization error:', error);
-            throw new Error('ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง');
+            throw new Error('ไม่สามารถโหลดข้อมูลแดชบอร์ดได้');
         }
     }
 
-    // Load dashboard data from API with retry logic
+    // ========================
+    // DATA LOADING FUNCTIONS
+    // ========================
+
+    // FUNCTION: โหลดข้อมูลแดชบอร์ดทั้งหมด
     async loadDashboardData() {
         if (this.isLoading) return;
-        
+
         this.isLoading = true;
         this.showLoadingStates();
-        
+
         try {
-            // Reset retry count on new load attempt
-            this.retryCount = 0;
-            
-            // Load all data concurrently for better performance
             await Promise.allSettled([
                 this.loadOverviewData(),
                 this.loadSalesData(),
                 this.loadRecentActivity(),
                 this.loadRecentOrders()
             ]);
-            
         } catch (error) {
             console.error('Error loading dashboard data:', error);
             this.handleLoadError(error);
@@ -78,17 +80,17 @@ class DashboardManager {
         }
     }
 
-    // Load overview data with improved error handling
+    // FUNCTION: โหลดข้อมูลภาพรวม
     async loadOverviewData() {
         try {
             const response = await this.fetchWithRetry(
                 `controllers/get_dashboard.php?type=overview&period=${this.currentPeriod}`
             );
-            
+
             if (response.success) {
                 this.updateOverviewCards(response.data);
             } else {
-                throw new Error(response.error || 'Failed to load overview data');
+                throw new Error(response.error || 'ไม่สามารถโหลดข้อมูลภาพรวมได้');
             }
         } catch (error) {
             console.error('Error loading overview data:', error);
@@ -96,17 +98,17 @@ class DashboardManager {
         }
     }
 
-    // Load sales data with improved error handling
+    // FUNCTION: โหลดข้อมูลยอดขาย
     async loadSalesData() {
         try {
             const response = await this.fetchWithRetry(
                 `controllers/get_dashboard.php?type=sales&period=${this.currentPeriod}`
             );
-            
+
             if (response.success) {
                 this.updateSalesChart(response.data);
             } else {
-                throw new Error(response.error || 'Failed to load sales data');
+                throw new Error(response.error || 'ไม่สามารถโหลดข้อมูลยอดขายได้');
             }
         } catch (error) {
             console.error('Error loading sales data:', error);
@@ -114,17 +116,17 @@ class DashboardManager {
         }
     }
 
-    // Load recent activity with improved error handling
+    // FUNCTION: โหลดกิจกรรมล่าสุด
     async loadRecentActivity() {
         try {
             const response = await this.fetchWithRetry(
                 'controllers/get_dashboard.php?type=recent_activity'
             );
-            
+
             if (response.success) {
                 this.updateRecentActivity(response.data);
             } else {
-                throw new Error(response.error || 'Failed to load recent activity');
+                throw new Error(response.error || 'ไม่สามารถโหลดกิจกรรมล่าสุดได้');
             }
         } catch (error) {
             console.error('Error loading recent activity:', error);
@@ -132,17 +134,17 @@ class DashboardManager {
         }
     }
 
-    // Load recent orders with improved error handling
+    // FUNCTION: โหลดคำสั่งซื้อล่าสุด
     async loadRecentOrders() {
         try {
             const response = await this.fetchWithRetry(
                 'controllers/get_dashboard.php?type=recent_orders'
             );
-            
+
             if (response.success) {
                 this.updateRecentOrders(response.data);
             } else {
-                throw new Error(response.error || 'Failed to load recent orders');
+                throw new Error(response.error || 'ไม่สามารถโหลดคำสั่งซื้อล่าสุดได้');
             }
         } catch (error) {
             console.error('Error loading recent orders:', error);
@@ -150,10 +152,14 @@ class DashboardManager {
         }
     }
 
-    // Fetch with retry logic and better error handling
+    // ========================
+    // FETCH & RETRY LOGIC
+    // ========================
+
+    // FUNCTION: ดึงข้อมูลพร้อมระบบ Retry
     async fetchWithRetry(url, options = {}) {
         let lastError;
-        
+
         for (let i = 0; i <= this.maxRetries; i++) {
             try {
                 const response = await fetch(url, {
@@ -171,33 +177,33 @@ class DashboardManager {
 
                 const contentType = response.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/json')) {
-                    const text = await response.text();
-                    console.error('Non-JSON response:', text);
                     throw new Error('Server returned invalid response format');
                 }
 
                 return await response.json();
-                
             } catch (error) {
                 lastError = error;
                 console.warn(`Request attempt ${i + 1} failed:`, error.message);
-                
+
                 if (i < this.maxRetries) {
-                    // Exponential backoff: wait 1s, 2s, 4s
                     await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000));
                 }
             }
         }
-        
+
         throw lastError;
     }
 
-    // Update overview cards with null checks
+    // ========================
+    // UI UPDATE FUNCTIONS
+    // ========================
+
+    // FUNCTION: อัปเดตการ์ดสถิติ
     updateOverviewCards(data) {
         if (!data) return;
 
         const updates = [
-            { id: 'total-sales', value: data.total_sales, prefix: '฿', isMoney: true },
+            { id: 'total-sales', value: data.total_sales, isMoney: true },
             { id: 'total-orders', value: data.total_orders },
             { id: 'total-products', value: data.total_products },
             { id: 'total-users', value: data.total_users },
@@ -205,7 +211,7 @@ class DashboardManager {
             { id: 'low-stock-count', value: data.low_stock_count }
         ];
 
-        updates.forEach(({ id, value, prefix = '', suffix = '', isMoney = false }) => {
+        updates.forEach(({ id, value, isMoney = false }) => {
             const element = document.getElementById(id);
             if (element && value !== undefined && value !== null) {
                 let formattedValue;
@@ -227,12 +233,12 @@ class DashboardManager {
                     formattedValue = value;
                 }
 
-                element.textContent = `${prefix}${formattedValue}${suffix}`;
+                element.textContent = `${formattedValue}`;
             }
         });
     }
 
-    // Set default overview data when API fails
+    // FUNCTION: ตั้งค่าเริ่มต้นสำหรับการ์ดสถิติ
     setDefaultOverviewData() {
         const defaults = [
             { id: 'total-sales', value: '฿0' },
@@ -251,44 +257,35 @@ class DashboardManager {
         });
     }
 
-    // Update sales chart with improved error handling
+    // FUNCTION: อัปเดตกราฟยอดขาย
     updateSalesChart(salesData) {
         const ctx = document.getElementById('salesChart');
         if (!ctx) return;
 
         try {
-            // Validate data
             if (!Array.isArray(salesData) || salesData.length === 0) {
                 this.handleChartError(new Error('No sales data available'));
                 return;
             }
 
-            // Prepare chart data
             const labels = salesData.map(item => {
                 try {
                     const date = new Date(item.date);
-                    if (isNaN(date.getTime())) {
-                        throw new Error('Invalid date');
-                    }
-                    return date.toLocaleDateString('th-TH', { 
-                        weekday: 'short', 
-                        day: 'numeric' 
-                    });
+                    if (isNaN(date.getTime())) throw new Error('Invalid date');
+                    return date.toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric' });
                 } catch (e) {
                     return 'N/A';
                 }
             });
-            
+
             const salesValues = salesData.map(item => Number(item.sales) || 0);
             const orderCounts = salesData.map(item => Number(item.orders) || 0);
 
-            // Destroy existing chart
             if (this.salesChart) {
                 this.salesChart.destroy();
                 this.salesChart = null;
             }
 
-            // Create gradient
             const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 300);
             gradient.addColorStop(0, 'rgba(76, 175, 80, 0.3)');
             gradient.addColorStop(1, 'rgba(76, 175, 80, 0.05)');
@@ -334,10 +331,7 @@ class DashboardManager {
                     scales: {
                         y: {
                             beginAtZero: true,
-                            grid: {
-                                color: 'rgba(0,0,0,0.1)',
-                                drawBorder: false
-                            },
+                            grid: { color: 'rgba(0,0,0,0.1)', drawBorder: false },
                             ticks: {
                                 callback: (value) => '฿' + value.toLocaleString(),
                                 color: '#666',
@@ -346,41 +340,33 @@ class DashboardManager {
                         },
                         x: {
                             grid: { display: false },
-                            ticks: {
-                                color: '#666',
-                                font: { size: 12 }
-                            }
+                            ticks: { color: '#666', font: { size: 12 } }
                         }
                     },
-                    interaction: {
-                        intersect: false,
-                        mode: 'index'
-                    }
+                    interaction: { intersect: false, mode: 'index' }
                 }
             });
-
         } catch (error) {
             console.error('Chart creation error:', error);
             this.handleChartError(error);
         }
     }
 
-    // Update recent activity with improved HTML generation
+    // FUNCTION: อัปเดตกิจกรรมล่าสุด
     updateRecentActivity(activities) {
         const container = document.getElementById('recent-activity-list');
         if (!container) return;
-        
+
         if (!Array.isArray(activities) || activities.length === 0) {
             container.innerHTML = this.createEmptyState('ไม่มีกิจกรรมล่าสุด');
             return;
         }
-        
+
         const activityHtml = activities.map(activity => {
             const timeAgo = this.getTimeAgo(activity.activity_time);
-            const amount = activity.amount ? 
-                `฿${Number(activity.amount).toLocaleString()}` : '';
+            const amount = activity.amount ? `฿${Number(activity.amount).toLocaleString()}` : '';
             const description = this.escapeHtml(activity.description || '');
-            
+
             return `
                 <div class="activity-item">
                     <div class="activity-content">
@@ -391,21 +377,20 @@ class DashboardManager {
                 </div>
             `;
         }).join('');
-        
+
         container.innerHTML = activityHtml;
     }
 
-    // Update recent orders with improved HTML generation
+    // FUNCTION: อัปเดตคำสั่งซื้อล่าสุด
     updateRecentOrders(orders) {
         const container = document.getElementById('recent-orders-list');
         if (!container) return;
-        
+
         if (!Array.isArray(orders) || orders.length === 0) {
             container.innerHTML = this.createEmptyState('ไม่มีคำสั่งซื้อล่าสุด');
             return;
         }
-        
-        // Create table structure
+
         const tableHtml = `
             <div class="table-responsive">
                 <table class="orders-table">
@@ -425,7 +410,7 @@ class DashboardManager {
                             const customerName = this.escapeHtml(order.customer_name || 'ไม่ระบุ');
                             const statusDesc = this.escapeHtml(order.status_desc || 'ไม่ระบุสถานะ');
                             const amount = Number(order.total_amount) || 0;
-                            
+
                             return `
                                 <tr class="order-row">
                                     <td class="order-id-cell">
@@ -450,15 +435,20 @@ class DashboardManager {
                 </table>
             </div>
         `;
-        
+
         container.innerHTML = tableHtml;
     }
 
-    // Utility functions
+    // ========================
+    // UTILITY FUNCTIONS
+    // ========================
+
+    // FUNCTION: สร้าง Empty State
     createEmptyState(message) {
         return `<div style="text-align: center; color: #666; padding: 20px;">${message}</div>`;
     }
 
+    // FUNCTION: Escape HTML
     escapeHtml(unsafe) {
         if (typeof unsafe !== 'string') return '';
         return unsafe
@@ -469,6 +459,7 @@ class DashboardManager {
             .replace(/'/g, "&#039;");
     }
 
+    // FUNCTION: ได้รับ CSS Class สำหรับสถานะ
     getStatusClass(statusCode) {
         const statusMap = {
             'status01': 'status-pending',
@@ -481,45 +472,51 @@ class DashboardManager {
         return statusMap[statusCode] || 'status-unknown';
     }
 
+    // FUNCTION: คำนวณเวลาที่ผ่านมา
     getTimeAgo(datetime) {
         try {
             const now = new Date();
             const time = new Date(datetime);
-            
+
             if (isNaN(time.getTime())) {
                 return 'เวลาไม่ถูกต้อง';
             }
-            
+
             const diffInSeconds = Math.floor((now - time) / 1000);
-            
+
             if (diffInSeconds < 60) return 'เมื่อสักครู่';
             if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} นาทีที่แล้ว`;
             if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} ชั่วโมงที่แล้ว`;
             return `${Math.floor(diffInSeconds / 86400)} วันที่แล้ว`;
-            
         } catch (error) {
             console.error('Error calculating time ago:', error);
             return 'ไม่ทราบเวลา';
         }
     }
 
-    // UI State Management
+    // ========================
+    // UI STATE MANAGEMENT
+    // ========================
+
+    // FUNCTION: แสดงสถานะการโหลด
     showLoadingStates() {
         const loadingElements = document.querySelectorAll('.loading-indicator');
         const contentElements = document.querySelectorAll('.dashboard-content');
-        
+
         loadingElements.forEach(el => el.style.display = 'block');
         contentElements.forEach(el => el.style.opacity = '0.5');
     }
 
+    // FUNCTION: ซ่อนสถานะการโหลด
     hideLoadingStates() {
         const loadingElements = document.querySelectorAll('.loading-indicator');
         const contentElements = document.querySelectorAll('.dashboard-content');
-        
+
         loadingElements.forEach(el => el.style.display = 'none');
         contentElements.forEach(el => el.style.opacity = '1');
     }
 
+    // FUNCTION: แสดงข้อความแจ้งเตือน
     showErrorMessage(message) {
         const errorContainer = document.getElementById('error-message');
         if (errorContainer) {
@@ -532,18 +529,20 @@ class DashboardManager {
         console.error(message);
     }
 
+    // FUNCTION: จัดการข้อผิดพลาดในการโหลด
     handleLoadError(error) {
         console.error('Dashboard load error:', error);
         this.showErrorMessage('เกิดข้อผิดพลาดในการโหลดข้อมูล กรุณาลองใหม่อีกครั้ง');
     }
 
+    // FUNCTION: จัดการข้อผิดพลาดของกราฟ
     handleChartError(error) {
         console.error('Chart error:', error);
         const chartContainer = document.querySelector('.chart-container');
         if (chartContainer) {
             const canvas = chartContainer.querySelector('canvas');
             if (canvas) canvas.style.display = 'none';
-            
+
             const existingError = chartContainer.querySelector('.chart-error');
             if (!existingError) {
                 const errorDiv = document.createElement('div');
@@ -555,7 +554,11 @@ class DashboardManager {
         }
     }
 
-    // Time and Animation Functions
+    // ========================
+    // TIME MANAGEMENT
+    // ========================
+
+    // FUNCTION: อัปเดตเวลาปัจจุบัน
     updateCurrentTime() {
         const now = new Date();
         const options = {
@@ -567,7 +570,7 @@ class DashboardManager {
             second: '2-digit',
             timeZone: 'Asia/Bangkok'
         };
-        
+
         const timeString = now.toLocaleDateString('th-TH', options);
         const timeElement = document.getElementById('current-time');
         if (timeElement) {
@@ -575,7 +578,11 @@ class DashboardManager {
         }
     }
 
-    // Periodic Updates
+    // ========================
+    // PERIODIC UPDATES
+    // ========================
+
+    // FUNCTION: เริ่มการอัปเดตเป็นระยะ
     startPeriodicUpdates() {
         setInterval(() => {
             if (!this.isLoading) {
@@ -584,7 +591,11 @@ class DashboardManager {
         }, this.REFRESH_INTERVAL);
     }
 
-    // Cleanup
+    // ========================
+    // CLEANUP
+    // ========================
+
+    // FUNCTION: ทำความสะอาด
     cleanup() {
         if (this.salesChart) {
             this.salesChart.destroy();
@@ -593,10 +604,11 @@ class DashboardManager {
     }
 }
 
-// Initialize dashboard when script loads
+// ========================
+// INITIALIZATION & EXPORTS
+// ========================
 window.dashboardManager = new DashboardManager();
 
-// Export for external use
 window.dashboardUtils = {
     updateDashboardData: () => window.dashboardManager?.loadDashboardData(),
     loadDashboardData: () => window.dashboardManager?.loadDashboardData()

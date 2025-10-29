@@ -1,3 +1,6 @@
+/* ========================
+   SIDEBAR MAIN STYLES
+   ======================== */
 .sidebar {
     background: #940606;
     color: white;
@@ -17,15 +20,21 @@
     overflow: hidden;
 }
 
+/* ========================
+   LOGO SECTION
+   ======================== */
 .logo {
     padding: 30px 20px;
     text-align: center;
-    border-bottom: 1px solid #940606;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     font-size: 18px;
     font-weight: 600;
     margin-top: 10px;
 }
 
+/* ========================
+   NAVIGATION MENU
+   ======================== */
 nav ul {
     list-style: none;
     padding: 20px 0;
@@ -53,11 +62,34 @@ nav li a i {
     text-align: center;
 }
 
+/* ========================
+   ACTIVE & HOVER STATES
+   ======================== */
 nav li.active a,
 nav li a:hover {
     background: #051A37;
 }
 
+/* ========================
+   RESTRICTED MENU ITEMS
+   ======================== */
+.sidebar nav li.restricted {
+    position: relative;
+}
+
+.sidebar nav li.restricted a {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.sidebar nav li.restricted a:hover {
+    background: transparent;
+    border-left-color: transparent;
+}
+
+/* ========================
+   MOBILE RESPONSIVE
+   ======================== */
 @media screen and (max-width: 768px) {
     .sidebar {
         position: fixed;
@@ -65,6 +97,7 @@ nav li a:hover {
         left: -260px;
         height: 100vh;
         z-index: 1000;
+        border-radius: 0;
     }
 
     .sidebar.show {

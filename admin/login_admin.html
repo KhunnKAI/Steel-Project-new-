@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>พนักงานช้างเหล็กไทย - เข้าสู่ระบบ</title>
+    <title>เข้าสู่ระบบ - ช้างเหล็กไทย</title>
     <style>
         body {
             margin: 0;
@@ -35,7 +35,7 @@
             left: 0;
             right: 0;
             height: 4px;
-            background:#940606;
+            background: #940606;
         }
 
         .logo {
@@ -88,7 +88,7 @@
             outline: none;
             border-color: #051A37;
             background: white;
-            box-shadow: #051A37;
+            box-shadow: 0 0 0 3px rgba(5, 26, 55, 0.1);
         }
 
         .form-input.error {
@@ -200,12 +200,12 @@
                 margin: 20px;
                 padding: 30px 20px;
             }
-            
+
             .logo {
                 width: 80px;
                 height: 80px;
             }
-            
+
             .title {
                 font-size: 18px;
             }
@@ -218,42 +218,45 @@
             <img src="image/logo_cropped.png" alt="Logo">
         </div>
         <div class="title">เข้าสู่ระบบ</div>
-        
+
         <div id="alert" class="alert hidden"></div>
-        
+
         <form id="loginForm">
             <div class="form-group">
-                <input type="text" 
-                       id="username" 
+                <input type="text"
+                       id="username"
                        name="username"
-                       class="form-input" 
-                       placeholder="รหัสพนักงาน" 
-                       required 
+                       class="form-input"
+                       placeholder="รหัสผู้ใช้งาน"
+                       required
                        autocomplete="username">
             </div>
-            
+
             <div class="form-group">
-                <input type="password" 
-                       id="password" 
+                <input type="password"
+                       id="password"
                        name="password"
-                       class="form-input" 
-                       placeholder="รหัสผ่าน" 
-                       required 
+                       class="form-input"
+                       placeholder="รหัสผ่าน"
+                       required
                        autocomplete="current-password">
             </div>
-            
+
             <button type="submit" class="login-button" id="loginBtn">
                 <span id="btnText">เข้าสู่ระบบ</span>
                 <div class="loading" id="loading"></div>
             </button>
         </form>
-        
+
         <div class="footer">
             © 2025 ช้างเหล็กไทย - ระบบจัดการพนักงาน
         </div>
     </div>
 
     <script>
+        // ========================
+        // DOM Elements
+        // ========================
         const loginForm = document.getElementById('loginForm');
         const loginBtn = document.getElementById('loginBtn');
         const btnText = document.getElementById('btnText');
@@ -262,14 +265,14 @@
         const usernameInput = document.getElementById('username');
         const passwordInput = document.getElementById('password');
 
-        
-        // Show alert function
+        // ========================
+        // FUNCTION: แสดงข้อความแจ้งเตือน
+        // ========================
         function showAlert(message, type = 'error') {
             alert.textContent = message;
             alert.className = `alert ${type}`;
             alert.classList.remove('hidden');
-            
-            // Auto hide after 5 seconds for success messages
+
             if (type === 'success') {
                 setTimeout(() => {
                     alert.classList.add('hidden');
@@ -277,19 +280,25 @@
             }
         }
 
-        // Hide alert function
+        // ========================
+        // FUNCTION: ซ่อนข้อความแจ้งเตือน
+        // ========================
         function hideAlert() {
             alert.classList.add('hidden');
         }
 
-        // Clear error states
+        // ========================
+        // FUNCTION: ลบสถานะข้อผิดพลาด
+        // ========================
         function clearErrors() {
             usernameInput.classList.remove('error');
             passwordInput.classList.remove('error');
             hideAlert();
         }
 
-        // Set loading state
+        // ========================
+        // FUNCTION: ตั้งค่าสถานะการโหลด
+        // ========================
         function setLoading(isLoading) {
             loginBtn.disabled = isLoading;
             if (isLoading) {
@@ -301,37 +310,38 @@
             }
         }
 
-        // Check for URL parameters on page load
+        // ========================
+        // FUNCTION: ตรวจสอบพารามิเตอร์จาก URL
+        // ========================
         function checkUrlParams() {
             const urlParams = new URLSearchParams(window.location.search);
-            
+
             if (urlParams.get('logout') === 'success') {
                 showAlert('ออกจากระบบเรียบร้อยแล้ว', 'success');
-                // Clean up URL
                 window.history.replaceState({}, document.title, window.location.pathname);
             } else if (urlParams.get('timeout') === '1') {
                 showAlert('เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่', 'info');
-                // Clean up URL
                 window.history.replaceState({}, document.title, window.location.pathname);
             } else if (urlParams.get('access') === 'denied') {
-                showAlert('กรุณาเข้าสู่ระบบก่อนเข้าใช้งาน', 'info');
-                // Clean up URL
+                showAlert('กรุณาเข้าสู่ระบบเข้าใช้งาน', 'info');
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
         }
 
-        // Form submission handler
-        loginForm.addEventListener('submit', async function(e) {
+        // ========================
+        // FUNCTION: ส่งฟอร์มเข้าสู่ระบบ
+        // ========================
+        async function handleLoginSubmit(e) {
             e.preventDefault();
             clearErrors();
 
             const username = usernameInput.value.trim();
             const password = passwordInput.value.trim();
 
-            // Client-side validation
+            // Validation
             if (!username) {
                 usernameInput.classList.add('error');
-                showAlert('กรุณากรอกรหัสพนักงาน');
+                showAlert('กรุณากรอกรหัสผู้ใช้งาน');
                 usernameInput.focus();
                 return;
             }
@@ -358,23 +368,13 @@
                     })
                 });
 
-                // Get response text first to debug
                 const responseText = await response.text();
-                console.log('Server response:', responseText);
 
                 if (!response.ok) {
-                    throw new Error(`Server responded with ${response.status}: ${responseText}`);
+                    throw new Error(`Server responded with ${response.status}`);
                 }
 
-                // Try to parse JSON
-                let data;
-                try {
-                    data = JSON.parse(responseText);
-                } catch (parseError) {
-                    console.error('JSON parsing error:', parseError);
-                    console.error('Response text:', responseText);
-                    throw new Error(`Server returned invalid JSON. Response: ${responseText.substring(0, 200)}...`);
-                }
+                const data = JSON.parse(responseText);
 
                 if (data.success) {
                     showAlert(data.message, 'success');
@@ -383,8 +383,7 @@
                     }, 1500);
                 } else {
                     showAlert(data.message);
-                    // Focus on appropriate field based on error
-                    if (data.message.includes('รหัสพนักงาน') || data.message.includes('ไม่พบ')) {
+                    if (data.message.includes('รหัสผู้ใช้งาน') || data.message.includes('ไม่พบ')) {
                         usernameInput.classList.add('error');
                         usernameInput.focus();
                         usernameInput.select();
@@ -400,9 +399,35 @@
             } finally {
                 setLoading(false);
             }
-        });
+        }
 
-        // Enter key handling for inputs
+        // ========================
+        // FUNCTION: ตรวจสอบเซสชัน (Back Button)
+        // ========================
+        async function checkSessionOnBackButton() {
+            try {
+                const response = await fetch('controllers/check_session.php', {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.logged_in) {
+                        window.location.href = 'dashboard_admin.php';
+                    }
+                }
+            } catch (error) {
+                console.log('Session check error:', error);
+            }
+        }
+
+        // ========================
+        // EVENT LISTENERS
+        // ========================
+        loginForm.addEventListener('submit', handleLoginSubmit);
+
+        // Input field event listeners
         [usernameInput, passwordInput].forEach(input => {
             input.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
@@ -411,7 +436,6 @@
                 }
             });
 
-            // Clear error state when user starts typing
             input.addEventListener('input', function() {
                 this.classList.remove('error');
                 if (this.value.trim()) {
@@ -419,40 +443,21 @@
                 }
             });
 
-            // Clear error state on focus
             input.addEventListener('focus', function() {
                 this.classList.remove('error');
             });
         });
 
-        // Initialize page
+        // Page load event
         window.addEventListener('load', function() {
             checkUrlParams();
             usernameInput.focus();
         });
 
-        // Prevent going back to login page if already logged in
+        // Back button event
         window.addEventListener('pageshow', function(event) {
             if (event.persisted) {
-                // Page was loaded from cache, check if user is logged in
-                fetch('controllers/check_session.php', {
-                    method: 'GET',
-                    credentials: 'same-origin'
-                })
-                .then(response => {
-                    if (response.ok) {
-                        return response.json();
-                    }
-                    throw new Error('Not found');
-                })
-                .then(data => {
-                    if (data.logged_in) {
-                        window.location.href = 'dashboard_admin.php';
-                    }
-                })
-                .catch(error => {
-                    // Ignore errors, user probably not logged in
-                });
+                checkSessionOnBackButton();
             }
         });
     </script>

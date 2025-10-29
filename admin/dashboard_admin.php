@@ -1,14 +1,13 @@
 <?php
-// Remove session_start() from here since config.php handles it properly
-require_once 'controllers/config.php';
+// ========================
+// DASHBOARD ADMIN PAGE
+// ========================
 
-// Require login to access this page
+require_once 'controllers/config.php';
 requireLogin();
 
-// Get current admin information
 $current_admin = getCurrentAdmin();
 if (!$current_admin) {
-    // If admin not found in database, logout
     header("Location: controllers/logout.php");
     exit();
 }
@@ -73,6 +72,9 @@ if (!$current_admin) {
             min-height: 100vh;
         }
 
+        /* ========================
+           HEADER
+           ======================== */
         .header {
             display: flex;
             justify-content: space-between;
@@ -108,22 +110,9 @@ if (!$current_admin) {
             font-weight: bold;
         }
 
-        .logout-btn {
-            background: #dc2626;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
-
-        .logout-btn:hover {
-            background: #b91c1c;
-            transform: translateY(-1px);
-        }
-
+        /* ========================
+           STATISTICS CARDS
+           ======================== */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -217,20 +206,9 @@ if (!$current_admin) {
             font-weight: 500;
         }
 
-        .stat-change {
-            font-size: 14px;
-            font-weight: 600;
-            margin-top: 10px;
-        }
-
-        .stat-change.positive {
-            color: #4CAF50;
-        }
-
-        .stat-change.negative {
-            color: #f44336;
-        }
-
+        /* ========================
+           CONTENT GRIDS
+           ======================== */
         .content-grid {
             display: grid;
             grid-template-columns: 2fr 1fr;
@@ -253,12 +231,67 @@ if (!$current_admin) {
             box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
         }
 
+        .panel-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-canvas {
+            max-height: 300px;
+        }
+
+        .activity-list,
         .recent-orders-list {
             max-height: 450px;
             overflow-y: auto;
         }
 
-        /* Table Styles for Recent Orders */
+        /* ========================
+           ACTIVITY ITEMS
+           ======================== */
+        .activity-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 15px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-description {
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .activity-amount {
+            font-size: 14px;
+            font-weight: 600;
+            color: #4CAF50;
+        }
+
+        .activity-time {
+            font-size: 12px;
+            color: #999;
+            white-space: nowrap;
+            margin-left: 15px;
+        }
+
+        /* ========================
+           TABLE STYLES
+           ======================== */
         .table-responsive {
             overflow-x: auto;
         }
@@ -375,114 +408,9 @@ if (!$current_admin) {
             font-size: 13px;
         }
 
-        .panel-title {
-            font-size: 20px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .chart-canvas {
-            max-height: 300px;
-        }
-
-        .activity-list, .top-products-list {
-            max-height: 350px;
-            overflow-y: auto;
-        }
-
-        .activity-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            padding: 15px 0;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .activity-item:last-child {
-            border-bottom: none;
-        }
-
-        .activity-content {
-            flex: 1;
-        }
-
-        .activity-description {
-            font-weight: 500;
-            color: #333;
-            margin-bottom: 5px;
-        }
-
-        .activity-amount {
-            font-size: 14px;
-            font-weight: 600;
-            color: #4CAF50;
-        }
-
-        .activity-time {
-            font-size: 12px;
-            color: #999;
-            white-space: nowrap;
-            margin-left: 15px;
-        }
-
-        .product-item {
-            display: flex;
-            align-items: center;
-            padding: 15px 0;
-            border-bottom: 1px solid #f0f0f0;
-            gap: 15px;
-        }
-
-        .product-item:last-child {
-            border-bottom: none;
-        }
-
-        .product-rank {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            background: #007bff;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 14px;
-        }
-
-        .product-info {
-            flex: 1;
-        }
-
-        .product-name {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 3px;
-        }
-
-        .product-category {
-            font-size: 12px;
-            color: #666;
-        }
-
-        .product-stats {
-            text-align: right;
-        }
-
-        .product-sold {
-            font-size: 14px;
-            color: #666;
-        }
-
-        .product-revenue {
-            font-weight: 600;
-            color: #4CAF50;
-        }
-
+        /* ========================
+           LOADING & ERROR STATES
+           ======================== */
         .loading-indicator {
             display: none;
             text-align: center;
@@ -510,6 +438,9 @@ if (!$current_admin) {
             border: 1px solid #f5c6cb;
         }
 
+        /* ========================
+           MOBILE RESPONSIVE
+           ======================== */
         @media screen and (max-width: 768px) {
             .navbar-toggle {
                 display: block;
@@ -528,17 +459,12 @@ if (!$current_admin) {
                 grid-template-columns: 1fr;
             }
 
-            .bottom-grid {
-                grid-template-columns: 1fr;
-            }
-
             .header {
                 flex-direction: column;
                 gap: 15px;
                 text-align: center;
             }
 
-            /* Table responsiveness on mobile */
             .orders-table {
                 font-size: 13px;
             }
@@ -547,25 +473,9 @@ if (!$current_admin) {
             .orders-table td {
                 padding: 10px 8px;
             }
-
-            .order-id-badge {
-                font-size: 11px;
-                padding: 3px 6px;
-            }
-
-            .order-status {
-                font-size: 11px;
-                padding: 3px 6px;
-                min-width: 70px;
-            }
         }
 
         @media screen and (max-width: 480px) {
-            .stats-grid {
-                grid-template-columns: 1fr;
-                gap: 15px;
-            }
-
             .stat-card {
                 padding: 20px;
             }
@@ -573,62 +483,24 @@ if (!$current_admin) {
             .stat-value {
                 font-size: 24px;
             }
-
-            /* Stack table cells on very small screens */
-            .orders-table,
-            .orders-table thead,
-            .orders-table tbody,
-            .orders-table th,
-            .orders-table td,
-            .orders-table tr {
-                display: block;
-            }
-
-            .orders-table thead tr {
-                position: absolute;
-                top: -9999px;
-                left: -9999px;
-            }
-
-            .orders-table tr {
-                border: 1px solid #ccc;
-                margin-bottom: 10px;
-                padding: 10px;
-                border-radius: 8px;
-                background: white;
-            }
-
-            .orders-table td {
-                border: none;
-                position: relative;
-                padding: 8px 8px 8px 35%;
-                text-align: right;
-            }
-
-            .orders-table td:before {
-                content: attr(data-label);
-                position: absolute;
-                left: 6px;
-                width: 30%;
-                padding-right: 10px;
-                white-space: nowrap;
-                font-weight: 600;
-                color: #495057;
-                text-align: left;
-            }
         }
     </style>
 </head>
 
 <body>
+    <!-- Navbar Toggle Button -->
     <div class="navbar-toggle" onclick="toggleSidebar()">
         <i class="fas fa-bars"></i>
     </div>
 
+    <!-- Main Container -->
     <div class="container">
+        <!-- Sidebar -->
         <?php include 'sidebar_admin.php'; ?>
 
+        <!-- Main Content -->
         <main class="main-content">
+            <!-- Header -->
             <div class="header">
                 <h1><i class="fas fa-tachometer-alt"></i> แดชบอร์ด</h1>
 
@@ -642,12 +514,15 @@ if (!$current_admin) {
                 </div>
             </div>
 
+            <!-- Loading Indicator -->
             <div class="loading-indicator">
                 <i class="fas fa-spinner"></i>
                 <div>กำลังโหลดข้อมูล...</div>
             </div>
 
+            <!-- Dashboard Content -->
             <div class="dashboard-content">
+                <!-- Statistics Cards -->
                 <div class="stats-grid">
                     <div class="stat-card sales">
                         <div class="stat-header">
@@ -698,7 +573,9 @@ if (!$current_admin) {
                     </div>
                 </div>
 
+                <!-- Charts and Activity -->
                 <div class="content-grid">
+                    <!-- Sales Chart -->
                     <div class="chart-container">
                         <div class="panel-title">
                             <i class="fas fa-chart-line"></i>
@@ -707,32 +584,31 @@ if (!$current_admin) {
                         <canvas id="salesChart" class="chart-canvas"></canvas>
                     </div>
 
+                    <!-- Recent Activity -->
                     <div class="activity-panel">
                         <div class="panel-title">
                             <i class="fas fa-bell"></i>
                             กิจกรรมล่าสุด
                         </div>
-                        <div class="activity-list" id="recent-activity-list">
-                            <!-- Data will be loaded by JavaScript -->
-                        </div>
+                        <div class="activity-list" id="recent-activity-list"></div>
                     </div>
                 </div>
 
+                <!-- Recent Orders -->
                 <div class="bottom-grid">
                     <div class="recent-orders-panel">
                         <div class="panel-title">
                             <i class="fas fa-shopping-bag"></i>
                             คำสั่งซื้อล่าสุด
                         </div>
-                        <div class="recent-orders-list" id="recent-orders-list">
-                            <!-- Data will be loaded by JavaScript -->
-                        </div>
+                        <div class="recent-orders-list" id="recent-orders-list"></div>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
+    <!-- Scripts -->
     <script src="sidebar_admin.js"></script>
     <script src="dashboard_admin.js"></script>
 </body>

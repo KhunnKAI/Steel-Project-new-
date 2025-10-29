@@ -1,6 +1,10 @@
-// Simple sidebar_admin.js - เวอร์ชันง่ายที่ใช้งานได้จริง
+// ========================
+// SIDEBAR ADMIN - MAIN FUNCTIONS
+// ========================
 
-// Mobile sidebar toggle
+// ========================
+// FUNCTION: สลับการแสดง/ซ่อน Sidebar
+// ========================
 function toggleSidebar() {
     const sidebar = document.getElementById("sidebar");
     const main = document.querySelector(".main-content");
@@ -13,12 +17,16 @@ function toggleSidebar() {
     }
 }
 
-// Show access denied message
+// ========================
+// FUNCTION: แสดงข้อความไม่มีสิทธิ์เข้าถึง
+// ========================
 function showAccessDenied(sectionName) {
     alert(`คุณไม่มีสิทธิ์เข้าถึง${sectionName}\nกรุณาติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์การเข้าถึง`);
 }
 
-// Confirm and perform logout
+// ========================
+// FUNCTION: ยืนยันการออกจากระบบ
+// ========================
 function confirmLogout() {
     if (confirm('คุณต้องการออกจากระบบหรือไม่?')) {
         showLoadingOverlay();
@@ -26,6 +34,9 @@ function confirmLogout() {
     }
 }
 
+// ========================
+// FUNCTION: แสดง Loading Overlay
+// ========================
 function showLoadingOverlay() {
     const overlay = document.createElement('div');
     overlay.id = 'logout-overlay';
@@ -35,107 +46,116 @@ function showLoadingOverlay() {
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0,0,0,0.5);
+        background: rgba(0, 0, 0, 0.5);
         z-index: 9999;
         display: flex;
         justify-content: center;
         align-items: center;
     `;
-    
+
     overlay.innerHTML = `
-        <div style="background: white; padding: 30px; border-radius: 10px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
-            <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #990000; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px;"></div>
-            <div style="color: #333; font-weight: 500; font-family: Arial, sans-serif;">กำลังออกจากระบบ...</div>
+        <div style="
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        ">
+            <div style="
+                width: 40px;
+                height: 40px;
+                border: 4px solid #f3f3f3;
+                border-top: 4px solid #990000;
+                border-radius: 50%;
+                animation: spinLoader 1s linear infinite;
+                margin: 0 auto 15px;
+            "></div>
+            <div style="
+                color: #333;
+                font-weight: 500;
+                font-family: Arial, sans-serif;
+            ">กำลังออกจากระบบ...</div>
         </div>
     `;
-    
-    // Add CSS animation if not exists
-    if (!document.querySelector('#spin-animation')) {
+
+    // เพิ่ม CSS animation
+    if (!document.querySelector('#spin-loader-animation')) {
         const style = document.createElement('style');
-        style.id = 'spin-animation';
+        style.id = 'spin-loader-animation';
         style.textContent = `
-            @keyframes spin {
+            @keyframes spinLoader {
                 0% { transform: rotate(0deg); }
                 100% { transform: rotate(360deg); }
             }
         `;
         document.head.appendChild(style);
     }
-    
+
     document.body.appendChild(overlay);
 }
 
+// ========================
+// FUNCTION: ทำการออกจากระบบ
+// ========================
 function performLogout() {
-    // Array of possible logout paths to try
     const logoutPaths = [
         'controllers/logout.php',
-        '../controllers/logout.php', 
+        '../controllers/logout.php',
         'logout.php',
         '../logout.php'
     ];
-    
-    // Try each logout path
+
     tryLogoutPath(logoutPaths, 0);
 }
 
+// ========================
+// FUNCTION: ลองเข้าถึง Logout Path
+// ========================
 function tryLogoutPath(paths, index) {
     if (index >= paths.length) {
-        // If all paths fail, just redirect to login
-        console.log('All logout paths failed, redirecting to login');
         redirectToLogin();
         return;
     }
-    
+
     const currentPath = paths[index];
-    console.log(`Trying logout path: ${currentPath}`);
-    
+
     fetch(currentPath, {
         method: 'POST',
-        headers: { 
+        headers: {
             'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest' 
+            'X-Requested-With': 'XMLHttpRequest'
         },
         credentials: 'same-origin'
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log('Logout response:', data);
-        if (data && data.success) {
-            window.location.href = data.redirect || 'login_admin.html';
-        } else {
-            throw new Error('Logout response indicates failure');
-        }
-    })
-    .catch(error => {
-        console.log(`Logout failed for path ${currentPath}:`, error);
-        // Try next path
-        setTimeout(() => tryLogoutPath(paths, index + 1), 100);
-    });
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data && data.success) {
+                window.location.href = data.redirect || 'login_admin.html';
+            } else {
+                throw new Error('Logout failed');
+            }
+        })
+        .catch(error => {
+            setTimeout(() => tryLogoutPath(paths, index + 1), 100);
+        });
 }
 
+// ========================
+// FUNCTION: เปลี่ยนเส้นทางไปหน้า Login
+// ========================
 function redirectToLogin() {
-    // Clear any stored session data
-    try {
-        sessionStorage.clear();
-        localStorage.clear();
-    } catch (e) {
-        console.log('Error clearing storage:', e);
-    }
-    
-    // Try different login page paths
     const loginPaths = [
         'login_admin.html',
         '../login_admin.html',
         'admin/login_admin.html',
         'index.php'
     ];
-    
-    // Check which login page exists and redirect
+
     for (let path of loginPaths) {
         try {
             window.location.href = path;
@@ -144,24 +164,26 @@ function redirectToLogin() {
             console.log(`Failed to redirect to ${path}`);
         }
     }
-    
-    // Fallback - reload current page
+
     window.location.reload();
 }
 
-// Handle mobile menu interactions
-document.addEventListener('DOMContentLoaded', function() {
-    // Close sidebar when clicking outside on mobile
-    document.addEventListener('click', function(e) {
+// ========================
+// EVENT LISTENERS
+// ========================
+
+// ปิด Sidebar เมื่อคลิกนอก Sidebar บน Mobile
+document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('click', function (e) {
         const sidebar = document.getElementById('sidebar');
         const toggle = document.querySelector('.navbar-toggle');
         const main = document.querySelector('.main-content');
-        
+
         if (!sidebar) return;
-        
-        const clickedOutside = !sidebar.contains(e.target) && 
-                              (!toggle || !toggle.contains(e.target));
-        
+
+        const clickedOutside = !sidebar.contains(e.target) &&
+            (!toggle || !toggle.contains(e.target));
+
         if (sidebar.classList.contains('show') && clickedOutside && window.innerWidth <= 768) {
             sidebar.classList.remove('show');
             if (main) {
@@ -169,12 +191,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-    
-    // Handle window resize
-    window.addEventListener('resize', function() {
+
+    // จัดการการปรับขนาดหน้าต่าง
+    window.addEventListener('resize', function () {
         const sidebar = document.getElementById('sidebar');
         const main = document.querySelector('.main-content');
-        
+
         if (window.innerWidth > 768 && sidebar && sidebar.classList.contains('show')) {
             sidebar.classList.remove('show');
             if (main) {
@@ -184,7 +206,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Make functions available globally
+// ========================
+// GLOBAL FUNCTION EXPORTS
+// ========================
 window.toggleSidebar = toggleSidebar;
 window.showAccessDenied = showAccessDenied;
 window.confirmLogout = confirmLogout;

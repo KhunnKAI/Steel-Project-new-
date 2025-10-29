@@ -1,13 +1,22 @@
 <?php
-// get_current_user.php - Returns current user's permissions and role
+// ========================
+// GET CURRENT USER - API ENDPOINT
+// ========================
+// ดึงข้อมูลผู้ใช้ปัจจุบันและสิทธิ์การเข้าถึง
+
+error_reporting(0);
+ini_set('display_errors', 0);
+
 require_once 'config.php';
 
 header('Content-Type: application/json');
 
 try {
-    // Get current admin from session
+    // ========================
+    // GET CURRENT ADMIN
+    // ========================
     $current_admin = getCurrentAdmin();
-    
+
     if (!$current_admin) {
         http_response_code(401);
         echo json_encode([
@@ -17,7 +26,9 @@ try {
         exit;
     }
 
-    // Default permissions based on role
+    // ========================
+    // ROLE PERMISSIONS CONFIG
+    // ========================
     $role_permissions = [
         'manager' => ['dashboard', 'products', 'orders', 'admins', 'reports'],
         'sales' => ['dashboard', 'products', 'orders'],
@@ -27,21 +38,31 @@ try {
         'super' => ['dashboard', 'products', 'orders', 'admins', 'reports']
     ];
 
-    // Get user's permissions from database or use default
-    $permissions = [];
-    
-    if (isset($current_admin['permissions']) && !empty($current_admin['permissions'])) {
-        // If permissions are stored as JSON string
-        if (is_string($current_admin['permissions'])) {
-            $permissions = json_decode($current_admin['permissions'], true) ?: [];
+    // ========================
+    // FUNCTION: ดึงสิทธิ์ผู้ใช้
+    // ========================
+    function getUserPermissions($admin, $rolePermissions) {
+        $permissions = [];
+
+        if (isset($admin['permissions']) && !empty($admin['permissions'])) {
+            if (is_string($admin['permissions'])) {
+                $permissions = json_decode($admin['permissions'], true) ?: [];
+            } else {
+                $permissions = $admin['permissions'];
+            }
         } else {
-            $permissions = $current_admin['permissions'];
+            $permissions = $rolePermissions[$admin['position']] ?? ['dashboard'];
         }
-    } else {
-        // Use default permissions based on role
-        $permissions = $role_permissions[$current_admin['position']] ?? ['dashboard'];
+
+        return $permissions;
     }
 
+    // ได้รับสิทธิ์
+    $permissions = getUserPermissions($current_admin, $role_permissions);
+
+    // ========================
+    // SEND RESPONSE
+    // ========================
     echo json_encode([
         'success' => true,
         'data' => [

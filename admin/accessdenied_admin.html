@@ -10,16 +10,22 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
+        /* ========================
+           BODY STYLES
+           ======================== */
         body {
             background-color: #051A37;
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-family: 'Inter';
+            font-family: 'Inter', sans-serif;
         }
-        
+
+        /* ========================
+           CONTAINER STYLES
+           ======================== */
         .container {
             text-align: center;
             background: rgba(255, 255, 255, 0.95);
@@ -27,66 +33,151 @@
             border-radius: 10px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
             max-width: 500px;
+            animation: slideIn 0.5s ease-out;
         }
-        
+
+        /* ========================
+           TITLE STYLES
+           ======================== */
         .container h1 {
             color: #051A37;
-            font-size: 2.5em;
+            font-size: 3em;
             margin-bottom: 20px;
         }
-        
+
+        /* ========================
+           MESSAGE STYLES
+           ======================== */
         .message {
             font-size: 1.5em;
-            background: #940606;
+            background: linear-gradient(135deg, #051A37, #940606);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
             font-weight: bold;
             margin: 20px 0;
         }
-        
+
+        .description {
+            color: #666;
+            margin-top: 20px;
+            font-size: 1em;
+            line-height: 1.6;
+        }
+
+        /* ========================
+           DECORATION DOTS
+           ======================== */
         .decoration {
             display: flex;
             justify-content: center;
             gap: 10px;
             margin-top: 30px;
         }
-        
+
         .dot {
             width: 12px;
             height: 12px;
             border-radius: 50%;
         }
-        
-        .dot1 { background-color: #051A37; }
-        .dot2 { background-color: #940606; }
-        .dot3 { background-color: #FFFFFF; border: 1px solid #051A37; }
-        
+
+        .dot1 {
+            background-color: #051A37;
+        }
+
+        .dot2 {
+            background-color: #940606;
+        }
+
+        .dot3 {
+            background-color: #ffffff;
+            border: 1px solid #051A37;
+        }
+
+        /* ========================
+           BUTTON STYLES
+           ======================== */
         .btn {
             display: inline-block;
             margin-top: 30px;
             padding: 12px 30px;
             background-color: #940606;
-            color: #FFFFFF;
+            color: #ffffff;
             text-decoration: none;
             border-radius: 5px;
             font-size: 1em;
             font-weight: bold;
-            transition: background-color 0.3s ease;
+            transition: all 0.3s ease;
             border: none;
             cursor: pointer;
+            box-shadow: 0 4px 15px rgba(148, 6, 6, 0.3);
         }
-        
+
         .btn:hover {
             background-color: #051A37;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(5, 26, 55, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* ========================
+           ANIMATIONS
+           ======================== */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ========================
+           RESPONSIVE DESIGN
+           ======================== */
+        @media (max-width: 480px) {
+            .container {
+                margin: 20px;
+                padding: 40px 25px;
+            }
+
+            .container h1 {
+                font-size: 2.2em;
+            }
+
+            .message {
+                font-size: 1.3em;
+            }
+
+            .btn {
+                padding: 10px 25px;
+                font-size: 0.95em;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- ========================
+         ACCESS DENIED CONTAINER
+         ======================== -->
     <div class="container">
+        <!-- Icon -->
         <h1>⛔</h1>
+
+        <!-- Main Message -->
         <div class="message">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</div>
-        <p style="color: #666; margin-top: 20px;">กรุณาติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์การเข้าถึง</p>
+
+        <!-- Description -->
+        <p class="description">
+            กรุณาติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์การเข้าถึง
+        </p>
+
+        <!-- Back Button -->
         <a href="login_admin.html" class="btn">กลับไป Login</a>
     </div>
 </body>
