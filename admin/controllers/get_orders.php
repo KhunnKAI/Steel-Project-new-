@@ -1,4 +1,8 @@
 <?php
+// ========================
+// HEADERS & CORS
+// ========================
+
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
@@ -6,10 +10,18 @@ header('Access-Control-Allow-Headers: Content-Type');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit(0);
 
+// ========================
+// SETUP & CONFIGURATION
+// ========================
+
 require_once 'config.php';
 
 try {
-    // รับ filter parameters
+    // ========================
+    // FILTER PARAMETERS
+    // ========================
+
+    // FUNCTION: รับพารามิเตอร์ตัวกรองจาก GET
     $status_filter = $_GET['status'] ?? '';
     $user_filter = $_GET['user_id'] ?? '';
     $order_filter = $_GET['order_id'] ?? '';
@@ -20,7 +32,11 @@ try {
 
     $params = [];
 
-    // Query หลัก - ปรับปรุงให้เร็วขึ้น
+    // ========================
+    // MAIN QUERY
+    // ========================
+
+    // FUNCTION: สร้าง SQL query หลักดึงข้อมูลคำสั่งซื้อ
     $sql = "SELECT 
                 o.order_id,
                 o.user_id,
@@ -36,16 +52,13 @@ try {
                 o.note,
                 o.created_at,
                 o.updated_at,
-                -- Payment info
                 p.payment_id,
                 p.slip_image,
                 p.admin_id AS verified_by_admin,
                 p.created_at AS payment_created_at,
                 p.updated_at AS payment_updated_at,
-                -- Admin info
                 a.fullname AS admin_name,
                 a.position AS admin_position,
-                -- Address info
                 addr.address_id,
                 addr.recipient_name,
                 addr.phone AS address_phone,
@@ -63,31 +76,40 @@ try {
             LEFT JOIN Province prov ON addr.province_id = prov.province_id
             WHERE 1=1";
 
-    // Filters - ปรับปรุงให้รองรับ status code
+    // ========================
+    // FILTER CONDITIONS
+    // ========================
+
+    // FUNCTION: เพิ่มเงื่อนไขตัวกรองสถานะ
     if ($status_filter !== '') {
-        // รองรับทั้ง status_code และ status_id
         if (strpos($status_filter, 'status') === 0) {
-            // เป็น status_id (status01, status02, etc.)
             $sql .= " AND o.status = ?";
             $params[] = $status_filter;
         } else {
-            // เป็น status_code (pending_payment, awaiting_shipment, etc.)
             $sql .= " AND s.status_code = ?";
             $params[] = $status_filter;
         }
     }
+
+    // FUNCTION: เพิ่มเงื่อนไขตัวกรองผู้ใช้
     if ($user_filter !== '') {
         $sql .= " AND o.user_id = ?";
         $params[] = $user_filter;
     }
+
+    // FUNCTION: เพิ่มเงื่อนไขตัวกรองคำสั่งซื้อ
     if ($order_filter !== '') {
         $sql .= " AND o.order_id = ?";
         $params[] = $order_filter;
     }
+
+    // FUNCTION: เพิ่มเงื่อนไขตัวกรองวันที่เริ่มต้น
     if ($date_from !== '') {
         $sql .= " AND DATE(o.created_at) >= ?";
         $params[] = $date_from;
     }
+
+    // FUNCTION: เพิ่มเงื่อนไขตัวกรองวันที่สิ้นสุด
     if ($date_to !== '') {
         $sql .= " AND DATE(o.created_at) <= ?";
         $params[] = $date_to;
@@ -95,6 +117,11 @@ try {
 
     $sql .= " ORDER BY o.created_at DESC LIMIT $limit OFFSET $offset";
 
+    // ========================
+    // EXECUTE MAIN QUERY
+    // ========================
+
+    // FUNCTION: ดำเนินการ query หลัก
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
 
@@ -124,14 +151,13 @@ try {
                 'updated_at' => $row['updated_at'],
                 'payment_info' => null,
                 'order_items' => [],
-                // เพิ่มข้อมูลสำหรับการจัดการ status
                 'can_update_status' => $row['status_code'] !== 'delivered' && $row['status_code'] !== 'cancelled',
                 'can_be_cancelled' => $row['status_code'] !== 'cancelled',
                 'available_status_transitions' => [],
                 'last_updated_by' => null
             ];
 
-            // ข้อมูลที่อยู่จัดส่ง
+            // FUNCTION: เพิ่มข้อมูลที่อยู่ส่งสินค้า
             if ($row['address_id']) {
                 $orders[$order_id]['shipping_address'] = [
                     'address_id' => $row['address_id'],
@@ -145,7 +171,7 @@ try {
                 ];
             }
 
-            // ข้อมูลการชำระเงิน - ปรับปรุงให้สมบูรณ์ขึ้น
+            // FUNCTION: เพิ่มข้อมูลการชำระเงิน
             if ($row['payment_id']) {
                 $orders[$order_id]['payment_info'] = [
                     'payment_id' => $row['payment_id'],
@@ -158,7 +184,6 @@ try {
                     'is_verified' => !empty($row['verified_by_admin'])
                 ];
                 
-                // ข้อมูล admin ที่ verify
                 if ($row['verified_by_admin']) {
                     $orders[$order_id]['last_updated_by'] = [
                         'admin_id' => $row['verified_by_admin'],
@@ -168,12 +193,16 @@ try {
                 }
             }
 
-            // กำหนด available status transitions - อัปเดตให้รองรับการยกเลิกจากทุกสถานะ
+            // FUNCTION: หา available status transitions
             $orders[$order_id]['available_status_transitions'] = getAvailableStatusTransitions($row['status_code']);
         }
     }
 
-    // ดึง order items
+    // ========================
+    // FETCH ORDER ITEMS
+    // ========================
+
+    // FUNCTION: ดึงรายการสินค้าในคำสั่งซื้อ
     if (!empty($orders)) {
         $order_ids = array_keys($orders);
         $placeholders = str_repeat('?,', count($order_ids) - 1) . '?';
@@ -230,7 +259,11 @@ try {
         }
     }
 
-    // Total count - ปรับปรุงให้ตรงกับ filter
+    // ========================
+    // GET TOTAL COUNT
+    // ========================
+
+    // FUNCTION: นับจำนวนคำสั่งซื้อทั้งหมดตามตัวกรอง
     $count_sql = "SELECT COUNT(DISTINCT o.order_id) as total
                   FROM Orders o
                   LEFT JOIN Users u ON o.user_id = u.user_id
@@ -268,7 +301,11 @@ try {
     $count_stmt->execute($count_params);
     $total_count = $count_stmt->fetchColumn();
 
-    // สรุปสถิติ - FIXED: Added s.status_id to GROUP BY and ORDER BY
+    // ========================
+    // GET STATISTICS
+    // ========================
+
+    // FUNCTION: ดึงสถิติคำสั่งซื้อตามสถานะ
     $stats_sql = "SELECT 
                     s.status_id,
                     s.status_code,
@@ -291,6 +328,11 @@ try {
     $stats_stmt = $pdo->query($stats_sql);
     $statistics = $stats_stmt->fetchAll();
 
+    // ========================
+    // RESPONSE
+    // ========================
+
+    // FUNCTION: ส่งคำตอบ JSON
     echo json_encode([
         'success' => true,
         'data' => array_values($orders),
@@ -314,6 +356,11 @@ try {
     ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
 } catch (Exception $e) {
+    // ========================
+    // ERROR HANDLING
+    // ========================
+
+    // FUNCTION: ส่งคำตอบข้อผิดพลาด
     http_response_code(500);
     echo json_encode([
         'success' => false,
@@ -322,19 +369,28 @@ try {
     ], JSON_UNESCAPED_UNICODE);
 }
 
-// Helper functions - อัปเดตให้รองรับการยกเลิกจากทุกสถานะ
+// ========================
+// HELPER FUNCTIONS
+// ========================
+
+/**
+ * FUNCTION: ดึงสถานะที่สามารถเปลี่ยนไปได้จากสถานะปัจจุบัน
+ */
 function getAvailableStatusTransitions($current_status) {
     $transitions = [
         'pending_payment' => ['awaiting_shipment', 'cancelled'],
         'awaiting_shipment' => ['in_transit', 'cancelled'],
         'in_transit' => ['delivered', 'cancelled'],
-        'delivered' => ['cancelled'], // อนุกาตให้ยกเลิกได้หลังจัดส่งแล้ว (สำหรับการคืนเงิน/รีเทิร์น)
-        'cancelled' => [] // ไม่สามารถเปลี่ยนจากสถานะยกเลิกได้
+        'delivered' => ['cancelled'],
+        'cancelled' => []
     ];
     
     return $transitions[$current_status] ?? [];
 }
 
+/**
+ * FUNCTION: ดึงนิยามของสถานะคำสั่งซื้อ
+ */
 function getStatusDefinitions() {
     return [
         'pending_payment' => [
@@ -356,7 +412,7 @@ function getStatusDefinitions() {
         'in_transit' => [
             'code' => 'in_transit',
             'id' => 'status03',
-            'description' => 'กำลังจัดส่ง',
+            'description' => 'อำเนินจัดส่ง',
             'color' => '#007bff',
             'icon' => 'truck',
             'can_cancel' => true
@@ -367,7 +423,7 @@ function getStatusDefinitions() {
             'description' => 'จัดส่งแล้ว',
             'color' => '#28a745',
             'icon' => 'check',
-            'can_cancel' => true // อนุกาตให้ยกเลิกได้ (สำหรับรีเทิร์น)
+            'can_cancel' => true
         ],
         'cancelled' => [
             'code' => 'cancelled',
@@ -379,4 +435,5 @@ function getStatusDefinitions() {
         ]
     ];
 }
+
 ?>

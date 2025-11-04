@@ -1,5 +1,9 @@
 <?php
-// นำเข้าการตั้งค่าฐานข้อมูลจาก config.php
+// ========================
+// HEADERS & CORS SETUP
+// ========================
+
+// FUNCTION: ตั้งค่า headers สำหรับ API
 require_once 'config.php';
 require_once 'stock_logger.php';
 
@@ -8,7 +12,11 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
-// รับพารามิเตอร์จาก GET request
+// ========================
+// REQUEST PARAMETERS
+// ========================
+
+// FUNCTION: รับพารามิเตอร์จาก GET/POST
 $action = $_GET['action'] ?? 'get_movements';
 $product_id = $_GET['product_id'] ?? '';
 $change_type = $_GET['change_type'] ?? '';
@@ -20,13 +28,22 @@ $user_filter = $_GET['user_filter'] ?? '';
 $page = (int)($_GET['page'] ?? 1);
 $limit = (int)($_GET['limit'] ?? 10);
 
-// คำนวณ offset สำหรับ pagination
+// FUNCTION: คำนวณ offset สำหรับ pagination
 $offset = ($page - 1) * $limit;
 
-// สร้าง StockLogger instance
+// ========================
+// INITIALIZE LOGGER
+// ========================
+
+// FUNCTION: สร้าง StockLogger instance
 $stockLogger = new StockLogger($pdo);
 
+// ========================
+// HANDLE REQUESTS
+// ========================
+
 try {
+    // FUNCTION: ตรวจสอบ action และเรียกใช้ฟังก์ชันที่เหมาะสม
     switch ($action) {
         case 'get_movements':
             $movements = getStockMovements($pdo, $product_id, $change_type, $reference_type, $start_date, $end_date, $search, $user_filter, $limit, $offset);
@@ -59,6 +76,11 @@ try {
             ]);
     }
 } catch (Exception $e) {
+    // ========================
+    // ERROR HANDLING
+    // ========================
+
+    // FUNCTION: จัดการข้อผิดพลาดสำหรับ GET requests
     http_response_code(500);
     echo json_encode([
         'success' => false,
@@ -66,11 +88,26 @@ try {
     ]);
 }
 
+// ========================
+// HELPER FUNCTIONS
+// ========================
+
 /**
- * ดึงข้อมูลการเคลื่อนไหวของสต็อกจาก StockLog table
+ * FUNCTION: ดึงข้อมูลการเคลื่อนไหวของสต็อก
+ * 
+ * @param PDO $pdo
+ * @param string $product_id
+ * @param string $change_type (in, out, adjust)
+ * @param string $reference_type (order, cancel, receive, manual)
+ * @param string $start_date
+ * @param string $end_date
+ * @param string $search
+ * @param string $user_filter
+ * @param int $limit
+ * @param int $offset
  */
 function getStockMovements($pdo, $product_id, $change_type, $reference_type, $start_date, $end_date, $search, $user_filter, $limit, $offset) {
-    // สร้าง WHERE clause
+    // FUNCTION: สร้างเงื่อนไข WHERE clause
     $where_conditions = [];
     $params = [];
     
@@ -111,7 +148,7 @@ function getStockMovements($pdo, $product_id, $change_type, $reference_type, $st
     
     $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
     
-    // Query หลักสำหรับดึงข้อมูลการเคลื่อนไหว
+    // FUNCTION: ดึงข้อมูลการเคลื่อนไหว
     $sql = "
         SELECT 
             sl.log_id,
@@ -130,7 +167,6 @@ function getStockMovements($pdo, $product_id, $change_type, $reference_type, $st
             sl.reference_id,
             sl.created_at,
             sl.note,
-            -- สร้าง description ให้อ่านง่าย
             CASE 
                 WHEN sl.change_type = 'in' THEN 'รับเข้า'
                 WHEN sl.change_type = 'out' THEN 'เบิกออก'
@@ -164,7 +200,7 @@ function getStockMovements($pdo, $product_id, $change_type, $reference_type, $st
     $stmt->execute();
     $movements = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // นับจำนวนรายการทั้งหมดสำหรับ pagination
+    // FUNCTION: นับจำนวนรายการทั้งหมด
     $count_sql = "
         SELECT COUNT(*) as total
         FROM StockLog sl
@@ -196,23 +232,23 @@ function getStockMovements($pdo, $product_id, $change_type, $reference_type, $st
 }
 
 /**
- * ดึงสถิติการเคลื่อนไหวของสต็อกจาก StockLog
+ * FUNCTION: ดึงสถิติการเคลื่อนไหวของสต็อก
  */
 function getStockStats($pdo) {
     $today = date('Y-m-d');
     
-    // นับการเคลื่อนไหวทั้งหมด
+    // FUNCTION: นับการเคลื่อนไหวทั้งหมด
     $total_sql = "SELECT COUNT(*) as total FROM StockLog";
     $total_stmt = $pdo->query($total_sql);
     $total_movements = $total_stmt->fetch(PDO::FETCH_ASSOC)['total'];
     
-    // นับการเคลื่อนไหววันนี้
+    // FUNCTION: นับการเคลื่อนไหววันนี้
     $today_sql = "SELECT COUNT(*) as total FROM StockLog WHERE DATE(created_at) = :today";
     $today_stmt = $pdo->prepare($today_sql);
     $today_stmt->execute([':today' => $today]);
     $today_movements = $today_stmt->fetch(PDO::FETCH_ASSOC)['total'];
     
-    // นับการรับเข้าวันนี้
+    // FUNCTION: นับการรับเข้าวันนี้
     $receive_sql = "SELECT 
                         COUNT(*) as count,
                         SUM(ABS(quantity_change)) as total_qty
@@ -223,7 +259,7 @@ function getStockStats($pdo) {
     $receive_stmt->execute([':today' => $today]);
     $received_data = $receive_stmt->fetch(PDO::FETCH_ASSOC);
     
-    // นับการเบิกออกวันนี้
+    // FUNCTION: นับการเบิกออกวันนี้
     $dispatch_sql = "SELECT 
                         COUNT(*) as count,
                         SUM(ABS(quantity_change)) as total_qty
@@ -234,18 +270,18 @@ function getStockStats($pdo) {
     $dispatch_stmt->execute([':today' => $today]);
     $dispatched_data = $dispatch_stmt->fetch(PDO::FETCH_ASSOC);
     
-    // นับการปรับปรุงวันนี้
+    // FUNCTION: นับการปรับปรุงวันนี้
     $adjust_sql = "SELECT COUNT(*) as total FROM StockLog WHERE DATE(created_at) = :today AND change_type = 'adjust'";
     $adjust_stmt = $pdo->prepare($adjust_sql);
     $adjust_stmt->execute([':today' => $today]);
     $adjusted_today = $adjust_stmt->fetch(PDO::FETCH_ASSOC)['total'];
     
-    // สินค้าที่มีสต็อกต่ำ (น้อยกว่า 10)
+    // FUNCTION: นับสินค้าที่มีสต็อกต่ำ
     $low_stock_sql = "SELECT COUNT(*) as total FROM Product WHERE stock < 10 AND stock > 0";
     $low_stock_stmt = $pdo->query($low_stock_sql);
     $low_stock_count = $low_stock_stmt->fetch(PDO::FETCH_ASSOC)['total'];
     
-    // สินค้าหมดสต็อก
+    // FUNCTION: นับสินค้าหมดสต็อก
     $out_of_stock_sql = "SELECT COUNT(*) as total FROM Product WHERE stock = 0";
     $out_of_stock_stmt = $pdo->query($out_of_stock_sql);
     $out_of_stock_count = $out_of_stock_stmt->fetch(PDO::FETCH_ASSOC)['total'];
@@ -267,7 +303,7 @@ function getStockStats($pdo) {
 }
 
 /**
- * ดึงรายการสินค้าสำหรับ dropdown
+ * FUNCTION: ดึงรายการสินค้าสำหรับ dropdown
  */
 function getProductsForSelect($pdo) {
     $sql = "
@@ -290,59 +326,11 @@ function getProductsForSelect($pdo) {
     ];
 }
 
-/**
- * บันทึกการเคลื่อนไหวของสต็อกใหม่ (ใช้ StockLogger)
- */
-function recordStockMovement($pdo, $data) {
-    $stockLogger = new StockLogger($pdo);
-    
-    $pdo->beginTransaction();
-    
-    try {
-        // ตรวจสอบข้อมูลที่จำเป็น
-        if (empty($data['product_id']) || empty($data['change_type']) || empty($data['quantity_change'])) {
-            throw new Exception('ข้อมูลไม่ครบถ้วน: product_id, change_type, quantity_change จำเป็น');
-        }
-        
-        // แปลง quantity_change เป็น int
-        $quantity_change = (int)$data['quantity_change'];
-        if ($quantity_change <= 0) {
-            throw new Exception('จำนวนต้องมากกว่า 0');
-        }
-        
-        // ใช้ StockLogger ในการอัพเดทสต็อก
-        $result = $stockLogger->updateProductStock(
-            $data['product_id'],
-            $data['change_type'],
-            $quantity_change,
-            $data['reference_type'] ?? 'manual',
-            $data['reference_id'] ?? null,
-            $data['user_id'] ?? null,
-            $data['admin_id'] ?? null,
-            $data['note'] ?? null
-        );
-        
-        if (!$result['success']) {
-            throw new Exception($result['error']);
-        }
-        
-        $pdo->commit();
-        
-        return [
-            'success' => true,
-            'message' => 'บันทึกการเคลื่อนไหวสต็อกสำเร็จ',
-            'log_id' => $result['log_id'],
-            'quantity_before' => $result['quantity_before'],
-            'quantity_after' => $result['quantity_after']
-        ];
-        
-    } catch (Exception $e) {
-        $pdo->rollBack();
-        throw $e;
-    }
-}
+// ========================
+// POST REQUEST HANDLING
+// ========================
 
-// หากเป็น POST request สำหรับบันทึกข้อมูล
+// FUNCTION: จัดการ POST requests สำหรับบันทึกข้อมูล
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
     
@@ -350,11 +338,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             switch ($input['action']) {
                 case 'save_movement':
+                    // FUNCTION: บันทึกการเคลื่อนไหวสต็อกใหม่
                     $result = recordStockMovement($pdo, $input);
                     echo json_encode($result);
                     break;
                     
                 case 'add_initial_stock':
+                    // FUNCTION: เพิ่มสต็อกเริ่มต้น
                     if (empty($input['product_id']) || empty($input['initial_stock'])) {
                         throw new Exception('ข้อมูลไม่ครบถ้วน');
                     }
@@ -389,9 +379,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// สำหรับ OPTIONS request (CORS preflight)
+// ========================
+// CORS PREFLIGHT HANDLING
+// ========================
+
+// FUNCTION: จัดการ OPTIONS request (CORS preflight)
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
+
+/**
+ * FUNCTION: บันทึกการเคลื่อนไหวสต็อกใหม่
+ */
+function recordStockMovement($pdo, $data) {
+    $stockLogger = new StockLogger($pdo);
+    
+    $pdo->beginTransaction();
+    
+    try {
+        // FUNCTION: ตรวจสอบข้อมูลที่จำเป็น
+        if (empty($data['product_id']) || empty($data['change_type']) || empty($data['quantity_change'])) {
+            throw new Exception('ข้อมูลไม่ครบถ้วน: product_id, change_type, quantity_change จำเป็น');
+        }
+        
+        // FUNCTION: แปลง quantity_change เป็น int
+        $quantity_change = (int)$data['quantity_change'];
+        if ($quantity_change <= 0) {
+            throw new Exception('จำนวนต้องมากกว่า 0');
+        }
+        
+        // FUNCTION: ใช้ StockLogger อัพเดตสต็อก
+        $result = $stockLogger->updateProductStock(
+            $data['product_id'],
+            $data['change_type'],
+            $quantity_change,
+            $data['reference_type'] ?? 'manual',
+            $data['reference_id'] ?? null,
+            $data['user_id'] ?? null,
+            $data['admin_id'] ?? null,
+            $data['note'] ?? null
+        );
+        
+        if (!$result['success']) {
+            throw new Exception($result['error']);
+        }
+        
+        $pdo->commit();
+        
+        return [
+            'success' => true,
+            'message' => 'บันทึกการเคลื่อนไหวสต็อกสำเร็จ',
+            'log_id' => $result['log_id'],
+            'quantity_before' => $result['quantity_before'],
+            'quantity_after' => $result['quantity_after']
+        ];
+        
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        throw $e;
+    }
+}
+
 ?>

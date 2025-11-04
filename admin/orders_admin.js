@@ -1,17 +1,22 @@
-// Global variables
+// ========================
+// GLOBAL VARIABLES
+// ========================
 let currentPage = 1;
 let itemsPerPage = 20;
 let allOrders = [];
 let filteredOrders = [];
 let currentOrderId = null;
 let isLoading = false;
-let currentUser = null; // Store current user permissions
+let currentUser = null;
 
 // Notes modal variables
 let notesModalResolve = null;
 let notesModalReject = null;
 
-// Initialize when DOM is loaded
+// ========================
+// INITIALIZATION
+// ========================
+// FUNCTION: เริ่มต้นการทำงานเมื่อ DOM โหลดเสร็จ
 document.addEventListener('DOMContentLoaded', function() {
     initializeEventListeners();
     loadCurrentUser().then(() => {
@@ -20,7 +25,10 @@ document.addEventListener('DOMContentLoaded', function() {
     handleResize();
 });
 
-// Load current user permissions
+// ========================
+// USER & PERMISSIONS
+// ========================
+// FUNCTION: โหลดข้อมูลผู้ใช้ปัจจุบันจาก API
 async function loadCurrentUser() {
     try {
         const response = await fetch('controllers/get_current_user.php', {
@@ -47,20 +55,18 @@ async function loadCurrentUser() {
     } catch (error) {
         console.error('Error loading current user:', error);
         showNotification('ไม่สามารถโหลดข้อมูลผู้ใช้ได้: ' + error.message, 'error');
-        // Redirect to login if unauthorized
         if (error.message.includes('401')) {
             window.location.href = 'controllers/logout.php';
         }
     }
 }
 
-// Check if user has permission for specific status action
+// FUNCTION: ตรวจสอบสิทธิ์การอนุมัติสำหรับการกระทำแต่ละอย่าง
 function hasPermissionForStatus(statusCode, action = 'update') {
     if (!currentUser) return false;
     
     const position = currentUser.position;
     
-    // Define permissions for each status and action
     const statusPermissions = {
         'pending_payment': {
             'approve': ['manager', 'super', 'accounting', 'sales'],
@@ -82,12 +88,10 @@ function hasPermissionForStatus(statusCode, action = 'update') {
         }
     };
     
-    // General cancel permission
     if (action === 'cancel') {
         return ['manager', 'super', 'sales'].includes(position);
     }
     
-    // Check specific status permissions
     const statusPerms = statusPermissions[statusCode];
     if (!statusPerms) return false;
     
@@ -97,12 +101,14 @@ function hasPermissionForStatus(statusCode, action = 'update') {
     return actionPerms.includes(position);
 }
 
+// ========================
+// EVENT LISTENERS
+// ========================
+// FUNCTION: ตั้งค่าฟังก์ชันฟังสำหรับปุ่มและอินพุตทั้งหมด
 function initializeEventListeners() {
-    // Search input - ลบการค้นหา real-time
+    // Search input - Enter key
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
-        // ลบการเรียก applyFilters() ที่นี่
-        // เก็บไว้เฉพาะเพื่ออนุญาต Enter key
         searchInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 applyFilters();
@@ -110,26 +116,14 @@ function initializeEventListeners() {
         });
     }
 
-    // Filter controls - ลบการเรียก applyFilters() แบบอัตโนมัติ
-    const statusFilter = document.getElementById('statusFilter');
-    const dateFromFilter = document.getElementById('dateFromFilter');
-    const dateToFilter = document.getElementById('dateToFilter');
+    // Filter buttons
     const searchBtn = document.getElementById('searchBtn');
     const resetBtn = document.getElementById('resetBtn');
 
-    // ลบการเรียก applyFilters() ที่นี่
-    // [statusFilter, dateFromFilter, dateToFilter].forEach(filter => {
-    //     if (filter) {
-    //         filter.addEventListener('change', applyFilters);
-    //     }
-    // });
-
-    // Search button - กดปุ่มค้นหา
     if (searchBtn) {
         searchBtn.addEventListener('click', applyFilters);
     }
 
-    // Reset button
     if (resetBtn) {
         resetBtn.addEventListener('click', resetFilters);
     }
@@ -157,6 +151,10 @@ function initializeEventListeners() {
     });
 }
 
+// ========================
+// DATA LOADING
+// ========================
+// FUNCTION: โหลดรายการคำสั่งซื้อจาก API
 async function loadOrders() {
     if (isLoading) return;
     
@@ -188,7 +186,7 @@ async function loadOrders() {
         
     } catch (error) {
         console.error('Error loading orders:', error);
-        showNotification('เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + error.message, 'error');
+        showNotification('เกิดข้อผิดพลาดในการโหลดข้อมูลรายการสั่งซื้อ: ' + error.message, 'error');
         displayOrders([], 0);
     } finally {
         isLoading = false;
@@ -196,6 +194,10 @@ async function loadOrders() {
     }
 }
 
+// ========================
+// FILTERING & SORTING
+// ========================
+// FUNCTION: ใช้ตัวกรองต่างๆ กับรายการคำสั่งซื้อ
 function applyFilters() {
     const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
     const statusFilter = document.getElementById('statusFilter')?.value || '';
@@ -243,21 +245,23 @@ function applyFilters() {
     displayOrders(filteredOrders, filteredOrders.length);
 }
 
+// FUNCTION: รีเซ็ตตัวกรองทั้งหมด
 function resetFilters() {
-    // Clear all filter inputs
     document.getElementById('searchInput').value = '';
     document.getElementById('statusFilter').value = '';
     document.getElementById('dateFromFilter').value = '';
     document.getElementById('dateToFilter').value = '';
 
-    // Reset to show all orders
     currentPage = 1;
     displayOrders(allOrders, allOrders.length);
     
     showNotification('ตัวกรองถูกรีเซ็ตเรียบร้อย', 'success');
 }
 
-
+// ========================
+// STATISTICS
+// ========================
+// FUNCTION: อัปเดตสถิติสำหรับแต่ละสถานะ
 function updateStatistics(statistics) {
     const stats = {
         pending_payment: 0,
@@ -289,6 +293,10 @@ function updateStatistics(statistics) {
     });
 }
 
+// ========================
+// DISPLAY TABLE
+// ========================
+// FUNCTION: แสดงรายการคำสั่งซื้อในตาราง
 function displayOrders(orders, totalCount) {
     const tbody = document.getElementById('ordersTableBody');
     if (!tbody) return;
@@ -297,7 +305,7 @@ function displayOrders(orders, totalCount) {
         tbody.innerHTML = `
             <tr>
                 <td colspan="7" style="text-align: center; padding: 40px; color: #666;">
-                    ไม่พบข้อมูลคำสั่งซื้อ
+                    ไม่พบข้อมูลรายการสั่งซื้อ
                 </td>
             </tr>
         `;
@@ -316,6 +324,7 @@ function displayOrders(orders, totalCount) {
     updatePagination(orders.length);
 }
 
+// FUNCTION: สร้างแถวตารางสำหรับคำสั่งซื้อหนึ่งรายการ
 function createOrderRow(order) {
     const statusBadge = createStatusBadge(order.status);
     const customerInfo = createCustomerInfo(order.customer_info);
@@ -337,14 +346,15 @@ function createOrderRow(order) {
     `;
 }
 
+// FUNCTION: สร้างแบบ status badge
 function createStatusBadge(status) {
     if (!status) return '<span class="status-badge status-unknown">ไม่ทราบ</span>';
     
-    // แปลง underscore เป็น hyphen เพื่อให้ match กับ CSS class names
     const statusClass = `status-${status.status_code.replace(/_/g, '-')}`;
     return `<span class="status-badge ${statusClass}">${escapeHtml(status.description)}</span>`;
 }
 
+// FUNCTION: สร้างข้อมูลลูกค้า
 function createCustomerInfo(customerInfo) {
     if (!customerInfo) return '-';
     
@@ -356,6 +366,7 @@ function createCustomerInfo(customerInfo) {
     `;
 }
 
+// FUNCTION: สร้างข้อมูลสินค้าในคำสั่งซื้อ
 function createItemsInfo(orderItems) {
     if (!orderItems || orderItems.length === 0) {
         return '<span style="color: #999;">ไม่มีรายการ</span>';
@@ -372,47 +383,45 @@ function createItemsInfo(orderItems) {
     return `<div class="order-items">${itemsText}</div>`;
 }
 
+// FUNCTION: สร้างปุ่มการกระทำสำหรับคำสั่งซื้อ
 function createActionButtons(order) {
     const status = order.status?.status_code;
     let buttons = [];
 
-    // View button (always available)
+    // View button
     buttons.push(`
         <button class="btn btn-view" onclick="viewOrder('${order.order_id}')" title="ดูรายละเอียด">
             <i class="fas fa-eye"></i>
         </button>
     `);
 
-    // Status-specific action buttons with permission checks
     switch (status) {
         case 'pending_payment':
             if (order.payment_info?.slip_image) {
-                // Check approve permission
                 if (hasPermissionForStatus('pending_payment', 'approve')) {
                     buttons.push(`
                         <button class="btn btn-approve" onclick="approvePayment('${order.order_id}')" title="อนุมัติการชำระเงิน">
-                            <i class="fas fa-check"> อนุมัติ </i>
+                            <i class="fas fa-check"></i> อนุมัติ
                         </button>
                     `);
                 } else {
                     buttons.push(`
                         <button class="btn btn-approve btn-disabled" disabled title="ไม่มีสิทธิ์อนุมัติ">
-                            <i class="fas fa-lock"> ล็อค </i>
+                            <i class="fas fa-lock"></i> ล็อค
                         </button>
                     `);
                 }
                 
-                // Check reject permission
                 if (hasPermissionForStatus('pending_payment', 'reject')) {
                     buttons.push(`
                         <button class="btn btn-reject" onclick="rejectPayment('${order.order_id}')" title="ปฏิเสธการชำระเงิน">
-                            <i class="fas fa-times"> ปฏิเสธ </i>
+                            <i class="fas fa-times"></i> ปฏิเสธ
                         </button>
                     `);
                 } else {
                     buttons.push(`
                         <button class="btn btn-reject btn-disabled" disabled title="ไม่มีสิทธิ์ปฏิเสธ">
-                            <i class="fas fa-lock"> ล็อค </i>
+                            <i class="fas fa-lock"></i> ล็อค
                         </button>
                     `);
                 }
@@ -420,64 +429,60 @@ function createActionButtons(order) {
             break;
 
         case 'awaiting_shipment':
-            // Check ship permission
             if (hasPermissionForStatus('awaiting_shipment', 'ship')) {
                 buttons.push(`
                     <button class="btn btn-ship" onclick="shipOrder('${order.order_id}')" title="จัดส่งสินค้า">
-                        <i class="fas fa-truck"> จัดส่ง </i>
+                        <i class="fas fa-truck"></i> จัดส่ง
                     </button>
                 `);
             } else {
                 buttons.push(`
                     <button class="btn btn-ship btn-disabled" disabled title="ไม่มีสิทธิ์จัดส่ง">
-                        <i class="fas fa-lock"> ล็อค </i>
+                        <i class="fas fa-lock"></i> ล็อค
                     </button>
                 `);
             }
             
-            // Check cancel permission
             if (hasPermissionForStatus('awaiting_shipment', 'cancel')) {
                 buttons.push(`
                     <button class="btn btn-cancel" onclick="cancelOrder('${order.order_id}')" title="ยกเลิกคำสั่งซื้อ">
-                        <i class="fas fa-ban"> ยกเลิก </i>
+                        <i class="fas fa-ban"></i> ยกเลิก
                     </button>
                 `);
             } else {
                 buttons.push(`
                     <button class="btn btn-cancel btn-disabled" disabled title="ไม่มีสิทธิ์ยกเลิก">
-                        <i class="fas fa-lock"> ล็อค </i>
+                        <i class="fas fa-lock"></i> ล็อค
                     </button>
                 `);
             }
             break;
 
         case 'in_transit':
-            // Check complete permission
             if (hasPermissionForStatus('in_transit', 'complete')) {
                 buttons.push(`
                     <button class="btn btn-approve" onclick="markAsDelivered('${order.order_id}')" title="ยืนยันการจัดส่ง">
-                        <i class="fas fa-check"> สำเร็จ </i>
+                        <i class="fas fa-check"></i> สำเร็จ
                     </button>
                 `);
             } else {
                 buttons.push(`
                     <button class="btn btn-approve btn-disabled" disabled title="ไม่มีสิทธิ์ยืนยัน">
-                        <i class="fas fa-lock"> ล็อค </i>
+                        <i class="fas fa-lock"></i> ล็อค
                     </button>
                 `);
             }
             
-            // Check cancel permission
             if (hasPermissionForStatus('in_transit', 'cancel')) {
                 buttons.push(`
                     <button class="btn btn-cancel" onclick="cancelOrder('${order.order_id}')" title="ยกเลิกคำสั่งซื้อ">
-                        <i class="fas fa-ban"> ยกเลิก </i>
+                        <i class="fas fa-ban"></i> ยกเลิก
                     </button>
                 `);
             } else {
                 buttons.push(`
                     <button class="btn btn-cancel btn-disabled" disabled title="ไม่มีสิทธิ์ยกเลิก">
-                        <i class="fas fa-lock"> ล็อค </i>
+                        <i class="fas fa-lock"></i> ล็อค
                     </button>
                 `);
             }
@@ -485,13 +490,13 @@ function createActionButtons(order) {
 
         case 'delivered':
         case 'cancelled':
-            // Only view button for completed orders
             break;
     }
 
     return buttons.join('');
 }
 
+// FUNCTION: อัปเดตข้อมูลจำนวนผลการค้นหา
 function updateResultsInfo(filteredCount, totalCount) {
     const resultsInfo = document.getElementById('resultsInfo');
     if (resultsInfo) {
@@ -503,6 +508,10 @@ function updateResultsInfo(filteredCount, totalCount) {
     }
 }
 
+// ========================
+// PAGINATION
+// ========================
+// FUNCTION: อัปเดตปุ่มเปลี่ยนหน้า
 function updatePagination(totalItems) {
     const pagination = document.getElementById('pagination');
     if (!pagination) return;
@@ -561,6 +570,7 @@ function updatePagination(totalItems) {
     pagination.innerHTML = paginationHTML;
 }
 
+// FUNCTION: เปลี่ยนหน้าในการแสดงผล
 function changePage(page) {
     const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
     if (page < 1 || page > totalPages) return;
@@ -571,7 +581,10 @@ function changePage(page) {
     document.querySelector('.table-container')?.scrollIntoView({ behavior: 'smooth' });
 }
 
-// Order action functions with permission validation
+// ========================
+// ORDER ACTIONS
+// ========================
+// FUNCTION: ดูรายละเอียดคำสั่งซื้อ
 function viewOrder(orderId) {
     const order = allOrders.find(o => o.order_id === orderId);
     if (!order) {
@@ -582,6 +595,7 @@ function viewOrder(orderId) {
     displayOrderDetails(order);
 }
 
+// FUNCTION: อนุมัติการชำระเงิน
 function approvePayment(orderId) {
     if (!hasPermissionForStatus('pending_payment', 'approve')) {
         showNotification('คุณไม่มีสิทธิ์ในการอนุมัติการชำระเงิน', 'error');
@@ -590,6 +604,7 @@ function approvePayment(orderId) {
     updateOrderStatus(orderId, 'awaiting_shipment');
 }
 
+// FUNCTION: ปฏิเสธการชำระเงิน
 async function rejectPayment(orderId) {
     if (!hasPermissionForStatus('pending_payment', 'reject')) {
         showNotification('คุณไม่มีสิทธิ์ในการปฏิเสธการชำระเงิน', 'error');
@@ -606,6 +621,7 @@ async function rejectPayment(orderId) {
     }
 }
 
+// FUNCTION: จัดส่งคำสั่งซื้อ
 function shipOrder(orderId) {
     if (!hasPermissionForStatus('awaiting_shipment', 'ship')) {
         showNotification('คุณไม่มีสิทธิ์ในการจัดส่งสินค้า', 'error');
@@ -614,6 +630,7 @@ function shipOrder(orderId) {
     updateOrderStatus(orderId, 'in_transit');
 }
 
+// FUNCTION: ยืนยันการจัดส่งสินค้า
 function markAsDelivered(orderId) {
     if (!hasPermissionForStatus('in_transit', 'complete')) {
         showNotification('คุณไม่มีสิทธิ์ในการยืนยันการจัดส่ง', 'error');
@@ -622,6 +639,7 @@ function markAsDelivered(orderId) {
     updateOrderStatus(orderId, 'delivered');
 }
 
+// FUNCTION: ยกเลิกคำสั่งซื้อ
 async function cancelOrder(orderId) {
     const order = allOrders.find(o => o.order_id === orderId);
     if (!order) {
@@ -644,7 +662,10 @@ async function cancelOrder(orderId) {
     }
 }
 
-// Notes Modal Functions
+// ========================
+// NOTES MODAL
+// ========================
+// FUNCTION: แสดง modal สำหรับบันทึกหมายเหตุ
 function showNotesModal(message, title) {
     return new Promise((resolve, reject) => {
         notesModalResolve = resolve;
@@ -662,6 +683,7 @@ function showNotesModal(message, title) {
     });
 }
 
+// FUNCTION: ปิด modal สำหรับบันทึกหมายเหตุ
 function closeNotesModal() {
     document.getElementById('notesModal').style.display = 'none';
     if (notesModalReject) {
@@ -671,10 +693,11 @@ function closeNotesModal() {
     }
 }
 
+// FUNCTION: ส่งหมายเหตุ
 function submitNotes() {
     const notes = document.getElementById('notesTextarea').value.trim();
     if (notes === '') {
-        showNotification('กรุณากรอกเหตุผล', 'error');
+        showNotification('กรุณาเขียนหมายเหตุผล', 'error');
         return;
     }
     
@@ -686,10 +709,15 @@ function submitNotes() {
     }
 }
 
+// FUNCTION: ยกเลิกการบันทึกหมายเหตุ
 function cancelNotes() {
     closeNotesModal();
 }
 
+// ========================
+// API CALLS
+// ========================
+// FUNCTION: อัปเดตสถานะคำสั่งซื้อ
 async function updateOrderStatus(orderId, newStatus, notes = '') {
     try {
         const response = await fetch('controllers/update_order_status.php', {
@@ -731,6 +759,10 @@ async function updateOrderStatus(orderId, newStatus, notes = '') {
     }
 }
 
+// ========================
+// MODAL DISPLAY
+// ========================
+// FUNCTION: แสดงรายละเอียดคำสั่งซื้อในหน้าต่าง
 function displayOrderDetails(order) {
     currentOrderId = order.order_id;
     
@@ -767,6 +799,7 @@ function displayOrderDetails(order) {
     document.getElementById('orderDetailsModal').style.display = 'block';
 }
 
+// FUNCTION: อัปเดตปุ่มการกระทำสำหรับการตรวจสอบการชำระเงิน
 function updatePaymentActions(orderId) {
     const verificationActions = document.querySelector('.verification-actions');
     if (!verificationActions) return;
@@ -808,6 +841,7 @@ function updatePaymentActions(orderId) {
     verificationActions.innerHTML = actionsHTML;
 }
 
+// FUNCTION: แสดงข้อมูลการชำระเงิน
 function displayPaymentInfo(paymentInfo) {
     const paymentSlip = document.getElementById('paymentSlip');
     const noSlipMessage = document.getElementById('noSlipMessage');
@@ -822,6 +856,7 @@ function displayPaymentInfo(paymentInfo) {
     }
 }
 
+// FUNCTION: แสดงรายการสินค้าในคำสั่งซื้อ
 function displayOrderItems(orderItems) {
     const tbody = document.getElementById('orderItemsList');
     
@@ -840,12 +875,16 @@ function displayOrderItems(orderItems) {
     `).join('');
 }
 
+// FUNCTION: ปิดหน้าต่างรายละเอียดคำสั่งซื้อ
 function closeOrderDetailsModal() {
     document.getElementById('orderDetailsModal').style.display = 'none';
     currentOrderId = null;
 }
 
-// Lightbox functions
+// ========================
+// LIGHTBOX
+// ========================
+// FUNCTION: เปิด lightbox เพื่อแสดงภาพ
 function openLightbox(imageSrc) {
     const lightbox = document.getElementById('lightbox');
     const lightboxImage = document.getElementById('lightboxImage');
@@ -856,6 +895,7 @@ function openLightbox(imageSrc) {
     }
 }
 
+// FUNCTION: ปิด lightbox
 function closeLightbox() {
     const lightbox = document.getElementById('lightbox');
     if (lightbox) {
@@ -863,7 +903,10 @@ function closeLightbox() {
     }
 }
 
-// Utility functions
+// ========================
+// UTILITY - LOADING
+// ========================
+// FUNCTION: แสดงตัวบ่งชี้การโหลดข้อมูล
 function showLoading() {
     const loadingIndicator = document.getElementById('loadingIndicator');
     if (loadingIndicator) {
@@ -871,6 +914,7 @@ function showLoading() {
     }
 }
 
+// FUNCTION: ซ่อนตัวบ่งชี้การโหลดข้อมูล
 function hideLoading() {
     const loadingIndicator = document.getElementById('loadingIndicator');
     if (loadingIndicator) {
@@ -878,8 +922,11 @@ function hideLoading() {
     }
 }
 
+// ========================
+// UTILITY - NOTIFICATIONS
+// ========================
+// FUNCTION: แสดงข้อความแจ้งเตือน
 function showNotification(message, type = 'info') {
-    // Remove existing notifications
     document.querySelectorAll('.notification').forEach(n => n.remove());
     
     const notification = document.createElement('div');
@@ -888,17 +935,19 @@ function showNotification(message, type = 'info') {
     
     document.body.appendChild(notification);
     
-    // Auto remove after 5 seconds
     setTimeout(() => {
         notification.remove();
     }, 5000);
     
-    // Allow manual removal
     notification.addEventListener('click', () => {
         notification.remove();
     });
 }
 
+// ========================
+// UTILITY - FORMATTING
+// ========================
+// FUNCTION: จัดรูปแบบจำนวนเงิน
 function formatCurrency(amount) {
     return '฿' + (parseFloat(amount) || 0).toLocaleString('th-TH', {
         minimumFractionDigits: 2,
@@ -906,6 +955,7 @@ function formatCurrency(amount) {
     });
 }
 
+// FUNCTION: จัดรูปแบบวันที่และเวลา
 function formatDate(dateString) {
     if (!dateString) return '-';
     
@@ -923,6 +973,7 @@ function formatDate(dateString) {
     }
 }
 
+// FUNCTION: ป้องกัน XSS โดยการหลีกเลี่ยง HTML
 function escapeHtml(text) {
     if (!text) return '';
     const div = document.createElement('div');
@@ -930,7 +981,10 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Responsive design handler
+// ========================
+// RESPONSIVE DESIGN
+// ========================
+// FUNCTION: จัดการการรีไซซ์ของหน้าจออสำหรับ responsive design
 function handleResize() {
     const navbar = document.querySelector('.navbar-toggle');
     const sidebar = document.getElementById('sidebar');
@@ -957,6 +1011,6 @@ function handleResize() {
     }
 }
 
-// Add resize listener
+// Add resize listeners
 window.addEventListener('resize', handleResize);
 window.addEventListener('load', handleResize);

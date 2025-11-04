@@ -1,42 +1,39 @@
 <?php
-// Remove session_start() from here since config.php handles it properly
+// ========================
+// INITIALIZATION & SECURITY
+// ========================
 require_once 'controllers/config.php';
 
-
-// Require login to access this page
+// FUNCTION: ตรวจสอบสิทธิ์การเข้าถึง
 requireLogin();
 
-// Get current admin information
+// FUNCTION: ดึงข้อมูลผู้ดำเนินการ
 $current_admin = getCurrentAdmin();
 if (!$current_admin) {
-    // If admin not found in database, logout
     header("Location: controllers/logout.php");
     exit();
 }
 
+// FUNCTION: ตรวจสอบบทบาท (role) ของผู้ใช้
 $allowed_roles = ['manager', 'super', 'sales', 'warehouse'];
-
 if (!isset($current_admin['position']) || !in_array($current_admin['position'], $allowed_roles)) {
-    // Set error message
     $_SESSION['error'] = "คุณไม่มีสิทธิ์เข้าถึงหน้านี้";
-    
-    // Redirect to access denied page
     header("Location: accessdenied_admin.html");
     exit();
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="th">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>บันทึกการเคลื่อนไหวสต็อค - ระบบจัดการร้านค้า</title>
+    <title>บันทึกการเคลื่อนไหวสินค้า - ระบบจัดการร้านค้า</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
     <style>
+        /* ========================
+           RESET & GENERAL STYLES
+           ======================== */
         * {
             margin: 0;
             padding: 0;
@@ -49,6 +46,9 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             min-height: 100vh;
         }
 
+        /* ========================
+           HEADER SECTION
+           ======================== */
         .header-section {
             background: linear-gradient(135deg, #990000, #cc0000);
             color: white;
@@ -103,12 +103,18 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             transform: translateY(-2px);
         }
 
+        /* ========================
+           CONTAINER & LAYOUT
+           ======================== */
         .container {
             max-width: 1400px;
             margin: 0 auto;
             padding: 2rem;
         }
 
+        /* ========================
+           STATISTICS CARDS
+           ======================== */
         .stats-row {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -125,6 +131,10 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             transition: transform 0.3s ease;
         }
 
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
         .stat-number {
             font-size: 2.5rem;
             font-weight: 700;
@@ -138,6 +148,9 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             font-size: 14px;
         }
 
+        /* ========================
+           FILTERS SECTION
+           ======================== */
         .filters-section {
             background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
             padding: 25px 30px;
@@ -145,7 +158,6 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             margin-bottom: 25px;
             border: 1px solid rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
             position: relative;
         }
 
@@ -187,7 +199,6 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
         }
 
         .filter-group {
-            position: relative;
             display: flex;
             flex-direction: column;
             gap: 8px;
@@ -210,10 +221,10 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             border: 2px solid #e9ecef;
             border-radius: 12px;
             font-size: 14px;
+            font-family: 'Inter';
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             background: white;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            position: relative;
         }
 
         .filter-group select:hover,
@@ -232,7 +243,6 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
         }
 
         .filter-all {
-            grid-column: span 1;
             display: flex;
             gap: 10px;
             align-self: end;
@@ -247,6 +257,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             cursor: pointer;
             font-size: 13px;
             font-weight: 600;
+            font-family: 'Inter';
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             align-items: center;
@@ -254,7 +265,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            width: 100%;
+            flex: 1;
             justify-content: center;
         }
 
@@ -265,31 +276,35 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
         }
 
         .search-filter-btn {
-        padding: 12px 20px;
-        background: linear-gradient(45deg, #28a745, #20c997);
-        color: white;
-        border: none;
-        border-radius: 12px;
-        cursor: pointer;
-        font-size: 13px;
-        font-weight: 600;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        flex: 1;
-        justify-content: center;
-    }
+            padding: 12px 20px;
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: 'Inter';
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex: 1;
+            justify-content: center;
+        }
 
-    .search-filter-btn:hover {
-        background: linear-gradient(45deg, #20c997, #17a2b8);
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
-    }
+        .search-filter-btn:hover {
+            background: linear-gradient(45deg, #20c997, #17a2b8);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
 
+        /* ========================
+           TABLE CONTAINER
+           ======================== */
         .table-container {
             background: white;
             border-radius: 15px;
@@ -329,6 +344,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             border: 2px solid #e9ecef;
             border-radius: 10px;
             font-size: 14px;
+            font-family: 'Inter';
             transition: all 0.3s ease;
         }
 
@@ -344,8 +360,12 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             top: 50%;
             transform: translateY(-50%);
             color: #666;
+            pointer-events: none;
         }
 
+        /* ========================
+           TABLE STYLES
+           ======================== */
         .table-wrapper {
             overflow-x: auto;
         }
@@ -380,6 +400,9 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             background: rgba(153, 0, 0, 0.02);
         }
 
+        /* ========================
+           PAGINATION
+           ======================== */
         .pagination {
             display: flex;
             justify-content: center;
@@ -395,6 +418,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             background: white;
             border-radius: 8px;
             cursor: pointer;
+            font-family: 'Inter';
             transition: all 0.3s ease;
         }
 
@@ -410,9 +434,12 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             cursor: not-allowed;
         }
 
-        /* Responsive */
+        /* ========================
+           RESPONSIVE DESIGN
+           ======================== */
         @media (max-width: 768px) {
             .header-content {
+                flex-direction: column;
                 text-align: center;
             }
 
@@ -428,6 +455,10 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                 grid-template-columns: 1fr;
             }
 
+            .filter-all {
+                grid-column: span 1;
+            }
+
             .table-header {
                 flex-direction: column;
                 align-items: stretch;
@@ -439,18 +470,20 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
 
             .pagination {
                 justify-content: center;
+                flex-wrap: wrap;
             }
         }
     </style>
 </head>
-
 <body>
-    <!-- Header Section -->
+    <!-- ========================
+         HEADER SECTION
+         ======================== -->
     <div class="header-section">
         <div class="header-content">
             <div class="header-title">
                 <i class="fas fa-exchange-alt"></i>
-                <h1>บันทึกการเคลื่อนไหวสต็อค</h1>
+                <h1>บันทึกการเคลื่อนไหวสินค้า</h1>
             </div>
             <a href="products_admin.php" class="back-btn">
                 <i class="fas fa-arrow-left"></i>
@@ -460,7 +493,9 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
     </div>
 
     <div class="container">
-        <!-- Statistics Row -->
+        <!-- ========================
+             STATISTICS ROW
+             ======================== -->
         <div class="stats-row">
             <div class="stat-card">
                 <div class="stat-number" id="totalMovements">0</div>
@@ -480,7 +515,9 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             </div>
         </div>
 
-        <!-- Filters Section -->
+        <!-- ========================
+             FILTERS SECTION
+             ======================== -->
         <div class="filters-section">
             <div class="filters-header">
                 <i class="fas fa-filter"></i>
@@ -520,15 +557,17 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             </div>
         </div>
 
-        <!-- Table Section -->
+        <!-- ========================
+             TABLE SECTION
+             ======================== -->
         <div class="table-container">
             <div class="table-header">
                 <h3 class="table-title">
-                    <i class="fas fa-list"></i> 
-                    รายการการเคลื่อนไหวสต็อค
+                    <i class="fas fa-list"></i>
+                    รายการการเคลื่อนไหวสินค้าสต็อก
                 </h3>
                 <div class="search-container">
-                    <input type="text" id="searchInput" placeholder="ค้นหาตามรหัสสินค้า, ชื่อสินค้า หรือหมายเหตุ...">
+                    <input type="text" id="searchInput" placeholder="ค้นหาตามรหัสสินค้า ชื่อสินค้า หรือหมายเหตุ...">
                     <i class="fas fa-search"></i>
                 </div>
             </div>
@@ -543,8 +582,8 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                             <th>ชื่อสินค้า</th>
                             <th>ล็อต</th>
                             <th>จำนวนที่เปลี่ยน</th>
-                            <th>สต็อคก่อน</th>
-                            <th>สต็อคหลัง</th>
+                            <th>สต็อกก่อน</th>
+                            <th>สต็อกหลัง</th>
                             <th>ผู้ดำเนินการ</th>
                             <th>หมายเหตุ</th>
                         </tr>

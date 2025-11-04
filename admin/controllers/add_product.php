@@ -104,13 +104,14 @@ try {
     $price = is_numeric(getVal($input, 'price')) ? (float)getVal($input, 'price') : 0;
 
     // ประมวลผลวันที่
-    $received_date = getVal($input, 'received_date');
-    if ($received_date) {
-        $ts = strtotime($received_date);
-        $received_date = ($ts !== false) ? date('Y-m-d H:i:s', $ts) : null;
-    } else {
-        $received_date = null;
+    $received_time = getVal($input, 'received_time', date('H:i:s'));
+    
+    // ตรวจสอบรูปแบบเวลา HH:mm:ss
+    if (!preg_match('/^\d{2}:\d{2}:\d{2}$/', $received_time)) {
+        $received_time = date('H:i:s');
     }
+    
+    $received_date = date('Y-m-d') . ' ' . $received_time;
 
     // ตรวจสอบ Category
     $allowed_categories = ['ot', 'rb', 'sp', 'ss', 'wm'];
@@ -156,7 +157,7 @@ try {
             null,
             null,
             $admin_id,
-            "สต็อกเริ่มต้นเมื่อสร้างสินค้า: {$name}",
+            "Initial stock when creating product: {$name}",
             0
         );
 

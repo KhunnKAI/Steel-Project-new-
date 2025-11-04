@@ -1,18 +1,45 @@
 <?php
-// stock_logger.php - Centralized stock logging system
+// ========================
+// STOCK LOGGER CLASS
+// ========================
+
+/**
+ * CLASS: StockLogger - Centralized stock logging system
+ * 
+ * บริหารจัดการการบันทึกและอัพเดตสต็อกสินค้าอย่างเป็นศูนย์กลาง
+ */
 class StockLogger {
     private $pdo;
     
+    // ========================
+    // CONSTRUCTOR
+    // ========================
+
+    // FUNCTION: สร้าง constructor
     public function __construct($pdo) {
         $this->pdo = $pdo;
     }
     
+    // ========================
+    // LOGGING
+    // ========================
+
     /**
-     * Log stock changes with proper tracking
+     * FUNCTION: บันทึกการเปลี่ยนแปลงสต็อก
+     * 
+     * @param string $product_id
+     * @param string $change_type (in, out, adjust)
+     * @param int $quantity_change
+     * @param string $reference_type
+     * @param string|null $reference_id
+     * @param string|null $user_id
+     * @param string|null $admin_id
+     * @param string|null $note
+     * @param int|null $override_quantity_before
      */
     public function logStockChange($product_id, $change_type, $quantity_change, $reference_type, $reference_id = null, $user_id = null, $admin_id = null, $note = null, $override_quantity_before = null) {
         try {
-            // Get current stock before change (unless overridden)
+            // FUNCTION: ดึงสต็อกปัจจุบัน
             if ($override_quantity_before !== null) {
                 $quantity_before = $override_quantity_before;
             } else {
@@ -27,7 +54,7 @@ class StockLogger {
                 $quantity_before = $product['stock'];
             }
             
-            // Calculate quantity after based on change type
+            // FUNCTION: คำนวณสต็อกใหม่ตามประเภทการเปลี่ยนแปลง
             switch ($change_type) {
                 case 'in':
                     $quantity_after = $quantity_before + abs($quantity_change);
@@ -38,7 +65,6 @@ class StockLogger {
                     $actual_quantity_change = -abs($quantity_change);
                     break;
                 case 'adjust':
-                    // For adjustments, quantity_change can be positive or negative
                     $quantity_after = $quantity_before + $quantity_change;
                     $actual_quantity_change = $quantity_change;
                     break;
@@ -46,12 +72,12 @@ class StockLogger {
                     throw new Exception("Invalid change_type: " . $change_type);
             }
             
-            // Ensure quantity doesn't go negative
+            // FUNCTION: ตรวจสอบสต็อกไม่เป็นลบ
             if ($quantity_after < 0) {
                 throw new Exception("Insufficient stock. Current: {$quantity_before}, Requested: {$quantity_change}");
             }
             
-            // Insert into StockLog
+            // FUNCTION: บันทึกลง StockLog
             $sql = "INSERT INTO StockLog (
                 product_id, user_id, change_type, quantity_change, 
                 quantity_before, quantity_after, reference_type, 
@@ -92,14 +118,16 @@ class StockLogger {
         }
     }
     
+    // ========================
+    // UPDATE STOCK
+    // ========================
+
     /**
-     * Update product stock with logging
+     * FUNCTION: อัพเดตสต็อกสินค้ากับการบันทึก
      */
     public function updateProductStock($product_id, $change_type, $quantity_change, $reference_type, $reference_id = null, $user_id = null, $admin_id = null, $note = null) {
         try {
-            // สำคัญ: ต้องอยู่ใน transaction แล้ว
-            
-            // Log the stock change first
+            // FUNCTION: บันทึกการเปลี่ยนแปลงก่อน
             $log_result = $this->logStockChange(
                 $product_id, $change_type, $quantity_change, 
                 $reference_type, $reference_id, $user_id, $admin_id, $note
@@ -109,7 +137,7 @@ class StockLogger {
                 throw new Exception($log_result['error']);
             }
             
-            // Update the actual stock in Product table
+            // FUNCTION: อัพเดตสต็อกในตาราง Product
             $stmt = $this->pdo->prepare("UPDATE Product SET stock = ?, updated_at = NOW() WHERE product_id = ?");
             $update_result = $stmt->execute([$log_result['quantity_after'], $product_id]);
             
@@ -137,16 +165,21 @@ class StockLogger {
         }
     }
     
+    // ========================
+    // INITIAL STOCK
+    // ========================
+
     /**
-     * Add initial stock for new products with quantity_before = 0
+     * FUNCTION: เพิ่มสต็อกเริ่มต้นสำหรับสินค้าใหม่
      */
     public function addInitialStock($product_id, $initial_stock, $admin_id = null, $note = null) {
         try {
+            // FUNCTION: ตรวจสอบสต็อกเริ่มต้น
             if ($initial_stock <= 0) {
                 return ['success' => true, 'message' => 'No initial stock to add'];
             }
             
-            // Log stock change with quantity_before = 0
+            // FUNCTION: บันทึกการเปลี่ยนแปลงด้วยสต็อกเริ่มต้น = 0
             $log_result = $this->logStockChange(
                 $product_id,
                 'in',
@@ -156,14 +189,14 @@ class StockLogger {
                 null,
                 $admin_id,
                 $note ?: "Initial stock for new product",
-                0 // Override quantity_before to 0 for new products
+                0
             );
             
             if (!$log_result['success']) {
                 throw new Exception($log_result['error']);
             }
             
-            // Update product stock
+            // FUNCTION: อัพเดตสต็อกสินค้า
             $stmt = $this->pdo->prepare("UPDATE Product SET stock = ?, updated_at = NOW() WHERE product_id = ?");
             $update_result = $stmt->execute([$log_result['quantity_after'], $product_id]);
             
@@ -187,8 +220,12 @@ class StockLogger {
         }
     }
     
+    // ========================
+    // HISTORY & RETRIEVAL
+    // ========================
+
     /**
-     * Get stock history for a product
+     * FUNCTION: ดึงประวัติสต็อกของสินค้า
      */
     public function getStockHistory($product_id, $limit = 50) {
         try {
@@ -221,10 +258,11 @@ class StockLogger {
     }
     
     /**
-     * Get all stock movements summary
+     * FUNCTION: ดึงสรุปการเคลื่อนไหวสต็อก
      */
     public function getStockMovements($filters = [], $limit = 100) {
         try {
+            // FUNCTION: สร้างเงื่อนไข WHERE
             $where_conditions = [];
             $params = [];
             
@@ -255,6 +293,7 @@ class StockLogger {
             
             $where_clause = !empty($where_conditions) ? "WHERE " . implode(" AND ", $where_conditions) : "";
             
+            // FUNCTION: ดึงการเคลื่อนไหว
             $sql = "SELECT 
                         sl.*,
                         p.name as product_name,
@@ -287,4 +326,5 @@ class StockLogger {
         }
     }
 }
+
 ?>

@@ -90,7 +90,7 @@ try {
     // ========================
     } elseif ($method === 'POST' && !isset($data['_method'])) {
         if (empty($data['name'])) {
-            send_json_error("ชื่อสินค้าเป็นสิ่งจำเป็น");
+            send_json_error("จำเป็นต้องกรอกชื่อสินค้า");
         }
 
         // สร้าง product_id อัตโนมัติ
@@ -182,7 +182,7 @@ try {
     // ========================
     } elseif ($method === 'PUT') {
         if (empty($data['product_id'])) {
-            send_json_error("รหัสสินค้าเป็นสิ่งจำเป็น");
+            send_json_error("จำเป็นต้องกรอกรหัสสินค้า");
         }
 
         $check_stmt = $pdo->prepare("SELECT product_id, stock FROM Product WHERE product_id = ?");
@@ -246,12 +246,12 @@ try {
                 if ($stock_difference > 0) {
                     $stock_result = $stockLogger->updateProductStock(
                         $product_id, 'in', $stock_difference, 'manual', null, null, $admin_id,
-                        "ปรับปรุงสต็อคด้วยตนเอง (+{$stock_difference})"
+                        "Manual stock adjustment (+{$stock_difference}) via product update"
                     );
                 } else {
                     $stock_result = $stockLogger->updateProductStock(
                         $product_id, 'out', abs($stock_difference), 'manual', null, null, $admin_id,
-                        "ปรับปรุงสต็อคด้วยตนเอง ({$stock_difference})"
+                        "Manual stock adjustment ({$stock_difference}) via product update"
                     );
                 }
 
@@ -282,7 +282,7 @@ try {
         $product_id = $data['product_id'] ?? $_POST['product_id'] ?? $_GET['product_id'] ?? null;
 
         if (empty($product_id)) {
-            send_json_error("รหัสสินค้าเป็นสิ่งจำเป็น");
+            send_json_error("จำเป็นต้องกรอกรหัสสินค้า");
         }
 
         // ตรวจสอบการใช้งาน

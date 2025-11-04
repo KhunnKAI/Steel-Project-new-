@@ -1,19 +1,19 @@
 <?php
-// Remove session_start() from here since config.php handles it properly
+// ========================
+// SECURITY & INITIALIZATION
+// ========================
 require_once 'controllers/config.php';
 
-// Require login to access this page
+// FUNCTION: ตรวจสอบสิทธิ์การเข้าถึง
 requireLogin();
 
-// Get current admin information
+// FUNCTION: ดึงข้อมูลผู้ดำเนินการปัจจุบัน
 $current_admin = getCurrentAdmin();
 if (!$current_admin) {
-    // If admin not found in database, logout
     header("Location: controllers/logout.php");
     exit();
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -25,6 +25,9 @@ if (!$current_admin) {
     <link rel="stylesheet" href="sidebar_admin.css">
     
     <style>
+        /* ========================
+           RESET & GENERAL
+           ======================== */
         * {
             margin: 0;
             padding: 0;
@@ -37,6 +40,9 @@ if (!$current_admin) {
             min-height: 100vh;
         }
 
+        /* ========================
+           NAVBAR & SIDEBAR
+           ======================== */
         .navbar-toggle {
             position: fixed;
             top: 20px;
@@ -59,6 +65,69 @@ if (!$current_admin) {
             transform: scale(1.05);
         }
 
+        .sidebar {
+            background: #940606;
+            color: white;
+            width: 260px;
+            min-width: 260px;
+            height: 100%;
+            position: fixed;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar.collapsed {
+            width: 0;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .logo {
+            padding: 30px 20px;
+            text-align: center;
+            border-bottom: 1px solid #940606;
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        nav ul {
+            list-style: none;
+            padding: 20px 0;
+        }
+
+        nav li {
+            margin: 5px 0;
+            transition: all 0.3s ease;
+        }
+
+        nav li a {
+            display: flex;
+            align-items: center;
+            padding: 15px 25px;
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+
+        nav li a i {
+            margin-right: 12px;
+            width: 20px;
+            text-align: center;
+        }
+
+        nav li.active a,
+        nav li a:hover {
+            background: #051A37;
+        }
+
+        /* ========================
+           LAYOUT
+           ======================== */
         .container {
             display: flex;
             min-height: 100vh;
@@ -72,6 +141,9 @@ if (!$current_admin) {
             min-height: 100vh;
         }
 
+        /* ========================
+           HEADER
+           ======================== */
         .header {
             display: flex;
             justify-content: space-between;
@@ -119,19 +191,13 @@ if (!$current_admin) {
             text-decoration: none;
             font-size: 14px;
             white-space: nowrap;
+            font-family: 'Inter';
         }
 
         .print-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
             background: linear-gradient(45deg, #0056b3, #004085);
-        }
-
-        .search-filter {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            flex-wrap: wrap;
         }
 
         .search-container {
@@ -144,8 +210,8 @@ if (!$current_admin) {
             border-radius: 10px;
             border: 2px solid #e9ecef;
             font-size: 14px;
-            transition: all 0.3s ease;
             font-family: 'Inter';
+            transition: all 0.3s ease;
         }
 
         .search-container input[type="text"]:focus {
@@ -160,13 +226,17 @@ if (!$current_admin) {
             top: 50%;
             transform: translateY(-50%);
             color: #666;
+            pointer-events: none;
         }
 
+        /* ========================
+           FILTERS
+           ======================== */
         .filters-section {
             background: white;
             padding: 20px 30px;
             border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
             margin-bottom: 20px;
         }
 
@@ -197,14 +267,62 @@ if (!$current_admin) {
             font-size: 14px;
             min-width: 150px;
             font-family: 'Inter';
+            transition: all 0.3s ease;
+        }
+
+        .filter-group select:hover,
+        .filter-group input:hover {
+            border-color: #990000;
         }
 
         .filter-group select:focus,
         .filter-group input:focus {
             outline: none;
             border-color: #990000;
+            box-shadow: 0 0 0 3px rgba(153, 0, 0, 0.1);
         }
 
+        .btn-filter-search,
+        .btn-filter-reset {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: 'Inter';
+            font-size: 14px;
+            min-height: 36px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-filter-search {
+            background: linear-gradient(45deg, #990000, #cc0000);
+            color: white;
+        }
+
+        .btn-filter-search:hover {
+            background: linear-gradient(45deg, #770000, #990000);
+            box-shadow: 0 4px 12px rgba(153, 0, 0, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .btn-filter-reset {
+            background: linear-gradient(45deg, #6c757d, #868e96);
+            color: white;
+        }
+
+        .btn-filter-reset:hover {
+            background: linear-gradient(45deg, #5a6268, #6c757d);
+            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* ========================
+           STATISTICS CARDS
+           ======================== */
         .stats-row {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -216,7 +334,7 @@ if (!$current_admin) {
             background: white;
             padding: 20px;
             border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
             text-align: center;
             position: relative;
             overflow: hidden;
@@ -254,20 +372,16 @@ if (!$current_admin) {
             font-size: 14px;
         }
 
-        .table-container {
-            background: white;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-        }
-
+        /* ========================
+           LOADING INDICATOR
+           ======================== */
         .loading-container {
             display: none;
             text-align: center;
             padding: 40px;
             background: white;
             border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
             margin-bottom: 20px;
         }
 
@@ -284,6 +398,16 @@ if (!$current_admin) {
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+
+        /* ========================
+           TABLE
+           ======================== */
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
         }
 
         table {
@@ -315,8 +439,11 @@ if (!$current_admin) {
             font-size: 14px;
         }
 
+        tr:hover {
+            background: rgba(153, 0, 0, 0.02);
+        }
+
         .order-id {
-            font-family: 'Inter';
             font-weight: 600;
             color: #007bff;
             font-size: 13px;
@@ -324,6 +451,7 @@ if (!$current_admin) {
             padding: 3px 6px;
             border-radius: 4px;
             display: inline-block;
+            font-family: 'Inter';
         }
 
         .customer-info {
@@ -379,56 +507,12 @@ if (!$current_admin) {
             min-width: fit-content;
         }
 
-        /* Status badge styles */
-        .status-pending-payment { 
-            background: #fff3cd; 
-            color: #856404;
-        }
-        .status-pending-payment::before {
-            content: '💳';
-            font-size: 10px;
-        }
-
-        .status-awaiting-shipment { 
-            background: #e3f2fd; 
-            color: #1976d2;
-        }
-        .status-awaiting-shipment::before {
-            content: '📦';
-            font-size: 10px;
-        }
-
-        .status-in-transit { 
-            background: #fff3e0; 
-            color: #f57c00;
-        }
-        .status-in-transit::before {
-            content: '🚛';
-            font-size: 10px;
-        }
-
-        .status-delivered { 
-            background: #d4edda; 
-            color: #155724;
-        }
-        .status-delivered::before {
-            content: '✅';
-            font-size: 10px;
-        }
-
-        .status-cancelled { 
-            background: #f8d7da; 
-            color: #721c24;
-        }
-        .status-cancelled::before {
-            content: '❌';
-            font-size: 10px;
-        }
-
-        .status-unknown {
-            background: #e9ecef;
-            color: #6c757d;
-        }
+        .status-pending-payment { background: #fff3cd; color: #856404; }
+        .status-awaiting-shipment { background: #e3f2fd; color: #1976d2; }
+        .status-in-transit { background: #fff3e0; color: #f57c00; }
+        .status-delivered { background: #d4edda; color: #155724; }
+        .status-cancelled { background: #f8d7da; color: #721c24; }
+        .status-unknown { background: #e9ecef; color: #6c757d; }
 
         .date-info {
             font-size: 13px;
@@ -445,6 +529,9 @@ if (!$current_admin) {
             min-width: 180px;
         }
 
+        /* ========================
+           ACTION BUTTONS
+           ======================== */
         .actions .btn {
             padding: 6px 8px;
             border: none;
@@ -452,6 +539,7 @@ if (!$current_admin) {
             cursor: pointer;
             font-size: 10px;
             font-weight: 500;
+            font-family: 'Inter';
             transition: all 0.2s ease;
             display: inline-flex;
             align-items: center;
@@ -460,12 +548,11 @@ if (!$current_admin) {
             white-space: nowrap;
             min-height: 28px;
             line-height: 1;
-            font-family: 'Inter';
         }
 
         .actions .btn:hover:not(.btn-disabled) {
             transform: translateY(-1px);
-            box-shadow: 0 3px 8px rgba(0,0,0,0.12);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
         }
 
         .actions .btn i {
@@ -532,73 +619,22 @@ if (!$current_admin) {
             background: #e8680f;
         }
 
-        /* Disabled button styles */
         .btn-disabled {
             opacity: 0.5 !important;
             cursor: not-allowed !important;
             background: #6c757d !important;
             color: white !important;
             pointer-events: none;
-            position: relative;
         }
 
         .btn-disabled:hover {
             transform: none !important;
             box-shadow: none !important;
-            background: #6c757d !important;
         }
 
-        .btn-disabled::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.1);
-            border-radius: inherit;
-        }
-
-        .btn-primary {
-            background: #990000;
-            color: white;
-            padding: 10px 16px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-family: 'Inter';
-        }
-
-        .btn-primary:hover {
-            background: #770000;
-            transform: translateY(-1px);
-        }
-
-        .btn-success {
-            background: #28a745;
-            color: white;
-            padding: 10px 16px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-family: 'Inter';
-        }
-
-        .btn-success:hover {
-            background: #218838;
-            transform: translateY(-1px);
-        }
-
+        /* ========================
+           PAGINATION
+           ======================== */
         .pagination {
             display: flex;
             justify-content: center;
@@ -614,8 +650,8 @@ if (!$current_admin) {
             background: white;
             border-radius: 8px;
             cursor: pointer;
-            transition: all 0.3s ease;
             font-family: 'Inter';
+            transition: all 0.3s ease;
         }
 
         .pagination button:hover:not(:disabled),
@@ -635,7 +671,16 @@ if (!$current_admin) {
             color: #666;
         }
 
-        /* Modal Styles */
+        .results-info {
+            text-align: center;
+            margin-top: 10px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        /* ========================
+           MODALS
+           ======================== */
         .modal {
             display: none;
             position: fixed;
@@ -643,7 +688,7 @@ if (!$current_admin) {
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0, 0, 0, 0.5);
             z-index: 2000;
             overflow-y: auto;
         }
@@ -656,7 +701,8 @@ if (!$current_admin) {
             border-radius: 15px;
             width: 90%;
             max-width: 800px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            font-family: 'Inter';
         }
 
         .modal-header {
@@ -680,6 +726,7 @@ if (!$current_admin) {
             cursor: pointer;
             color: #666;
             transition: color 0.3s ease;
+            padding: 0;
         }
 
         .close-btn:hover {
@@ -746,70 +793,9 @@ if (!$current_admin) {
             font-weight: 600;
         }
 
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            font-size: 14px;
-            font-family: 'Inter';
-            resize: vertical;
-            min-height: 100px;
-        }
-
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #990000;
-        }
-
-        .form-actions {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            margin-top: 20px;
-        }
-
-        .form-actions button {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            font-family: 'Inter';
-        }
-
-        .save-btn {
-            background: #990000;
-            color: white;
-        }
-
-        .save-btn:hover {
-            background: #770000;
-        }
-
-        .cancel-form-btn {
-            background: #6c757d;
-            color: white;
-        }
-
-        .cancel-form-btn:hover {
-            background: #545b62;
-        }
-
+        /* ========================
+           PAYMENT SECTION
+           ======================== */
         .payment-section {
             background: #fff9c4;
             border: 2px solid #f57f17;
@@ -824,26 +810,6 @@ if (!$current_admin) {
             display: flex;
             align-items: center;
             gap: 10px;
-        }
-
-        .bank-info {
-            background: #fff3e0;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border-left: 4px solid #ff9800;
-        }
-
-        .bank-info h4 {
-            color: #e65100;
-            font-size: 16px;
-            margin-bottom: 8px;
-        }
-
-        .bank-name {
-            color: #333;
-            font-size: 18px;
-            font-weight: 600;
         }
 
         .slip-preview {
@@ -861,7 +827,7 @@ if (!$current_admin) {
             max-width: 100%;
             max-height: 400px;
             border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             cursor: pointer;
             transition: transform 0.3s ease;
         }
@@ -884,6 +850,7 @@ if (!$current_admin) {
             gap: 15px;
             justify-content: center;
             margin-top: 20px;
+            flex-wrap: wrap;
         }
 
         .verification-actions button {
@@ -892,11 +859,11 @@ if (!$current_admin) {
             border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
+            font-family: 'Inter';
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
             gap: 8px;
-            font-family: 'Inter';
         }
 
         .approve-payment-btn {
@@ -921,21 +888,125 @@ if (!$current_admin) {
             transform: translateY(-1px);
         }
 
-        /* Enhanced verification actions for payment section */
         .verification-actions .btn-disabled {
-            min-width: 140px;
-            justify-content: center;
-            opacity: 0.4;
+            opacity: 0.4 !important;
             background: #dee2e6 !important;
             color: #6c757d !important;
             border: 1px solid #ced4da;
             cursor: not-allowed;
         }
 
-        .verification-actions .btn-disabled i {
-            color: #adb5bd;
+        /* ========================
+           NOTES MODAL
+           ======================== */
+        .notes-modal {
+            z-index: 2100;
         }
 
+        .notes-modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            font-family: 'Inter';
+        }
+
+        .notes-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .notes-modal-header h3 {
+            color: #333;
+            font-size: 20px;
+            margin: 0;
+        }
+
+        .notes-modal-message {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Inter';
+            resize: vertical;
+            min-height: 100px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #990000;
+            box-shadow: 0 0 0 3px rgba(153, 0, 0, 0.1);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .form-actions button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: 'Inter';
+            transition: all 0.3s ease;
+        }
+
+        .save-btn {
+            background: #990000;
+            color: white;
+        }
+
+        .save-btn:hover {
+            background: #770000;
+            transform: translateY(-1px);
+        }
+
+        .cancel-form-btn {
+            background: #6c757d;
+            color: white;
+        }
+
+        .cancel-form-btn:hover {
+            background: #545b62;
+            transform: translateY(-1px);
+        }
+
+        /* ========================
+           LIGHTBOX
+           ======================== */
         .lightbox {
             display: none;
             position: fixed;
@@ -943,7 +1014,7 @@ if (!$current_admin) {
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.9);
+            background: rgba(0, 0, 0, 0.9);
             z-index: 3000;
             cursor: pointer;
         }
@@ -973,147 +1044,9 @@ if (!$current_admin) {
             opacity: 0.7;
         }
 
-        .sidebar {
-            background: #940606;
-            color: white;
-            width: 260px;
-            min-width: 260px;
-            height: 100%;
-            position: fixed;
-            display: flex;
-            flex-direction: column;
-            transition: all 0.3s ease;
-            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
-        }
-
-        .sidebar.collapsed {
-            width: 0;
-            min-width: 0;
-            overflow: hidden;
-        }
-
-        .logo {
-            padding: 30px 20px;
-            text-align: center;
-            border-bottom: 1px solid #940606;
-            font-size: 18px;
-            font-weight: 600;
-            margin-top: 10px;
-        }
-
-        nav ul {
-            list-style: none;
-            padding: 20px 0;
-        }
-
-        nav li {
-            margin: 5px 0;
-            transition: all 0.3s ease;
-        }
-
-        nav li a {
-            display: flex;
-            align-items: center;
-            padding: 15px 25px;
-            color: white;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            border-left: 4px solid transparent;
-        }
-
-        nav li a i {
-            margin-right: 12px;
-            width: 20px;
-            text-align: center;
-        }
-
-        nav li.active a,
-        nav li a:hover {
-            background: #051A37;
-        }
-
-        .results-info {
-            text-align: center; 
-            margin-top: 10px; 
-            color: #666;
-            font-size: 14px;
-        }
-
-        .btn-filter-search,
-        .btn-filter-reset {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-family: 'Inter';
-            font-size: 14px;
-            min-height: 36px;
-        }
-
-        .btn-filter-search {
-            background: linear-gradient(45deg, #990000, #cc0000);
-            color: white;
-            border: 2px solid #990000;
-        }
-
-        .btn-filter-search:hover {
-            background: linear-gradient(45deg, #770000, #990000);
-            box-shadow: 0 4px 12px rgba(153, 0, 0, 0.3);
-            transform: translateY(-2px);
-        }
-
-        .btn-filter-search:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 6px rgba(153, 0, 0, 0.2);
-        }
-
-        .btn-filter-reset {
-            background: linear-gradient(45deg, #6c757d, #868e96);
-            color: white;
-            border: 2px solid #6c757d;
-        }
-
-        .btn-filter-reset:hover {
-            background: linear-gradient(45deg, #5a6268, #6c757d);
-            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
-            transform: translateY(-2px);
-        }
-
-        .btn-filter-reset:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 6px rgba(108, 117, 125, 0.2);
-        }
-
-        /* Responsive adjustments */
-        @media screen and (max-width: 768px) {
-            .filters-row {
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .filter-group {
-                width: 100%;
-            }
-            
-            .filter-group select,
-            .filter-group input {
-                width: 100%;
-            }
-            
-            .btn-filter-search,
-            .btn-filter-reset {
-                width: 100%;
-                justify-content: center;
-            }
-        }
-
-        /* Notification styles */
+        /* ========================
+           NOTIFICATIONS
+           ======================== */
         .notification {
             position: fixed;
             top: 20px;
@@ -1124,9 +1057,21 @@ if (!$current_admin) {
             font-weight: 600;
             z-index: 3000;
             max-width: 350px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             font-family: 'Inter';
             cursor: pointer;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
 
         .notification.success {
@@ -1146,53 +1091,9 @@ if (!$current_admin) {
             color: #856404;
         }
 
-        /* Notes Modal Styles */
-        .notes-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 2100;
-        }
-
-        .notes-modal-content {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-
-        .notes-modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #e9ecef;
-        }
-
-        .notes-modal-header h3 {
-            color: #333;
-            font-size: 20px;
-            margin: 0;
-        }
-
-        .notes-modal-message {
-            color: #666;
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-
-        /* Responsive Design */
+        /* ========================
+           RESPONSIVE DESIGN
+           ======================== */
         @media screen and (max-width: 1200px) {
             .actions {
                 width: auto;
@@ -1202,10 +1103,15 @@ if (!$current_admin) {
             .actions .btn {
                 min-width: 35px;
                 padding: 4px 6px;
+                font-size: 9px;
             }
         }
 
         @media screen and (max-width: 768px) {
+            .navbar-toggle {
+                display: block;
+            }
+
             .main-content {
                 margin-left: 0 !important;
                 padding: 80px 15px 30px 15px !important;
@@ -1217,23 +1123,66 @@ if (!$current_admin) {
                 align-items: stretch;
             }
             
+            .header h1 {
+                font-size: 20px;
+            }
+            
             .search-container input[type="text"] {
                 width: 100%;
+            }
+
+            .filters-row {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .filter-group select,
+            .filter-group input {
+                width: 100%;
+                min-width: 100%;
+            }
+
+            .btn-filter-search,
+            .btn-filter-reset {
+                width: 100%;
+                justify-content: center;
             }
             
             .order-details {
                 grid-template-columns: 1fr;
             }
+
+            .modal-content {
+                width: 95%;
+                margin: 100px auto;
+                padding: 20px;
+            }
+
+            .stats-row {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            table th, table td {
+                padding: 8px 4px;
+                font-size: 12px;
+            }
+
+            .actions {
+                width: 100%;
+            }
         }
 
-        /* Print Styles */
+        /* ========================
+           PRINT STYLES
+           ======================== */
         @media print {
             .sidebar,
             .navbar-toggle,
-            .search-filter,
             .filters-section,
             .pagination,
-            .actions {
+            .actions,
+            .header {
                 display: none !important;
             }
 
@@ -1242,7 +1191,7 @@ if (!$current_admin) {
                 padding: 0 !important;
             }
 
-            .header {
+            .table-container {
                 box-shadow: none !important;
             }
         }
@@ -1250,18 +1199,29 @@ if (!$current_admin) {
 </head>
 
 <body>
+    <!-- ========================
+         NAVBAR TOGGLE BUTTON
+         ======================== -->
     <div class="navbar-toggle" onclick="toggleSidebar()">
         <i class="fas fa-bars"></i>
     </div>
 
+    <!-- ========================
+         MAIN CONTAINER
+         ======================== -->
     <div class="container">
+        <!-- Include Sidebar -->
         <?php include 'sidebar_admin.php'; ?>
 
+        <!-- Main Content Area -->
         <main class="main-content">
+            <!-- ========================
+                 HEADER
+                 ======================== -->
             <div class="header">
                 <div>
                     <h1>
-                        <i class="fas fa-shopping-cart" aria-hidden="true"></i> 
+                        <i class="fas fa-shopping-cart"></i> 
                         จัดการคำสั่งซื้อ
                         <div class="role-indicator">
                             <i class="fas fa-user-shield"></i>
@@ -1269,24 +1229,28 @@ if (!$current_admin) {
                         </div>
                     </h1>
                 </div>
-                <button class="print-btn" onclick="window.location.href='printorders_admin.php'">
-                        <i class="fas fa-print"></i> พิมพ์รายละเอียดคำสั่งซื้อ
-                    </button>
-                <div class="search-filter">
-                    <div class="search-container">
-                        <input type="text" id="searchInput" placeholder="ค้นหารหัสคำสั่งซื้อ, ชื่อลูกค้า..." autocomplete="off">
-                        <i class="fas fa-search" aria-hidden="true"></i>
-                    </div>
+                <!-- Search Bar -->
+                <div class="search-container">
+                    <input type="text" id="searchInput" placeholder="ค้นหารหัสคำสั่งซื้อ, ชื่อลูกค้า..." autocomplete="off">
+                    <i class="fas fa-search"></i>
                 </div>
+
+                <button class="print-btn" onclick="window.location.href='printorders_admin.php'">
+                    <i class="fas fa-print"></i> พิมพ์รายละเอียดคำสั่งซื้อ
+                </button>
             </div>
 
-            <!-- Loading Indicator -->
-            <div class="loading-container" id="loadingIndicator" aria-live="polite">
-                <div class="loading-spinner" role="status" aria-label="Loading"></div>
+            <!-- ========================
+                 LOADING INDICATOR
+                 ======================== -->
+            <div class="loading-container" id="loadingIndicator">
+                <div class="loading-spinner"></div>
                 <div>กำลังโหลดข้อมูล...</div>
             </div>
 
-            <!-- Statistics Cards -->
+            <!-- ========================
+                 STATISTICS CARDS
+                 ======================== -->
             <div class="stats-row">
                 <div class="stat-card pending-payment">
                     <div class="stat-number" id="pendingPaymentOrders">0</div>
@@ -1298,11 +1262,11 @@ if (!$current_admin) {
                 </div>
                 <div class="stat-card in-transit">
                     <div class="stat-number" id="inTransitOrders">0</div>
-                    <div class="stat-label">กำลังจัดส่ง</div>
+                    <div class="stat-label">อยู่ระหว่างการจัดส่ง</div>
                 </div>
                 <div class="stat-card delivered">
                     <div class="stat-number" id="deliveredOrders">0</div>
-                    <div class="stat-label">จัดส่งแล้ว</div>
+                    <div class="stat-label">จัดส่งสำเร็จ</div>
                 </div>
                 <div class="stat-card cancelled">
                     <div class="stat-number" id="cancelledOrders">0</div>
@@ -1310,17 +1274,19 @@ if (!$current_admin) {
                 </div>
             </div>
 
-            <!-- Filters Section -->
+            <!-- ========================
+                 FILTERS SECTION
+                 ======================== -->
             <div class="filters-section">
                 <div class="filters-row">
                     <div class="filter-group">
                         <label for="statusFilter">สถานะ</label>
                         <select id="statusFilter">
                             <option value="">ทั้งหมด</option>
-                            <option value="pending_payment">รอการชำระเงิน</option>
+                            <option value="pending_payment">รอตรวจสอบการการชำระเงิน</option>
                             <option value="awaiting_shipment">รอจัดส่ง</option>
-                            <option value="in_transit">กำลังจัดส่ง</option>
-                            <option value="delivered">จัดส่งแล้ว</option>
+                            <option value="in_transit">อยู่ระหว่างการจัดส่ง</option>
+                            <option value="delivered">จัดส่งสำเร็จ</option>
                             <option value="cancelled">ยกเลิก</option>
                         </select>
                     </div>
@@ -1343,7 +1309,9 @@ if (!$current_admin) {
                 </div>
             </div>
 
-            <!-- Orders Table -->
+            <!-- ========================
+                 ORDERS TABLE
+                 ======================== -->
             <div class="table-container">
                 <table id="ordersTable">
                     <thead>
@@ -1367,17 +1335,21 @@ if (!$current_admin) {
                 </table>
             </div>
 
-            <!-- Pagination -->
+            <!-- ========================
+                 PAGINATION
+                 ======================== -->
             <div class="pagination" id="pagination" role="navigation" aria-label="Pagination">
                 <!-- Pagination buttons will be inserted here -->
             </div>
 
             <!-- Results Info -->
-            <div id="resultsInfo" class="results-info" aria-live="polite"></div>
+            <div id="resultsInfo" class="results-info"></div>
         </main>
     </div>
 
-    <!-- Order Details Modal -->
+    <!-- ========================
+         ORDER DETAILS MODAL
+         ======================== -->
     <div id="orderDetailsModal" class="modal" role="dialog" aria-labelledby="orderDetailsTitle" aria-hidden="true">
         <div class="modal-content" role="document">
             <div class="modal-header">
@@ -1387,7 +1359,7 @@ if (!$current_admin) {
             
             <div class="order-details">
                 <div class="detail-section">
-                    <h3><i class="fas fa-user" aria-hidden="true"></i> ข้อมูลลูกค้า</h3>
+                    <h3><i class="fas fa-user"></i> ข้อมูลลูกค้า</h3>
                     <div class="detail-row">
                         <span class="detail-label">ชื่อ:</span>
                         <span class="detail-value" id="detailCustomerName">-</span>
@@ -1407,7 +1379,7 @@ if (!$current_admin) {
                 </div>
                 
                 <div class="detail-section">
-                    <h3><i class="fas fa-shopping-cart" aria-hidden="true"></i> ข้อมูลคำสั่งซื้อ</h3>
+                    <h3><i class="fas fa-shopping-cart"></i> ข้อมูลคำสั่งซื้อ</h3>
                     <div class="detail-row">
                         <span class="detail-label">รหัสคำสั่งซื้อ:</span>
                         <span class="detail-value" id="detailOrderId">-</span>
@@ -1427,10 +1399,12 @@ if (!$current_admin) {
                 </div>
             </div>
 
-            <!-- Payment Verification Section -->
+            <!-- ========================
+                 PAYMENT VERIFICATION
+                 ======================== -->
             <div id="paymentSection" class="payment-section" style="display: none;">
                 <h3>
-                    <i class="fas fa-credit-card" aria-hidden="true"></i>
+                    <i class="fas fa-credit-card"></i>
                     การตรวจสอบสลิปโอนเงิน
                 </h3>
             
@@ -1438,19 +1412,21 @@ if (!$current_admin) {
                     <h4>รูปภาพสลิปการโอนเงิน</h4>
                     <img id="paymentSlip" class="slip-image" src="" alt="Payment Slip" onclick="openLightbox(this.src)" style="display: none;">
                     <div id="noSlipMessage" class="no-slip-message" style="display: none;">
-                        <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+                        <i class="fas fa-exclamation-triangle"></i>
                         ลูกค้ายังไม่ได้แนบรูปสลิป
                     </div>
                 </div>
 
                 <div class="verification-actions">
-                    <!-- Actions will be populated by JavaScript based on permissions -->
+                    <!-- Actions will be populated by JavaScript -->
                 </div>
             </div>
 
-            <!-- Order Items Section -->
+            <!-- ========================
+                 ORDER ITEMS TABLE
+                 ======================== -->
             <div class="detail-section">
-                <h3><i class="fas fa-list" aria-hidden="true"></i> รายการสินค้า</h3>
+                <h3><i class="fas fa-list"></i> รายการสินค้า</h3>
                 <table class="items-table">
                     <thead>
                         <tr>
@@ -1476,11 +1452,13 @@ if (!$current_admin) {
         </div>
     </div>
 
-    <!-- Notes Modal -->
+    <!-- ========================
+         NOTES MODAL
+         ======================== -->
     <div id="notesModal" class="modal notes-modal" role="dialog" aria-labelledby="notesModalTitle" aria-hidden="true">
         <div class="notes-modal-content" role="document">
             <div class="notes-modal-header">
-                <h3 id="notesModalTitle">กรอกหมายเหตุ</h3>
+                <h3 id="notesModalTitle">เพิ่มหมายเหตุ</h3>
                 <button class="close-btn" onclick="closeNotesModal()" type="button" aria-label="Close">&times;</button>
             </div>
             
@@ -1500,13 +1478,17 @@ if (!$current_admin) {
         </div>
     </div>
 
-    <!-- Image Lightbox -->
-    <div id="lightbox" class="lightbox" onclick="closeLightbox()" role="dialog" aria-labelledby="lightboxTitle" aria-hidden="true">
+    <!-- ========================
+         IMAGE LIGHTBOX
+         ======================== -->
+    <div id="lightbox" class="lightbox" onclick="closeLightbox()" role="dialog" aria-hidden="true">
         <span class="close" onclick="closeLightbox()" aria-label="Close">&times;</span>
         <img id="lightboxImage" src="" alt="Payment Slip" loading="lazy">
     </div>
 
-    <!-- JavaScript -->
+    <!-- ========================
+         SCRIPTS
+         ======================== -->
     <script src="sidebar_admin.js"></script>
     <script src="orders_admin.js?v=<?php echo time(); ?>"></script>
 </body>

@@ -242,7 +242,7 @@ if (!$current_admin) {
         }
 
         .chart-canvas {
-            max-height: 300px;
+            max-height: 400px;
         }
 
         .activity-list,

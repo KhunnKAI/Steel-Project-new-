@@ -4,6 +4,11 @@
 // ========================
 
 // ========================
+// TIMEZONE CONFIGURATION
+// ========================
+date_default_timezone_set('Asia/Bangkok'); // เวลาไทย (UTC+7)
+
+// ========================
 // SESSION CONFIGURATION
 // ========================
 ini_set('session.gc_maxlifetime', 14400); // 4 hours = 14400 seconds
@@ -32,6 +37,9 @@ try {
     );
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+    
+// ตั้ง timezone เป็นเวลาไทย (UTC+7)
+    $pdo->exec("SET time_zone = '+07:00'");
 } catch (PDOException $e) {
     die("Connection failed: " . $e->getMessage());
 }

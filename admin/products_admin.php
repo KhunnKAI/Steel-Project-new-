@@ -1,26 +1,30 @@
 <?php
-// Remove session_start() from here since config.php handles it properly
+// ========================
+// PRODUCTS ADMIN PAGE
+// ========================
+
+// ========================
+// SECURITY & AUTHENTICATION
+// ========================
+
+// FUNCTION: โหลดไฟล์กำหนดค่าและตรวจสอบการเข้าสู่ระบบ
 require_once 'controllers/config.php';
 
-
-// Require login to access this page
+// FUNCTION: บังคับให้ผู้ใช้เข้าสู่ระบบ
 requireLogin();
 
-// Get current admin information
+// FUNCTION: ดึงข้อมูลผู้ดูแลระบบปัจจุบัน
 $current_admin = getCurrentAdmin();
 if (!$current_admin) {
-    // If admin not found in database, logout
     header("Location: controllers/logout.php");
     exit();
 }
 
+// FUNCTION: ตรวจสอบสิทธิ์การเข้าถึง
 $allowed_roles = ['manager', 'super', 'sales', 'warehouse'];
 
 if (!isset($current_admin['position']) || !in_array($current_admin['position'], $allowed_roles)) {
-    // Set error message
     $_SESSION['error'] = "คุณไม่มีสิทธิ์เข้าถึงหน้านี้";
-    
-    // Redirect to access denied page
     header("Location: accessdenied_admin.html");
     exit();
 }
@@ -39,6 +43,9 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
     <link rel="stylesheet" href="sidebar_admin.css">
 
     <style>
+        /* ======================== */
+        /* BASE STYLES              */
+        /* ======================== */
         * {
             margin: 0;
             padding: 0;
@@ -51,6 +58,9 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             min-height: 100vh;
         }
 
+        /* ======================== */
+        /* LAYOUT                   */
+        /* ======================== */
         .navbar-toggle {
             position: fixed;
             top: 20px;
@@ -85,6 +95,9 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             min-height: 100vh;
         }
 
+        /* ======================== */
+        /* HEADER                   */
+        /* ======================== */
         .header {
             display: flex;
             justify-content: space-between;
@@ -102,12 +115,15 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             font-weight: 600;
         }
 
-        .search-add {
+        .add-stockmovement {
             display: flex;
             gap: 15px;
             align-items: center;
         }
 
+        /* ======================== */
+        /* SEARCH                   */
+        /* ======================== */
         .search-container {
             position: relative;
         }
@@ -135,9 +151,15 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             color: #666;
         }
 
-        .add-btn {
+        /* ======================== */
+        /* BUTTONS                  */
+        /* ======================== */
+        .add-btn,
+        .stockmovement-btn,
+        .clear-dates-btn,
+        .reset-all-btn,
+        .search-filter-btn {
             padding: 12px 24px;
-            background: linear-gradient(45deg, #990000, #cc0000);
             color: white;
             border: none;
             border-radius: 10px;
@@ -147,6 +169,13 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             align-items: center;
             gap: 8px;
             transition: all 0.3s ease;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .add-btn {
+            background: linear-gradient(45deg, #990000, #cc0000);
         }
 
         .add-btn:hover {
@@ -155,19 +184,8 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
         }
 
         .stockmovement-btn {
-            padding: 12px 24px;
             background: linear-gradient(45deg, #007bff, #0056b3);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
             text-decoration: none;
-            font-size: 14px;
             white-space: nowrap;
         }
 
@@ -177,6 +195,77 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             background: linear-gradient(45deg, #0056b3, #004085);
         }
 
+        .clear-dates-btn {
+            background: linear-gradient(45deg, #6c757d, #495057);
+            height: fit-content;
+            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+        }
+
+        .clear-dates-btn:hover {
+            background: linear-gradient(45deg, #5a6268, #343a40);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+        }
+
+        .reset-all-btn {
+            background: linear-gradient(45deg, #dc3545, #c82333);
+            width: 100%;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+        }
+
+        .reset-all-btn:hover {
+            background: linear-gradient(45deg, #c82333, #bd2130);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+        }
+
+        .search-filter-btn {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            flex: 1;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        .search-filter-btn:hover {
+            background: linear-gradient(45deg, #20c997, #17a2b8);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+
+        /* ======================== */
+        /* STATISTICS CARDS         */
+        /* ======================== */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        /* ======================== */
+        /* FILTERS SECTION          */
+        /* ======================== */
         .filters-section {
             background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
             padding: 25px 30px;
@@ -252,7 +341,6 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             background: white;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            position: relative;
         }
 
         .filter-group select:hover,
@@ -304,108 +392,11 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             font-weight: 600;
         }
 
-        .clear-dates-btn {
-            padding: 12px 18px;
-            background: linear-gradient(45deg, #6c757d, #495057);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 600;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            height: fit-content;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .clear-dates-btn:hover {
-            background: linear-gradient(45deg, #5a6268, #343a40);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
-        }
-
         .filter-all {
             grid-column: span 1;
             display: flex;
             gap: 10px;
             align-self: end;
-        }
-
-        .reset-all-btn {
-            padding: 12px 20px;
-            background: linear-gradient(45deg, #dc3545, #c82333);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 600;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            width: 100%;
-            justify-content: center;
-        }
-
-        .reset-all-btn:hover {
-            background: linear-gradient(45deg, #c82333, #bd2130);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
-        }
-
-        .search-filter-btn {
-        padding: 12px 20px;
-        background: linear-gradient(45deg, #28a745, #20c997);
-        color: white;
-        border: none;
-        border-radius: 12px;
-        cursor: pointer;
-        font-size: 13px;
-        font-weight: 600;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        flex: 1;
-        justify-content: center;
-    }
-
-    .search-filter-btn:hover {
-        background: linear-gradient(45deg, #20c997, #17a2b8);
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
-    }
-
-        @keyframes pulse {
-            0% {
-                opacity: 1;
-                transform: scale(1);
-                box-shadow: 0 0 10px rgba(153, 0, 0, 0.5);
-            }
-
-            50% {
-                opacity: 0.7;
-                transform: scale(1.1);
-                box-shadow: 0 0 20px rgba(153, 0, 0, 0.8);
-            }
-
-            100% {
-                opacity: 1;
-                transform: scale(1);
-                box-shadow: 0 0 10px rgba(153, 0, 0, 0.5);
-            }
         }
 
         .filter-count-badge {
@@ -425,26 +416,15 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
         }
 
         @keyframes bounceIn {
-            0% {
-                opacity: 0;
-                transform: scale(0.3);
-            }
-
-            50% {
-                opacity: 1;
-                transform: scale(1.05);
-            }
-
-            70% {
-                transform: scale(0.9);
-            }
-
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
+            0% { opacity: 0; transform: scale(0.3); }
+            50% { opacity: 1; transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1); }
         }
 
+        /* ======================== */
+        /* TABLE STYLES             */
+        /* ======================== */
         .table-container {
             background: white;
             border-radius: 15px;
@@ -477,6 +457,9 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             color: #555;
         }
 
+        /* ======================== */
+        /* PRODUCT INFO CELLS       */
+        /* ======================== */
         .product-info {
             display: flex;
             gap: 15px;
@@ -543,18 +526,11 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             color: #666;
         }
 
-        .product-dimensions {
-            font-size: 10px;
-            color: #007bff;
-            background: #f0f8ff;
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin-top: 4px;
-            display: inline-block;
-        }
-
+        /* ======================== */
+        /* BADGES & STATUS          */
+        /* ======================== */
         .product-code {
-            font-family: 'Courier New', monospace;
+            font-family: 'Inter';
             font-weight: 600;
             color: #007bff;
             font-size: 10px;
@@ -574,6 +550,24 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             display: inline-block;
         }
 
+        .category-badge {
+            padding: 8px 16px;
+            border-radius: 15px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .category-badge[data-category="rebar"] { background: #e74c3c; color: white; }
+        .category-badge[data-category="steelplate"] { background: #34495e; color: white; }
+        .category-badge[data-category="structuralsteel"] { background: #f39c12; color: white; }
+        .category-badge[data-category="wiremesh"] { background: #27ae60; color: white; }
+        .category-badge[data-category="steelproducts"] { background: #8e44ad; color: white; }
+
+        /* ======================== */
+        /* STOCK & PRICE INFO       */
+        /* ======================== */
         .stock-info {
             display: flex;
             flex-direction: column;
@@ -593,34 +587,17 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             font-weight: 600;
         }
 
-        .stock-status.high {
-            background: #d4edda;
-            color: #155724;
-        }
+        .stock-status.high { background: #d4edda; color: #155724; }
+        .stock-status.medium { background: #fff3cd; color: #856404; }
+        .stock-status.low { background: #f8d7da; color: #721c24; }
 
-        .stock-status.medium {
-            background: #fff3cd;
-            color: #856404;
-        }
+        .price-info { font-weight: 500; color: #000000ff; }
+        .date-info { font-size: 10px; color: #666; }
+        .supplier-info { font-size: 10px; color: #333; font-weight: 500; max-width: 200px; word-wrap: break-word; }
 
-        .stock-status.low {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .date-info {
-            font-size: 10px;
-            color: #666;
-        }
-
-        .supplier-info {
-            font-size: 10px;
-            color: #333;
-            font-weight: 500;
-            max-width: 200px;
-            word-wrap: break-word;
-        }
-
+        /* ======================== */
+        /* ACTION BUTTONS           */
+        /* ======================== */
         .actions {
             display: flex;
             gap: 8px;
@@ -642,33 +619,18 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             transform: translateY(-2px);
         }
 
-        .edit-btn {
-            background: linear-gradient(45deg, #ffc107, #ffb300);
-            color: white;
-        }
+        .view-btn { background: linear-gradient(45deg, #28a745, #20c997); color: white; }
+        .view-btn:hover { box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4); }
 
-        .edit-btn:hover {
-            box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
-        }
+        .edit-btn { background: linear-gradient(45deg, #ffc107, #ffb300); color: white; }
+        .edit-btn:hover { box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4); }
 
-        .delete-btn {
-            background: linear-gradient(45deg, #dc3545, #c82333);
-            color: white;
-        }
+        .delete-btn { background: linear-gradient(45deg, #dc3545, #c82333); color: white; }
+        .delete-btn:hover { box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4); }
 
-        .delete-btn:hover {
-            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
-        }
-
-        .view-btn {
-            background: linear-gradient(45deg, #28a745, #20c997);
-            color: white;
-        }
-
-        .view-btn:hover {
-            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
-        }
-
+        /* ======================== */
+        /* PAGINATION               */
+        /* ======================== */
         .pagination {
             display: flex;
             justify-content: center;
@@ -694,34 +656,9 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             border-color: #990000;
         }
 
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
-            text-align: center;
-        }
-
-        .stat-number {
-            font-size: 24px;
-            font-weight: 700;
-            color: #333;
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
-            color: #666;
-            font-size: 14px;
-        }
-
-        /* Modal Styles */
+        /* ======================== */
+        /* MODAL STYLES             */
+        /* ======================== */
         .modal {
             display: none;
             position: fixed;
@@ -787,308 +724,9 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             color: #333;
         }
 
-        /* Product View Modal Specific Styles */
-        .product-view-modal {
-            max-width: 1000px;
-        }
-
-        .product-view-content {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .product-view-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            border-left: 4px solid #990000;
-        }
-
-        .product-view-code {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-family: 'Courier New', monospace;
-            font-size: 18px;
-            font-weight: 700;
-            color: #333;
-        }
-
-        .product-view-code i {
-            color: #990000;
-            font-size: 20px;
-        }
-
-        .category-badge {
-            padding: 8px 16px;
-            border-radius: 15px;
-            font-size: 10px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .category-badge[data-category="rebar"] {
-            background: #e74c3c;
-            color: white;
-        }
-
-        .category-badge[data-category="steelplate"] {
-            background: #34495e;
-            color: white;
-        }
-
-        .category-badge[data-category="structuralsteel"] {
-            background: #f39c12;
-            color: white;
-        }
-
-        .category-badge[data-category="wiremesh"] {
-            background: #27ae60;
-            color: white;
-        }
-
-        .category-badge[data-category="steelproducts"] {
-            background: #8e44ad;
-            color: white;
-        }
-
-        .product-view-main {
-            display: grid;
-            grid-template-columns: 1fr 1.5fr;
-            gap: 25px;
-            align-items: start;
-        }
-
-        /* Simplified Images Section */
-        .product-view-images {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 15px;
-        }
-
-        .main-image-container {
-            width: 100%;
-            height: 250px;
-            border-radius: 8px;
-            overflow: hidden;
-            background: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            margin-bottom: 15px;
-            border: 1px solid #e9ecef;
-        }
-
-        .main-image-container img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            cursor: pointer;
-        }
-
-        .main-image-container .no-image-placeholder {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            color: #999;
-            font-size: 14px;
-        }
-
-        .main-image-container .no-image-placeholder i {
-            font-size: 32px;
-        }
-
-        .thumbnail-gallery {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
-            gap: 8px;
-            max-height: 150px;
-            overflow-y: auto;
-        }
-
-        .thumbnail {
-            width: 50px;
-            height: 50px;
-            border-radius: 6px;
-            overflow: hidden;
-            cursor: pointer;
-            border: 2px solid #e9ecef;
-            background: white;
-        }
-
-        .thumbnail.active {
-            border-color: #990000;
-        }
-
-        .thumbnail img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        /* Simplified Product Details */
-        .product-view-details {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .product-view-details h3 {
-            font-size: 24px;
-            color: #333;
-            font-weight: 700;
-            line-height: 1.3;
-            margin-bottom: 5px;
-        }
-
-        .product-description-text {
-            font-size: 15px;
-            color: #666;
-            line-height: 1.5;
-            background: #f8f9fa;
-            padding: 12px;
-            border-radius: 8px;
-            border-left: 3px solid #990000;
-        }
-
-        .product-view-specs {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 12px;
-        }
-
-        .spec-item {
-            background: white;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            padding: 12px;
-        }
-
-        .spec-item label {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            color: #666;
-            margin-bottom: 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .spec-item label i {
-            color: #990000;
-            width: 16px;
-            text-align: center;
-        }
-
-        .spec-item span {
-            font-size: 16px;
-            font-weight: 700;
-            color: #333;
-            display: block;
-        }
-
-        .lot-value {
-            background: #007bff;
-            color: white;
-            padding: 6px 12px;
-            border-radius: 15px;
-            font-size: 10px !important;
-            font-weight: 600 !important;
-            display: inline-block !important;
-        }
-
-        .stock-value {
-            color: #28a745;
-        }
-
-        .price-value {
-            color: #990000;
-        }
-
-        .date-value {
-            color: #6c757d;
-        }
-
-        .supplier-value {
-            color: #333;
-            font-weight: 600;
-        }
-
-        /* Simplified Dimensions Section */
-        .product-view-dimensions {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
-            border: 1px solid #e9ecef;
-        }
-
-        .product-view-dimensions h4 {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 16px;
-            color: #333;
-            margin-bottom: 15px;
-            font-weight: 600;
-        }
-
-        .product-view-dimensions h4 i {
-            color: #990000;
-            font-size: 18px;
-        }
-
-        .dimensions-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 12px;
-        }
-
-        .dimension-item {
-            background: white;
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid #e9ecef;
-            text-align: center;
-        }
-
-        .dimension-item .dimension-label {
-            font-size: 11px;
-            color: #666;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 6px;
-        }
-
-        .dimension-item .dimension-value {
-            font-size: 16px;
-            font-weight: 700;
-            color: #333;
-        }
-
-        .dimension-item .dimension-unit {
-            font-size: 12px;
-            color: #999;
-            margin-left: 3px;
-        }
-
-        .product-view-actions {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            padding-top: 20px;
-            border-top: 2px solid #f0f0f0;
-        }
-
+        /* ======================== */
+        /* FORM STYLES              */
+        /* ======================== */
         .form-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -1128,7 +766,26 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             border-color: #990000;
         }
 
-        /* Image Upload Section */
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .form-actions button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .save-btn { background: #990000; color: white; }
+        .cancel-btn { background: #6c757d; color: white; }
+
+        /* ======================== */
+        /* IMAGE UPLOAD SECTION     */
+        /* ======================== */
         .images-section {
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
             padding: 25px;
@@ -1228,6 +885,9 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             box-shadow: 0 5px 15px rgba(153, 0, 0, 0.3);
         }
 
+        /* ======================== */
+        /* IMAGE PREVIEW             */
+        /* ======================== */
         .image-preview-container {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -1262,6 +922,21 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             object-fit: cover;
         }
 
+        .main-image-indicator {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: linear-gradient(45deg, #ffc107, #ffb300);
+            color: white;
+            font-size: 10px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
         .image-preview-overlay {
             position: absolute;
             top: 0;
@@ -1294,43 +969,16 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             transition: all 0.3s ease;
         }
 
-        .preview-view-btn {
-            background: #007bff;
-            color: white;
-        }
-
-        .preview-delete-btn {
-            background: #dc3545;
-            color: white;
-        }
+        .preview-view-btn { background: #007bff; color: white; }
+        .preview-delete-btn { background: #dc3545; color: white; }
 
         .preview-action-btn:hover {
             transform: scale(1.1);
         }
 
-        .main-image-indicator {
-            position: absolute;
-            top: 8px;
-            left: 8px;
-            background: linear-gradient(45deg, #ffc107, #ffb300);
-            color: white;
-            font-size: 10px;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .image-loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #999;
-        }
-
+        /* ======================== */
+        /* DIMENSIONS SECTION       */
+        /* ======================== */
         .dimensions-section {
             background: #f8f9fa;
             padding: 20px;
@@ -1354,31 +1002,256 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             margin-bottom: 10px;
         }
 
-        .form-actions {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
+        /* ======================== */
+        /* PRODUCT VIEW MODAL       */
+        /* ======================== */
+        .product-view-modal {
+            max-width: 1000px;
         }
 
-        .form-actions button {
-            padding: 12px 24px;
-            border: none;
+        .product-view-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .product-view-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #990000;
+        }
+
+        .product-view-code {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Inter';
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .product-view-code i {
+            color: #990000;
+            font-size: 20px;
+        }
+
+        .product-view-main {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 25px;
+            align-items: start;
+        }
+
+        .product-view-images {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .main-image-container {
+            width: 100%;
+            height: 250px;
             border-radius: 8px;
+            overflow: hidden;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+            border: 1px solid #e9ecef;
+        }
+
+        .main-image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
             cursor: pointer;
+        }
+
+        .main-image-container .no-image-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            color: #999;
+            font-size: 14px;
+        }
+
+        .main-image-container .no-image-placeholder i {
+            font-size: 32px;
+        }
+
+        .thumbnail-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+            gap: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .thumbnail {
+            width: 50px;
+            height: 50px;
+            border-radius: 6px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid #e9ecef;
+            background: white;
+        }
+
+        .thumbnail.active {
+            border-color: #990000;
+        }
+
+        .thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .product-view-details {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .product-view-details h3 {
+            font-size: 24px;
+            color: #333;
+            font-weight: 700;
+            line-height: 1.3;
+            margin-bottom: 5px;
+        }
+
+        .product-description-text {
+            font-size: 15px;
+            color: #666;
+            line-height: 1.5;
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 3px solid #990000;
+        }
+
+        .product-view-specs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .spec-item {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .spec-item label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .spec-item label i {
+            color: #990000;
+            width: 16px;
+            text-align: center;
+        }
+
+        .spec-item span {
+            font-size: 16px;
+            font-weight: 700;
+            color: #333;
+            display: block;
+        }
+
+        .lot-value {
+            background: #007bff;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 10px !important;
+            font-weight: 600 !important;
+            display: inline-block !important;
+        }
+
+        .stock-value { color: #28a745; }
+        .price-value { color: #990000; }
+        .date-value { color: #6c757d; }
+        .supplier-value { color: #333; font-weight: 600; }
+
+        .product-view-dimensions {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+        }
+
+        .product-view-dimensions h4 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 15px;
             font-weight: 600;
         }
 
-        .save-btn {
-            background: #990000;
-            color: white;
+        .product-view-dimensions h4 i {
+            color: #990000;
+            font-size: 18px;
         }
 
-        .cancel-btn {
-            background: #6c757d;
-            color: white;
+        .dimensions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
         }
 
-        /* Image Gallery Modal */
+        .dimension-item {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            text-align: center;
+        }
+
+        .dimension-item .dimension-label {
+            font-size: 11px;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .dimension-item .dimension-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .dimension-item .dimension-unit {
+            font-size: 12px;
+            color: #999;
+            margin-left: 3px;
+        }
+
+        /* ======================== */
+        /* IMAGE GALLERY MODAL      */
+        /* ======================== */
         .image-gallery-modal {
             display: none;
             position: fixed;
@@ -1462,6 +1335,9 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             font-size: 14px;
         }
 
+        /* ======================== */
+        /* RESPONSIVE DESIGN        */
+        /* ======================== */
         @media screen and (max-width: 768px) {
             .navbar-toggle {
                 display: block;
@@ -1472,11 +1348,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                 margin-left: 0;
             }
 
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .content-grid {
+            .stats-row {
                 grid-template-columns: 1fr;
             }
 
@@ -1486,38 +1358,58 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                 text-align: center;
             }
 
-            .orders-table {
+            .search-container input[type="text"] {
+                width: 100%;
+            }
+
+            table {
                 font-size: 14px;
             }
 
-            .orders-table th,
-            .orders-table td {
+            th,
+            td {
                 padding: 10px 8px;
             }
         }
 
         @media screen and (max-width: 480px) {
-
-            .orders-table th,
-            .orders-table td {
+            th,
+            td {
                 padding: 8px 4px;
+            }
+
+            .stat-card {
+                padding: 15px;
+            }
+
+            .stat-number {
+                font-size: 18px;
             }
         }
     </style>
 </head>
 
 <body>
+    <!-- ======================== -->
+    <!-- NAVBAR TOGGLE BUTTON     -->
+    <!-- ======================== -->
     <div class="navbar-toggle" onclick="toggleSidebar()">
         <i class="fas fa-bars"></i>
     </div>
 
+    <!-- ======================== -->
+    <!-- MAIN CONTAINER           -->
+    <!-- ======================== -->
     <div class="container">
+        <!-- SIDEBAR -->
         <?php include 'sidebar_admin.php'; ?>
 
+        <!-- MAIN CONTENT -->
         <main class="main-content">
+            <!-- HEADER -->
             <div class="header">
                 <h1><i class="fas fa-box"></i> จัดการสินค้า</h1>
-                <div class="search-add">
+                <div class="add-stockmovement">
                     <div class="search-container">
                         <input type="text" id="searchInput" placeholder="ค้นหาชื่อสินค้า, ล็อต หรือรหัสสินค้า...">
                         <i class="fas fa-search"></i>
@@ -1531,6 +1423,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                 </div>
             </div>
 
+            <!-- STATISTICS CARDS -->
             <div class="stats-row">
                 <div class="stat-card">
                     <div class="stat-number" id="totalProducts">0</div>
@@ -1546,6 +1439,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                 </div>
             </div>
 
+            <!-- FILTERS SECTION -->
             <div class="filters-section">
                 <div class="filters-header">
                     <i class="fas fa-filter"></i>
@@ -1561,7 +1455,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                             <option value="steelplate">เหล็กแผ่น</option>
                             <option value="structuralsteel">เหล็กรูปพรรณ</option>
                             <option value="wiremesh">เหล็กตะแกรง/ตาข่าย</option>
-                            <option value="steelproducts">อื่น ๆ</option>
+                            <option value="steelproducts">อื่นๆ</option>
                         </select>
                     </div>
                     <div class="filter-group">
@@ -1577,7 +1471,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                         <label><i class="fas fa-sort"></i> เรียงตาม</label>
                         <select id="sortFilter">
                             <option value="name">ชื่อสินค้า</option>
-                            <option value="stock">จำนวนคงเหลือ</option>
+                            <option value="stock">จำนวนเหลือ</option>
                             <option value="lot">ล็อต</option>
                             <option value="receivedDate_desc">วันที่รับเข้า (ใหม่-เก่า)</option>
                             <option value="receivedDate_asc">วันที่รับเข้า (เก่า-ใหม่)</option>
@@ -1594,14 +1488,12 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                             <input type="date" id="endDateFilter">
                         </div>
                         <button class="clear-dates-btn" onclick="clearDateFilters()">
-                            <i class="fas fa-times"></i>
-                            ล้างวันที่
+                            <i class="fas fa-times"></i> ล้างวันที่
                         </button>
                     </div>
                     <div class="filter-all">
                         <button class="reset-all-btn" onclick="resetAllFilters()">
-                            <i class="fas fa-undo"></i>
-                            รีเซ็ต
+                            <i class="fas fa-undo"></i> รีเซ็ต
                         </button>
                         <button class="search-filter-btn" onclick="applyFilters()">
                             <i class="fas fa-search"></i> ค้นหา
@@ -1610,6 +1502,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                 </div>
             </div>
 
+            <!-- PRODUCTS TABLE -->
             <div class="table-container">
                 <table id="productsTable">
                     <thead>
@@ -1618,36 +1511,39 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                             <th>ข้อมูลสินค้า</th>
                             <th>หมวดหมู่</th>
                             <th>ล็อต</th>
-                            <th>จำนวนคงเหลือ</th>
+                            <th>จำนวนเหลือ</th>
                             <th>ราคา</th>
                             <th>วันที่รับเข้า</th>
                             <th>ซัพพลายเออร์</th>
                             <th>การจัดการ</th>
                         </tr>
-
                     </thead>
                     <tbody id="productsTableBody">
-                        <!-- Product rows will be dynamically inserted here -->
+                        <!-- Products inserted here -->
                     </tbody>
                 </table>
             </div>
 
+            <!-- PAGINATION -->
             <div class="pagination" id="pagination">
-                <!-- Pagination buttons will be inserted here -->
+                <!-- Pagination buttons inserted here -->
             </div>
         </main>
     </div>
 
-    <!-- Add/Edit Product Modal -->
+    <!-- ======================== -->
+    <!-- MODALS                   -->
+    <!-- ======================== -->
+
+    <!-- ADD/EDIT PRODUCT MODAL -->
     <div id="productModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 id="modalTitle">เพิ่มสินค้าใหม่</h2>
+                <h2 id="modalTitle"><i class="fas fa-plus-circle"></i> เพิ่มสินค้าใหม่</h2>
                 <button class="close-btn" onclick="closeModal()">&times;</button>
             </div>
             <form id="productForm">
                 <div class="form-grid">
-                    <!-- ลบ field รหัสสินค้าออก -->
                     <div class="form-group">
                         <label>หมวดหมู่ *</label>
                         <select id="productCategory" required>
@@ -1656,7 +1552,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                             <option value="steelplate">เหล็กแผ่น</option>
                             <option value="structuralsteel">เหล็กรูปพรรณ</option>
                             <option value="wiremesh">เหล็กตะแกรง/ตาข่าย</option>
-                            <option value="steelproducts">อื่น ๆ</option>
+                            <option value="steelproducts">อื่นๆ</option>
                         </select>
                     </div>
                 </div>
@@ -1671,33 +1567,26 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                     <textarea id="productDescription" rows="3"></textarea>
                 </div>
 
-                <!-- Image Upload Section ยังคงเหมือนเดิม -->
+                <!-- IMAGE UPLOAD SECTION -->
                 <div class="images-section" id="imagesSection">
                     <h3><i class="fas fa-images"></i> รูปภาพสินค้า</h3>
-
                     <div class="drop-zone" id="dropZone">
                         <input type="file" id="imageInput" class="file-input" multiple accept="image/*">
                         <div class="drop-zone-content">
                             <i class="fas fa-cloud-upload-alt drop-zone-icon"></i>
                             <div class="drop-zone-text">ลากและวางรูปภาพที่นี่</div>
-                            <div class="drop-zone-subtext">หรือคลิกเพื่อเลือกไฟล์ (สามารถเลือกได้หลายไฟล์)</div>
-                            <button type="button" class="upload-button"
-                                onclick="document.getElementById('imageInput').click()">
-                                <i class="fas fa-plus"></i>
-                                เลือกรูปภาพ
+                            <div class="drop-zone-subtext">หรือคลิกเพื่อเลือกไฟล์</div>
+                            <button type="button" class="upload-button" onclick="document.getElementById('imageInput').click()">
+                                <i class="fas fa-plus"></i> เลือกรูปภาพ
                             </button>
                         </div>
                     </div>
-
-                    <div class="image-preview-container" id="imagePreviewContainer">
-                        <!-- Image previews will be inserted here -->
-                    </div>
+                    <div class="image-preview-container" id="imagePreviewContainer"></div>
                 </div>
 
-                <!-- Dimensions Section ยังคงเหมือนเดิม -->
+                <!-- DIMENSIONS SECTION -->
                 <div class="dimensions-section">
                     <h3><i class="fas fa-ruler-combined"></i> ข้อมูลขนาดและน้ำหนัก</h3>
-
                     <div class="dimension-row">
                         <div class="form-group">
                             <label>ความกว้าง</label>
@@ -1769,7 +1658,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                         <input type="text" id="productLot" required>
                     </div>
                     <div class="form-group">
-                        <label>จำนวนคงเหลือ *</label>
+                        <label>จำนวนเหลือ *</label>
                         <input type="number" id="productStock" required min="0">
                     </div>
                 </div>
@@ -1785,20 +1674,16 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                     </div>
                 </div>
 
-                <!-- แทนที่ field ซัพพลายเออร์เดิม -->
                 <div class="form-group">
                     <label>ซัพพลายเออร์ *</label>
                     <select id="productSupplier" required>
                         <option value="">เลือกซัพพลายเออร์</option>
-                        <option value="บจก. โอเชี่ยนซัพพลายเออร์ จำกัด (Ocean Supplier)">บจก. โอเชี่ยนซัพพลายเออร์ จำกัด
-                            (Ocean Supplier)</option>
-                        <option value="Metallic Corporation Limited (MCC / Metallic Steel Center)">Metallic Corporation
-                            Limited (MCC / Metallic Steel Center)</option>
+                        <option value="บจก. โอเชี่ยนซัพพลายเออร์ จำกัด (Ocean Supplier)">บจก. โอเชี่ยนซัพพลายเออร์ จำกัด</option>
+                        <option value="Metallic Corporation Limited (MCC / Metallic Steel Center)">Metallic Corporation Limited</option>
                         <option value="Millcon Steel (MILL)">Millcon Steel (MILL)</option>
                         <option value="Navasiam Steel Co., Ltd.">Navasiam Steel Co., Ltd.</option>
-                        <option value="กิจไพบูลย์ เม็ททอล">กิจไพบูลย์ เม็ททอล</option>
-                        <option value="Chuephaibul Steel (เชื้อไพบูลย์ สตีล)">Chuephaibul Steel (เชื้อไพบูลย์ สตีล)
-                        </option>
+                        <option value="กิจไพบูลย์ เมททอล">กิจไพบูลย์ เมททอล</option>
+                        <option value="Chuephaibul Steel (เชื้อไพบูลย์ สตีล)">Chuephaibul Steel</option>
                     </select>
                 </div>
 
@@ -1810,27 +1695,23 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
         </div>
     </div>
 
-    <!-- Product View Modal -->
+    <!-- PRODUCT VIEW MODAL -->
     <div id="productViewModal" class="modal">
         <div class="modal-content product-view-modal">
             <div class="modal-header">
-                <h2 id="viewModalTitle"><i class="fas fa-eye"></i> รายละเอียดสินค้า</h2>
+                <h2><i class="fas fa-eye"></i> รายละเอียดสินค้า</h2>
                 <button class="close-btn" onclick="closeViewModal()">&times;</button>
             </div>
 
             <div class="product-view-content">
-                <!-- Product Header -->
                 <div class="product-view-header">
                     <div class="product-view-code">
                         <i class="fas fa-barcode"></i>
                         <span id="viewProductCode">-</span>
                     </div>
-                    <div class="product-view-category">
-                        <span id="viewProductCategory" class="category-badge">-</span>
-                    </div>
+                    <span id="viewProductCategory" class="category-badge">-</span>
                 </div>
 
-                <!-- Product Main Info -->
                 <div class="product-view-main">
                     <div class="product-view-images">
                         <div class="main-image-container" id="viewMainImageContainer">
@@ -1839,9 +1720,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                                 <span>ไม่มีรูปภาพ</span>
                             </div>
                         </div>
-                        <div class="thumbnail-gallery" id="viewThumbnailGallery">
-                            <!-- Thumbnails will be inserted here -->
-                        </div>
+                        <div class="thumbnail-gallery" id="viewThumbnailGallery"></div>
                     </div>
 
                     <div class="product-view-details">
@@ -1850,15 +1729,15 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
 
                         <div class="product-view-specs">
                             <div class="spec-item">
-                                <label><i class="fas fa-layer-group"></i> ล็อต:</label>
+                                <label><i class="fas fa-layer-group"></i> ลัก:</label>
                                 <span id="viewProductLot" class="lot-value">-</span>
                             </div>
                             <div class="spec-item">
-                                <label><i class="fas fa-warehouse"></i> จำนวนคงเหลือ:</label>
+                                <label><i class="fas fa-warehouse"></i> จำนวนเหลือ:</label>
                                 <span id="viewProductStock" class="stock-value">-</span>
                             </div>
                             <div class="spec-item">
-                                <label><i class="fas fa-tag"></i> ราคาต่อหน่วย:</label>
+                                <label><i class="fas fa-tag"></i> ราคา:</label>
                                 <span id="viewProductPrice" class="price-value">-</span>
                             </div>
                             <div class="spec-item">
@@ -1873,18 +1752,15 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                     </div>
                 </div>
 
-                <!-- Dimensions Section -->
-                <div class="product-view-dimensions" id="viewDimensionsSection">
+                <div class="product-view-dimensions">
                     <h4><i class="fas fa-ruler-combined"></i> ข้อมูลขนาดและน้ำหนัก</h4>
-                    <div class="dimensions-grid" id="viewDimensionsGrid">
-                        <!-- Dimensions will be inserted here -->
-                    </div>
+                    <div class="dimensions-grid" id="viewDimensionsGrid"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Image Gallery Modal -->
+    <!-- IMAGE GALLERY MODAL -->
     <div id="imageGalleryModal" class="image-gallery-modal">
         <div class="gallery-content">
             <button class="gallery-close-btn" onclick="closeImageGallery()">&times;</button>
@@ -1903,6 +1779,9 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
         </div>
     </div>
 
+    <!-- ======================== -->
+    <!-- SCRIPTS                  -->
+    <!-- ======================== -->
     <script src="sidebar_admin.js"></script>
     <script src="products_admin.js"></script>
 

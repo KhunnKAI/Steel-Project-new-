@@ -1,13 +1,20 @@
-// Configuration
+// ========================
+// CONFIGURATION
+// ========================
 const API_BASE_URL = './controllers/get_stock.php';
 
-// Global variables
+// ========================
+// GLOBAL VARIABLES
+// ========================
 let movements = [];
 let products = [];
 let currentPage = 1;
 const itemsPerPage = 10;
 
-// Initialize the page
+// ========================
+// INITIALIZATION
+// ========================
+// FUNCTION: เริ่มต้นหน้าเมื่อ DOM โหลดเสร็จ
 document.addEventListener('DOMContentLoaded', function () {
     loadProducts();
     updateStats();
@@ -15,9 +22,12 @@ document.addEventListener('DOMContentLoaded', function () {
     setupEventListeners();
 });
 
-// Setup event listeners
+// ========================
+// EVENT LISTENERS SETUP
+// ========================
+// FUNCTION: ตั้งค่าฟังก์ชันฟัง (listener) สำหรับปุ่มและฟิลด์อินพุตทั้งหมด
 function setupEventListeners() {
-    // Search button listener (instead of real-time search)
+    // Search button listener
     const searchBtn = document.getElementById('searchBtn');
     if (searchBtn) {
         searchBtn.addEventListener('click', () => {
@@ -36,53 +46,18 @@ function setupEventListeners() {
             }
         });
     }
-    
-    // *** เปลี่ยนจากการค้นหาแบบเรียลไทม์ให้เป็นเฉพาะการอัปเดต UI เท่านั้น ***
-    // ไม่เรียก loadMovements() เมื่อเปลี่ยนค่าตัวกรอง
-    document.getElementById('movementTypeFilter').addEventListener('change', () => {
-        // เพียงอัปเดต UI หากจำเป็น
-    });
-    
-    document.getElementById('startDateFilter').addEventListener('change', () => {
-        // เพียงอัปเดต UI หากจำเป็น
-    });
-    
-    document.getElementById('endDateFilter').addEventListener('change', () => {
-        // เพียงอัปเดต UI หากจำเป็น
-    });
-    
-    document.getElementById('userFilter').addEventListener('input', () => {
-        // เพียงอัปเดต UI หากจำเป็น
-    });
 
-    // Modal form event listeners (only if elements exist)
-    const quantityInput = document.getElementById('quantity');
-    const movementTypeSelect = document.getElementById('movementType');
-    const productSelect = document.getElementById('productSelect');
-    const movementForm = document.getElementById('movementForm');
-    
-    if (quantityInput) quantityInput.addEventListener('input', calculateNewStock);
-    if (movementTypeSelect) {
-        movementTypeSelect.addEventListener('change', () => {
-            calculateNewStock();
-            updateModalTitle();
-        });
-    }
-    if (productSelect) productSelect.addEventListener('change', handleProductSelection);
-    if (movementForm) movementForm.addEventListener('submit', handleFormSubmission);
-    
-    // Close modal when clicking outside (only if modal exists)
-    const modal = document.getElementById('movementModal');
-    if (modal) {
-        window.addEventListener('click', function (event) {
-            if (event.target === modal) {
-                closeModal();
-            }
-        });
-    }
+    // Filter change listeners
+    document.getElementById('movementTypeFilter')?.addEventListener('change', () => {});
+    document.getElementById('startDateFilter')?.addEventListener('change', () => {});
+    document.getElementById('endDateFilter')?.addEventListener('change', () => {});
+    document.getElementById('userFilter')?.addEventListener('input', () => {});
 }
 
-// Load products from API
+// ========================
+// DATA LOADING FUNCTIONS
+// ========================
+// FUNCTION: โหลดข้อมูลสินค้าจาก API
 async function loadProducts() {
     try {
         showLoading('กำลังโหลดรายการสินค้า...');
@@ -92,7 +67,6 @@ async function loadProducts() {
         
         if (result.success) {
             products = result.data;
-            populateProductSelect();
         } else {
             showError('เกิดข้อผิดพลาดในการโหลดรายการสินค้า: ' + result.message);
         }
@@ -104,27 +78,7 @@ async function loadProducts() {
     }
 }
 
-// Populate product select dropdown
-function populateProductSelect() {
-    const productSelect = document.getElementById('productSelect');
-    
-    // Only populate if element exists
-    if (!productSelect) return;
-    
-    // Clear existing options except the first one
-    productSelect.innerHTML = '<option value="">เลือกสินค้า</option>';
-    
-    products.forEach(product => {
-        const option = document.createElement('option');
-        option.value = product.product_id;
-        option.textContent = product.display_name;
-        option.dataset.lot = product.lot || '';
-        option.dataset.stock = product.stock || 0;
-        productSelect.appendChild(option);
-    });
-}
-
-// Load movements from API
+// FUNCTION: โหลดข้อมูลการเคลื่อนไหวสินค้าจาก API
 async function loadMovements() {
     try {
         showLoading('กำลังโหลดข้อมูล...');
@@ -156,7 +110,7 @@ async function loadMovements() {
             displayMovements(movements);
             setupPagination(result.pagination);
         } else {
-            showError('เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + result.message);
+            showError('เกิดข้อผิดพลาดในการโหลดข้อมูลการเคลื่อนไหว: ' + result.message);
         }
     } catch (error) {
         console.error('Error loading movements:', error);
@@ -166,7 +120,7 @@ async function loadMovements() {
     }
 }
 
-// Update statistics from API
+// FUNCTION: อัปเดตสถิติจาก API
 async function updateStats() {
     try {
         const response = await fetch(`${API_BASE_URL}?action=get_stats`);
@@ -184,7 +138,10 @@ async function updateStats() {
     }
 }
 
-// Display movements in table
+// ========================
+// DISPLAY FUNCTIONS
+// ========================
+// FUNCTION: แสดงข้อมูลการเคลื่อนไหวในตาราง
 function displayMovements(movementList) {
     const tbody = document.getElementById('movementsTableBody');
     
@@ -195,7 +152,7 @@ function displayMovements(movementList) {
             <tr>
                 <td colspan="10" style="text-align: center; padding: 2rem; color: var(--text-light);">
                     <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
-                    ไม่พบข้อมูลการเคลื่อนไหวสต็อก
+                    ไม่พบข้อมูลการเคลื่อนไหวสินค้า
                 </td>
             </tr>
         `;
@@ -205,15 +162,10 @@ function displayMovements(movementList) {
     movementList.forEach(movement => {
         const row = document.createElement('tr');
 
-        // Map change_type to display text and classes
         const typeClass = `type-${movement.change_type}`;
         const typeText = movement.change_type_text || movement.change_type;
-
-        // Determine quantity display
         const quantityClass = movement.quantity_change > 0 ? 'quantity-positive' : 'quantity-negative';
         const quantitySign = movement.quantity_change > 0 ? '+' : '';
-
-        // Format user/admin name
         const performedBy = movement.admin_name || movement.user_name || 'ระบบ';
 
         row.innerHTML = `
@@ -233,7 +185,7 @@ function displayMovements(movementList) {
     });
 }
 
-// Setup pagination
+// FUNCTION: ตั้งค่าปุ่มเปลี่ยนหน้า (pagination)
 function setupPagination(paginationData) {
     const paginationContainer = document.getElementById('pagination');
     paginationContainer.innerHTML = '';
@@ -279,11 +231,33 @@ function setupPagination(paginationData) {
     };
     paginationContainer.appendChild(nextBtn);
 
-    // Update current page
     currentPage = paginationData.current_page;
 }
 
-// Format datetime for display
+// ========================
+// FILTER FUNCTIONS
+// ========================
+// FUNCTION: ใช้ตัวกรองและโหลดข้อมูลใหม่
+function applyFilters() {
+    currentPage = 1;
+    loadMovements();
+}
+
+// FUNCTION: รีเซ็ตตัวกรองทั้งหมด
+function resetAllFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('movementTypeFilter').value = '';
+    document.getElementById('startDateFilter').value = '';
+    document.getElementById('endDateFilter').value = '';
+    document.getElementById('userFilter').value = '';
+    currentPage = 1;
+    loadMovements();
+}
+
+// ========================
+// UTILITY FUNCTIONS
+// ========================
+// FUNCTION: แปลงรูปแบบวันและเวลาสำหรับการแสดงผล
 function formatDateTime(datetime) {
     const date = new Date(datetime);
     return date.toLocaleString('th-TH', {
@@ -295,225 +269,8 @@ function formatDateTime(datetime) {
     });
 }
 
-// Modal functions (kept for compatibility, but may not be needed)
-function openMovementModal(type = '') {
-    const modal = document.getElementById('movementModal');
-    const movementTypeSelect = document.getElementById('movementType');
-
-    // Only proceed if modal exists
-    if (!modal) {
-        console.warn('Movement modal not found in DOM');
-        return;
-    }
-
-    if (type && movementTypeSelect) {
-        movementTypeSelect.value = type;
-        updateModalTitle();
-    }
-
-    resetForm();
-    setCurrentDateTime();
-    modal.style.display = 'block';
-}
-
-function closeModal() {
-    const modal = document.getElementById('movementModal');
-    if (modal) {
-        modal.style.display = 'none';
-        resetForm();
-    }
-}
-
-function updateModalTitle() {
-    const type = document.getElementById('movementType')?.value;
-    const modalTitle = document.getElementById('modalTitle');
-    
-    if (!modalTitle) return;
-    
-    const icons = {
-        'in': 'fas fa-plus-circle',
-        'out': 'fas fa-minus-circle',
-        'adjust': 'fas fa-edit'
-    };
-    const titles = {
-        'in': 'บันทึกการรับสินค้าเข้า',
-        'out': 'บันทึกการเบิกสินค้าออก',
-        'adjust': 'บันทึกการปรับปรุงสต็อก'
-    };
-
-    if (type && titles[type]) {
-        modalTitle.innerHTML = `<i class="${icons[type]}"></i> ${titles[type]}`;
-    } else {
-        modalTitle.innerHTML = '<i class="fas fa-plus-circle"></i> บันทึกการเคลื่อนไหวสต็อก';
-    }
-}
-
-function setCurrentDateTime() {
-    const datetimeInput = document.getElementById('movementDateTime');
-    if (!datetimeInput) return;
-    
-    const now = new Date();
-    const datetime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-        .toISOString()
-        .slice(0, 16);
-    datetimeInput.value = datetime;
-}
-
-function handleProductSelection() {
-    const select = document.getElementById('productSelect');
-    const selectedOption = select?.options[select.selectedIndex];
-    
-    if (!selectedOption) return;
-    
-    const productLotInput = document.getElementById('productLot');
-    const currentStockInput = document.getElementById('currentStock');
-    
-    if (selectedOption.value) {
-        if (productLotInput) productLotInput.value = selectedOption.dataset.lot || '';
-        if (currentStockInput) currentStockInput.value = selectedOption.dataset.stock || 0;
-        calculateNewStock();
-    } else {
-        if (productLotInput) productLotInput.value = '';
-        if (currentStockInput) currentStockInput.value = '';
-        const newStockInput = document.getElementById('newStock');
-        if (newStockInput) newStockInput.value = '';
-    }
-}
-
-function calculateNewStock() {
-    const currentStockInput = document.getElementById('currentStock');
-    const quantityInput = document.getElementById('quantity');
-    const movementTypeSelect = document.getElementById('movementType');
-    const newStockInput = document.getElementById('newStock');
-    
-    if (!currentStockInput || !quantityInput || !movementTypeSelect || !newStockInput) return;
-    
-    const currentStock = parseInt(currentStockInput.value) || 0;
-    const quantity = parseInt(quantityInput.value) || 0;
-    const type = movementTypeSelect.value;
-
-    let newStock = currentStock;
-
-    if (type === 'in') {
-        newStock = currentStock + quantity;
-    } else if (type === 'out') {
-        newStock = currentStock - quantity;
-    } else if (type === 'adjust') {
-        // For adjustment, the quantity is the final stock amount
-        newStock = quantity;
-    }
-
-    newStockInput.value = Math.max(0, newStock);
-}
-
-async function handleFormSubmission(e) {
-    e.preventDefault();
-
-    const productSelect = document.getElementById('productSelect');
-    const selectedProduct = products.find(p => p.product_id === productSelect?.value);
-    
-    if (!selectedProduct) {
-        showError('กรุณาเลือกสินค้า');
-        return;
-    }
-
-    const quantityInput = document.getElementById('quantity');
-    const quantity = parseInt(quantityInput?.value || '0');
-    if (!quantity || quantity <= 0) {
-        showError('กรุณาระบุจำนวนที่ถูกต้อง');
-        return;
-    }
-
-    const movementTypeSelect = document.getElementById('movementType');
-    const movementType = movementTypeSelect?.value;
-    if (!movementType) {
-        showError('กรุณาเลือกประเภทการเคลื่อนไหว');
-        return;
-    }
-
-    const notesInput = document.getElementById('notes');
-    const movementData = {
-        action: 'save_movement',
-        product_id: productSelect.value,
-        change_type: movementType,
-        quantity_change: movementType === 'out' ? -quantity : quantity,
-        reference_type: 'manual',
-        reference_id: null,
-        user_id: null,
-        admin_id: 'ADMIN001', // Should get from session
-        note: notesInput?.value || 'การปรับปรุงจาก Admin Panel'
-    };
-
-    try {
-        showLoading('กำลังบันทึกข้อมูล...');
-        
-        const response = await fetch(API_BASE_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(movementData)
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            showSuccess('บันทึกการเคลื่อนไหวสต็อกเรียบร้อยแล้ว');
-            closeModal();
-            
-            // Reload data
-            await Promise.all([
-                updateStats(),
-                loadProducts(),
-                loadMovements()
-            ]);
-        } else {
-            showError('เกิดข้อผิดพลาด: ' + result.message);
-        }
-    } catch (error) {
-        console.error('Error saving movement:', error);
-        showError('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
-    } finally {
-        hideLoading();
-    }
-}
-
-function resetForm() {
-    const form = document.getElementById('movementForm');
-    if (!form) return;
-    
-    form.reset();
-    
-    const productLotInput = document.getElementById('productLot');
-    const currentStockInput = document.getElementById('currentStock');
-    const newStockInput = document.getElementById('newStock');
-    const performedByInput = document.getElementById('performedBy');
-    
-    if (productLotInput) productLotInput.value = '';
-    if (currentStockInput) currentStockInput.value = '';
-    if (newStockInput) newStockInput.value = '';
-    if (performedByInput) performedByInput.value = 'Admin';
-}
-
-function applyFilters() {
-    currentPage = 1;
-    loadMovements();
-}
-
-// Reset all filters
-function resetAllFilters() {
-    document.getElementById('searchInput').value = '';
-    document.getElementById('movementTypeFilter').value = '';
-    document.getElementById('startDateFilter').value = '';
-    document.getElementById('endDateFilter').value = '';
-    document.getElementById('userFilter').value = '';
-    currentPage = 1;
-    loadMovements();
-}
-
-// Utility functions for loading and error messages
+// FUNCTION: แสดงหน้าต่างโหลดข้อมูล
 function showLoading(message = 'กำลังโหลด...') {
-    // Create loading overlay if not exists
     let overlay = document.getElementById('loadingOverlay');
     if (!overlay) {
         overlay = document.createElement('div');
@@ -544,6 +301,7 @@ function showLoading(message = 'กำลังโหลด...') {
     overlay.style.display = 'flex';
 }
 
+// FUNCTION: ซ่อนหน้าต่างโหลดข้อมูล
 function hideLoading() {
     const overlay = document.getElementById('loadingOverlay');
     if (overlay) {
@@ -551,10 +309,12 @@ function hideLoading() {
     }
 }
 
+// FUNCTION: แสดงข้อความข้อผิดพลาด
 function showError(message) {
     alert('เกิดข้อผิดพลาด: ' + message);
 }
 
+// FUNCTION: แสดงข้อความสำเร็จ
 function showSuccess(message) {
     alert(message);
 }

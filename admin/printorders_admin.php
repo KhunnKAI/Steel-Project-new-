@@ -1,25 +1,37 @@
 <?php
+// ========================
+// SECURITY & INITIALIZATION
+// ========================
 require_once 'controllers/config.php';
+
+// FUNCTION: ตรวจสอบสิทธิ์การเข้าถึง
 requireLogin();
 
-// ดึงข้อมูล admin ปัจจุบัน
+// FUNCTION: ดึงข้อมูลผู้ดำเนินการปัจจุบัน
 $admin = getCurrentAdmin();
 if (!$admin) {
     header("Location: login_admin.html");
     exit();
 }
 
-// ดึงข้อมูลคำสั่งซื้อสำหรับการพิมพ์
+// ========================
+// VARIABLES
+// ========================
 $orders = [];
 $order_details = [];
+$order_items = [];
 $selected_order_id = '';
+$error = '';
 
-// ถ้ามีการเลือกคำสั่งซื้อเพื่อพิมพ์
+// ========================
+// DATA FETCHING
+// ========================
+// FUNCTION: ดึงข้อมูลคำสั่งซื้อที่เลือกจาก Database
 if (isset($_GET['order_id']) && !empty($_GET['order_id'])) {
     $selected_order_id = $_GET['order_id'];
     
     try {
-        // ดึงข้อมูลคำสั่งซื้อและข้อมูลลูกค้า (เฉพาะ status 02)
+        // Fetch order details with customer and shipping information
         $stmt = $pdo->prepare("
             SELECT o.*, u.name as customer_name, u.email, u.phone as customer_phone,
                    s.status_code, s.description as status_description,
@@ -35,7 +47,7 @@ if (isset($_GET['order_id']) && !empty($_GET['order_id'])) {
         $stmt->execute([$selected_order_id]);
         $order_details = $stmt->fetch();
         
-        // ดึงรายการสินค้าในคำสั่งซื้อ
+        // FUNCTION: ดึงรายการสินค้าในคำสั่งซื้อ
         if ($order_details) {
             $stmt = $pdo->prepare("
                 SELECT oi.*, pr.name as product_name, pr.description, c.name as category_name
@@ -53,7 +65,7 @@ if (isset($_GET['order_id']) && !empty($_GET['order_id'])) {
     }
 }
 
-// ดึงรายการคำสั่งซื้อเฉพาะ status 02 สำหรับ dropdown
+// FUNCTION: ดึงรายการคำสั่งซื้อทั้งหมด (เฉพาะ status02) สำหรับ dropdown
 try {
     $stmt = $pdo->prepare("
         SELECT o.order_id, o.created_at, u.name as customer_name, o.total_amount,
@@ -71,7 +83,6 @@ try {
     $error = "เกิดข้อผิดพลาดในการดึงข้อมูล: " . $e->getMessage();
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -80,7 +91,11 @@ try {
     <title>พิมพ์คำสั่งซื้อ - ระบบจัดการร้านค้า</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
+        /* ========================
+           RESET & GENERAL
+           ======================== */
         * {
             margin: 0;
             padding: 0;
@@ -93,6 +108,9 @@ try {
             min-height: 100vh;
         }
 
+        /* ========================
+           HEADER
+           ======================== */
         .header-section {
             background: linear-gradient(135deg, #990000, #cc0000);
             color: white;
@@ -149,6 +167,9 @@ try {
             text-decoration: none;
         }
 
+        /* ========================
+           CONTAINER & LAYOUT
+           ======================== */
         .container {
             max-width: 1400px;
             margin: 0 auto;
@@ -167,6 +188,9 @@ try {
             gap: 0.5rem;
         }
 
+        /* ========================
+           ORDER SELECTION
+           ======================== */
         .order-selection {
             background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
             padding: 25px 30px;
@@ -174,7 +198,6 @@ try {
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             margin-bottom: 25px;
             border: 1px solid rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
             position: relative;
         }
 
@@ -230,6 +253,7 @@ try {
             border: 2px solid #e9ecef;
             border-radius: 12px;
             font-size: 14px;
+            font-family: 'Inter';
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             background: white;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -248,6 +272,9 @@ try {
             transform: translateY(-1px);
         }
 
+        /* ========================
+           BUTTONS
+           ======================== */
         .btn {
             padding: 12px 20px;
             border: none;
@@ -255,6 +282,7 @@ try {
             cursor: pointer;
             font-size: 13px;
             font-weight: 600;
+            font-family: 'Inter';
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             align-items: center;
@@ -291,11 +319,9 @@ try {
             color: white;
         }
 
-        .btn-lg {
-            padding: 15px 30px;
-            font-size: 16px;
-        }
-
+        /* ========================
+           PRINT SECTION
+           ======================== */
         .print-section {
             background: white;
             border-radius: 15px;
@@ -324,6 +350,10 @@ try {
             background: linear-gradient(90deg, #cc0000, #ff6b6b);
         }
 
+        .company-header img {
+            margin-bottom: 10px;
+        }
+
         .company-name {
             color: #990000;
             margin-bottom: 5px;
@@ -342,10 +372,17 @@ try {
             margin-bottom: 3px;
         }
 
+        /* ========================
+           ORDER INFORMATION
+           ======================== */
         .order-info-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .info-section {
             margin-bottom: 30px;
         }
 
@@ -357,12 +394,22 @@ try {
             display: flex;
             align-items: center;
             gap: 8px;
+            font-size: 14px;
         }
 
         .info-section h5 i {
             color: #990000;
         }
 
+        .info-section p {
+            margin-bottom: 8px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        /* ========================
+           ITEMS TABLE
+           ======================== */
         .items-table {
             width: 100%;
             border-collapse: collapse;
@@ -375,7 +422,7 @@ try {
             text-align: left;
             font-weight: 600;
             color: #333;
-            font-size: 14px;
+            font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             border: 1px solid #dee2e6;
@@ -386,12 +433,16 @@ try {
             border: 1px solid #dee2e6;
             vertical-align: middle;
             color: #555;
+            font-size: 13px;
         }
 
         .items-table tr:hover {
             background: rgba(153, 0, 0, 0.02);
         }
 
+        /* ========================
+           TOTAL SECTION
+           ======================== */
         .total-section {
             margin-top: 20px;
             text-align: right;
@@ -401,6 +452,7 @@ try {
             border-collapse: collapse;
             width: 300px;
             margin-left: auto;
+            font-size: 13px;
         }
 
         .total-section table td {
@@ -414,26 +466,34 @@ try {
             font-weight: 600;
         }
 
-        .print-buttons {
+        /* ========================
+           FOOTER
+           ======================== */
+        .print-footer {
             text-align: center;
-            margin: 20px 0;
-            page-break-inside: avoid;
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            font-size: 11px;
         }
 
-        .badge {
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 12px;
+        .print-footer p {
+            margin-bottom: 8px;
+        }
+
+        .print-footer p.thanks {
+            color: #990000;
             font-weight: 600;
         }
 
-        .bg-info {
-            background: #17a2b8 !important;
-            color: white;
+        .no-print {
+            page-break-inside: avoid;
         }
 
-        /* Responsive */
-        @media (max-width: 768px) {
+        /* ========================
+           RESPONSIVE DESIGN
+           ======================== */
+        @media screen and (max-width: 768px) {
             .header-content {
                 text-align: center;
             }
@@ -456,26 +516,33 @@ try {
                 gap: 20px;
             }
 
-            .print-buttons .btn {
+            .btn {
                 margin-bottom: 10px;
             }
 
             .company-name {
                 font-size: 16px;
             }
+
+            .items-table th,
+            .items-table td {
+                padding: 10px;
+                font-size: 11px;
+            }
         }
 
+        /* ========================
+           PRINT STYLES
+           ======================== */
         @media print {
             body {
                 background: white;
-                font-size: 12px;
+                font-size: 11px;
             }
             
             .header-section, 
             .order-selection, 
-            .print-buttons, 
-            .no-print,
-            .status-notice {
+            .no-print {
                 display: none !important;
             }
             
@@ -484,6 +551,7 @@ try {
                 padding: 0;
                 box-shadow: none;
                 border-radius: 0;
+                page-break-inside: avoid;
             }
             
             .container {
@@ -498,11 +566,19 @@ try {
             .company-header::after {
                 display: none;
             }
+
+            .order-info-grid,
+            .items-section {
+                page-break-inside: avoid;
+            }
         }
     </style>
 </head>
+
 <body>
-    <!-- Header Section -->
+    <!-- ========================
+         HEADER SECTION
+         ======================== -->
     <div class="header-section">
         <div class="header-content">
             <div class="header-title">
@@ -517,14 +593,19 @@ try {
     </div>
 
     <div class="container">
-
-        <?php if (isset($error)): ?>
+        <!-- ========================
+             ERROR MESSAGE
+             ======================== -->
+        <?php if (!empty($error)): ?>
         <div class="alert">
             <i class="fas fa-exclamation-triangle"></i>
-            <?php echo $error; ?>
+            <?php echo htmlspecialchars($error); ?>
         </div>
         <?php endif; ?>
 
+        <!-- ========================
+             NO ORDERS MESSAGE
+             ======================== -->
         <?php if (empty($orders)): ?>
         <div class="alert">
             <i class="fas fa-info-circle"></i>
@@ -532,7 +613,9 @@ try {
         </div>
         <?php else: ?>
 
-        <!-- Order Selection Section -->
+        <!-- ========================
+             ORDER SELECTION FORM
+             ======================== -->
         <div class="order-selection no-print">
             <h4><i class="fas fa-search"></i>เลือกคำสั่งซื้อที่ต้องการพิมพ์</h4>
             <form method="GET" action="" class="form-row">
@@ -541,13 +624,12 @@ try {
                     <select name="order_id" id="order_id" required>
                         <option value="">เลือกคำสั่งซื้อ...</option>
                         <?php foreach ($orders as $order): ?>
-                        <option value="<?php echo $order['order_id']; ?>" 
+                        <option value="<?php echo htmlspecialchars($order['order_id']); ?>" 
                                 <?php echo ($selected_order_id === $order['order_id']) ? 'selected' : ''; ?>>
-                            <?php echo $order['order_id']; ?> - 
+                            <?php echo htmlspecialchars($order['order_id']); ?> - 
                             <?php echo htmlspecialchars($order['customer_name']); ?> - 
                             ฿<?php echo number_format($order['total_amount'], 2); ?> - 
-                            <?php echo date('d/m/Y H:i', strtotime($order['created_at'])); ?> - 
-                            <?php echo $order['status_description']; ?>
+                            <?php echo date('d/m/Y H:i', strtotime($order['created_at'])); ?>
                         </option>
                         <?php endforeach; ?>
                     </select>
@@ -556,7 +638,7 @@ try {
                     <i class="fas fa-search"></i>แสดงคำสั่งซื้อ
                 </button>
                 <?php if ($selected_order_id): ?>
-                <button type="button" onclick="window.print()" class="btn btn-success">
+                <button type="button" onclick="printOrder()" class="btn btn-success">
                     <i class="fas fa-print"></i>พิมพ์
                 </button>
                 <?php endif; ?>
@@ -565,28 +647,28 @@ try {
 
         <?php endif; ?>
 
-        <!-- Print Section -->
-        <?php if ($order_details): ?>
+        <!-- ========================
+             PRINT SECTION
+             ======================== -->
+        <?php if (!empty($order_details)): ?>
         <div class="print-section" id="printSection">
             <!-- Company Header -->
             <div class="company-header">
-                <div>
-                    <img src="image/logo_cropped.png" width="100px">
-                </div>
+                <img src="image/logo_cropped.png" width="100px" alt="Company Logo">
                 <h2 class="company-name">บริษัท ช้างเหล็กไทย จำกัด</h2>
                 <div class="company-info">
-                    <p> 99/9 หมู่ 4 ถ.บางนา-ตราด กม.12 ต.บางโฉลง อ.บางพลี จ.สมุทรปราการ 10540</p>
-                    <p><strong>โทร:</strong> 02-123-4567 | <strong>มือถือ:</strong> 098-765-4321 | <strong>อีเมล:</strong> sales@changlekthai.co.th </p>
+                    <p>99/9 หมู่ 4 ถ.บางนา-ตราด กม.12 ต.บางโฉลง อ.บางพลี จ.สมุทรปราการ 10540</p>
+                    <p><strong>โทร:</strong> 02-123-4567 | <strong>มือถือ:</strong> 098-765-4321 | <strong>อีเมล:</strong> sales@changlekthai.co.th</p>
                 </div>
             </div>
 
-            <!-- Order Information -->
+            <!-- Order Information Grid -->
             <div class="order-info-grid">
                 <div class="info-section">
                     <h5><i class="fas fa-file-invoice"></i>ข้อมูลคำสั่งซื้อ</h5>
-                    <p><strong>เลขที่คำสั่งซื้อ:</strong> <?php echo $order_details['order_id']; ?></p>
+                    <p><strong>เลขที่คำสั่งซื้อ:</strong> <?php echo htmlspecialchars($order_details['order_id']); ?></p>
                     <p><strong>วันที่สั่งซื้อ:</strong> <?php echo date('d/m/Y H:i:s', strtotime($order_details['created_at'])); ?></p>
-                    <?php if ($order_details['note']): ?>
+                    <?php if (!empty($order_details['note'])): ?>
                     <p><strong>หมายเหตุ:</strong> <?php echo htmlspecialchars($order_details['note']); ?></p>
                     <?php endif; ?>
                 </div>
@@ -600,12 +682,12 @@ try {
             </div>
 
             <!-- Shipping Address -->
-            <?php if ($order_details['recipient_name']): ?>
-            <div class="info-section" style="margin-bottom: 30px;">
+            <?php if (!empty($order_details['recipient_name'])): ?>
+            <div class="info-section">
                 <h5><i class="fas fa-shipping-fast"></i>ที่อยู่จัดส่ง</h5>
                 <p><strong>ผู้รับ:</strong> <?php echo htmlspecialchars($order_details['recipient_name']); ?></p>
                 <p><strong>เบอร์โทร:</strong> <?php echo htmlspecialchars($order_details['shipping_phone']); ?></p>
-                <p><strong>ที่อยู่:</strong> 
+                <p><strong>ที่อยู่:</strong><br>
                     <?php echo htmlspecialchars($order_details['address_line']); ?><br>
                     <?php echo htmlspecialchars($order_details['subdistrict']); ?> 
                     <?php echo htmlspecialchars($order_details['district']); ?> 
@@ -615,9 +697,9 @@ try {
             </div>
             <?php endif; ?>
 
-            <!-- Order Items -->
+            <!-- Order Items Table -->
             <div class="items-section">
-                <h5 style="color: #495057; border-bottom: 2px solid #990000; padding-bottom: 8px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+                <h5 style="color: #495057; border-bottom: 2px solid #990000; padding-bottom: 8px; margin-bottom: 15px;">
                     <i class="fas fa-list" style="color: #990000;"></i>รายการสินค้า
                 </h5>
                 <table class="items-table">
@@ -644,12 +726,12 @@ try {
                             <td style="text-align: center;"><?php echo $item_no++; ?></td>
                             <td>
                                 <strong><?php echo htmlspecialchars($item['product_name']); ?></strong>
-                                <?php if ($item['description']): ?>
+                                <?php if (!empty($item['description'])): ?>
                                 <br><small style="color: #666;"><?php echo htmlspecialchars($item['description']); ?></small>
                                 <?php endif; ?>
                             </td>
-                            <td><?php echo htmlspecialchars($item['category_name']); ?></td>
-                            <td><?php echo htmlspecialchars($item['lot']); ?></td>
+                            <td><?php echo htmlspecialchars($item['category_name'] ?? '-'); ?></td>
+                            <td><?php echo htmlspecialchars($item['lot'] ?? '-'); ?></td>
                             <td style="text-align: center;"><?php echo number_format($item['quantity']); ?></td>
                             <td style="text-align: right;">฿<?php echo number_format($item['price_each'], 2); ?></td>
                             <td style="text-align: right;">฿<?php echo number_format($line_total, 2); ?></td>
@@ -659,7 +741,7 @@ try {
                 </table>
             </div>
 
-            <!-- Order Summary -->
+            <!-- Order Summary & Total -->
             <div class="total-section">
                 <table>
                     <tr>
@@ -686,13 +768,16 @@ try {
             </div>
 
             <!-- Footer -->
-            <div style="text-align: center; margin-top: 50px; padding-top: 20px; border-top: 1px solid #dee2e6;">
-                <p style="margin-bottom: 8px; color: #990000; font-weight: 600;"><small>ขอบคุณที่ใช้บริการ บริษัท ช้างเหล็กไทย จำกัด</small></p>
-                <p style="margin-bottom: 0;"><small>พิมพ์เมื่อ: <?php echo date('d/m/Y H:i:s'); ?> โดย: <?php echo htmlspecialchars($admin['fullname']); ?></small></p>
+            <div class="print-footer">
+                <p class="thanks"><i class="fas fa-heart"></i> ขอบคุณที่ใช้บริการ บริษัท ช้างเหล็กไทย จำกัด</p>
+                <p><small>พิมพ์เมื่อ: <?php echo date('d/m/Y H:i:s'); ?> โดย: <?php echo htmlspecialchars($admin['fullname']); ?></small></p>
             </div>
         </div>
 
-        <?php elseif (isset($_GET['order_id']) && !empty($_GET['order_id']) && !$order_details): ?>
+        <!-- ========================
+             NO ORDER FOUND MESSAGE
+             ======================== -->
+        <?php elseif (isset($_GET['order_id']) && !empty($_GET['order_id']) && empty($order_details)): ?>
         <div class="alert">
             <i class="fas fa-exclamation-triangle"></i>
             ไม่พบคำสั่งซื้อที่เลือก
@@ -701,20 +786,35 @@ try {
 
     </div>
 
+    <!-- ========================
+         JAVASCRIPT
+         ======================== -->
     <script>
-        // Auto-focus on order selection
-        document.getElementById('order_id').focus();
-        
-        // Keyboard shortcut for printing
+        // ========================
+        // PRINT FUNCTIONALITY
+        // ========================
+        // FUNCTION: เรียก print dialog
+        function printOrder() {
+            if (document.getElementById('printSection')) {
+                window.print();
+            }
+        }
+
+        // FUNCTION: Auto-focus on order dropdown
+        document.addEventListener('DOMContentLoaded', function() {
+            const orderSelect = document.getElementById('order_id');
+            if (orderSelect) {
+                orderSelect.focus();
+            }
+        });
+
+        // FUNCTION: Keyboard shortcut for printing (Ctrl+P)
         document.addEventListener('keydown', function(e) {
             if (e.ctrlKey && e.key === 'p') {
                 e.preventDefault();
-                if (document.getElementById('printSection')) {
-                    window.print();
-                }
+                printOrder();
             }
         });
-        
     </script>
 </body>
 </html>

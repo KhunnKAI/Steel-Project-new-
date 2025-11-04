@@ -1,15 +1,28 @@
 <?php
+// ========================
+// SETUP & ERROR HANDLING
+// ========================
+
 ob_start();
 error_reporting(0);
 ini_set('display_errors', 0);
 
 header('Content-Type: application/json; charset=utf-8');
 
+// ========================
+// INITIALIZATION
+// ========================
+
 require_once 'config.php';
-require_once 'stock_logger.php'; // Include stock logger
+require_once 'stock_logger.php';
 session_start();
 
 try {
+    // ========================
+    // AUTHENTICATION
+    // ========================
+
+    // FUNCTION: ตรวจสอบและตั้งค่า admin session
     if (!isset($_SESSION['admin_id'])) {
         $_SESSION['admin_id'] = 'admin001';
         $_SESSION['position'] = 'manager';
@@ -18,10 +31,20 @@ try {
     $admin_id = $_SESSION['admin_id'];
     $admin_position = $_SESSION['position'] ?? 'manager';
 
+    // ========================
+    // VALIDATE REQUEST
+    // ========================
+
+    // FUNCTION: ตรวจสอบวิธี HTTP
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         throw new Exception('Method not allowed');
     }
 
+    // ========================
+    // PARSE INPUT
+    // ========================
+
+    // FUNCTION: แยกวิเคราะห์ JSON input
     $json_input = file_get_contents('php://input');
     $input = json_decode($json_input, true);
     
@@ -29,6 +52,11 @@ try {
         throw new Exception('Invalid JSON input');
     }
 
+    // ========================
+    // VALIDATE INPUT DATA
+    // ========================
+
+    // FUNCTION: ตรวจสอบความถูกต้องของข้อมูลที่รับมา
     $order_id = trim($input['order_id'] ?? '');
     $new_status = trim($input['status'] ?? '');
     $notes = trim($input['notes'] ?? '');
@@ -37,6 +65,11 @@ try {
         throw new Exception('กรุณาระบุรหัสคำสั่งซื้อและสถานะใหม่');
     }
 
+    // ========================
+    // MAP STATUS
+    // ========================
+
+    // FUNCTION: แม็ป status code ไปยัง status ID
     $status_mapping = [
         'pending_payment' => 'status01',
         'awaiting_shipment' => 'status02',
@@ -51,7 +84,11 @@ try {
     
     $status_id = $status_mapping[$new_status];
 
-    // Get current order info
+    // ========================
+    // GET CURRENT ORDER
+    // ========================
+
+    // FUNCTION: ดึงข้อมูลคำสั่งซื้อปัจจุบัน
     $check_sql = "SELECT 
                     o.order_id, 
                     o.status, 
@@ -72,13 +109,26 @@ try {
 
     $current_status = $order['status_code'];
 
-    // Initialize stock logger
+    // ========================
+    // INITIALIZE STOCK LOGGER
+    // ========================
+
+    // FUNCTION: สร้าง instance ของ stock logger
     $stockLogger = new StockLogger($pdo);
 
+    // ========================
+    // DATABASE TRANSACTION
+    // ========================
+
+    // FUNCTION: เริ่มต้น transaction
     $pdo->beginTransaction();
 
     try {
-        // Update order status
+        // ========================
+        // UPDATE ORDER STATUS
+        // ========================
+
+        // FUNCTION: อัพเดตสถานะคำสั่งซื้อ
         $update_sql = "UPDATE Orders SET 
                         status = ?, 
                         note = ?, 
@@ -92,7 +142,11 @@ try {
             throw new Exception('No rows were updated - order may not exist');
         }
 
-        // Handle stock restoration when order is cancelled
+        // ========================
+        // HANDLE CANCELLATION
+        // ========================
+
+        // FUNCTION: คืนสต็อกเมื่อยกเลิกคำสั่งซื้อ
         if ($new_status === 'cancelled' && $current_status !== 'cancelled') {
             $items_sql = "SELECT oi.product_id, oi.quantity, p.name as product_name 
                          FROM OrderItem oi
@@ -104,15 +158,15 @@ try {
             
             $stock_updates = [];
             foreach ($items as $item) {
-                // Use stock logger to restore stock
+                // FUNCTION: ใช้ stock logger เพื่อคืนสต็อก
                 $stock_result = $stockLogger->updateProductStock(
                     $item['product_id'],
-                    'in', // Stock coming back in
+                    'in',
                     $item['quantity'],
-                    'cancel', // Reference type
-                    $order_id, // Reference ID
-                    $order['user_id'], // User ID
-                    $admin_id, // Admin ID
+                    'cancel',
+                    $order_id,
+                    $order['user_id'],
+                    $admin_id,
                     "Stock restored due to order cancellation by admin: {$admin_id}"
                 );
                 
@@ -132,13 +186,18 @@ try {
             }
         }
 
+        // FUNCTION: ยืนยัน transaction
         $pdo->commit();
 
-        // Prepare response
+        // ========================
+        // PREPARE RESPONSE
+        // ========================
+
+        // FUNCTION: เตรียมข้อความตอบกลับตามสถานะ
         $status_messages = [
             'cancelled' => 'ยกเลิกคำสั่งซื้อเรียบร้อยแล้ว และคืนสต็อกสินค้าเรียบร้อย',
             'awaiting_shipment' => 'อนุมัติการชำระเงินและเตรียมจัดส่งแล้ว',
-            'in_transit' => 'อัปเดตสถานะเป็นกำลังจัดส่งแล้ว',
+            'in_transit' => 'อัปเดตสถานะเป็นอำเนินจัดส่งแล้ว',
             'delivered' => 'อัปเดตสถานะเป็นจัดส่งแล้วเรียบร้อย'
         ];
 
@@ -159,6 +218,11 @@ try {
 
         ob_clean();
         
+        // ========================
+        // SUCCESS RESPONSE
+        // ========================
+
+        // FUNCTION: ส่งคำตอบสำเร็จ
         echo json_encode([
             'success' => true,
             'message' => $message,
@@ -166,11 +230,17 @@ try {
         ], JSON_UNESCAPED_UNICODE);
 
     } catch (Exception $e) {
+        // FUNCTION: ยกเลิก transaction เมื่อเกิดข้อผิดพลาด
         $pdo->rollback();
         throw $e;
     }
 
 } catch (Exception $e) {
+    // ========================
+    // ERROR HANDLING
+    // ========================
+
+    // FUNCTION: ยกเลิก transaction ถ้ายังดำเนินการอยู่
     if (isset($pdo) && $pdo->inTransaction()) {
         $pdo->rollback();
     }
@@ -179,6 +249,8 @@ try {
     
     ob_clean();
     http_response_code(400);
+    
+    // FUNCTION: ส่งคำตอบข้อผิดพลาด
     echo json_encode([
         'success' => false,
         'message' => $e->getMessage()
@@ -186,4 +258,5 @@ try {
 }
 
 ob_end_flush();
+
 ?>
