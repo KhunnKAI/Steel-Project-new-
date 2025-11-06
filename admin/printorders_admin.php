@@ -88,7 +88,9 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>พิมพ์คำสั่งซื้อ - ระบบจัดการร้านค้า</title>
+    <title>พิมพ์คำสั่งซื้อ - ช้างเหล็กไทย</title>
+    <link rel="icon" type="image/png" href="image\logo_cropped.png">
+    
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     

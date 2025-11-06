@@ -16,11 +16,74 @@ const itemsPerPage = 10;
 // ========================
 // FUNCTION: เริ่มต้นหน้าเมื่อ DOM โหลดเสร็จ
 document.addEventListener('DOMContentLoaded', function () {
+    initializeLoadingStyles();
     loadProducts();
     updateStats();
     loadMovements();
     setupEventListeners();
 });
+
+// ========================
+// LOADING INDICATOR SETUP
+// ========================
+// FUNCTION: สร้าง style สำหรับ loading indicator
+function initializeLoadingStyles() {
+    if (!document.getElementById('loading-indicator-styles')) {
+        const style = document.createElement('style');
+        style.id = 'loading-indicator-styles';
+        style.textContent = `
+            .loading-indicator {
+                display: none;
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                z-index: 9999;
+                background: rgba(255, 255, 255, 0.95);
+                color: #333;
+                padding: 40px;
+                border-radius: 15px;
+                text-align: center;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+                min-width: 250px;
+            }
+
+            .loading-spinner {
+                display: inline-block;
+                width: 50px;
+                height: 50px;
+                border: 4px solid #f3f3f3;
+                border-top: 4px solid #990000;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+                margin-bottom: 20px;
+            }
+
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+
+            .loading-text {
+                font-weight: 500;
+                font-size: 16px;
+                margin: 0;
+            }
+
+            .loading-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.3);
+                z-index: 9998;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+}
 
 // ========================
 // EVENT LISTENERS SETUP
@@ -269,43 +332,45 @@ function formatDateTime(datetime) {
     });
 }
 
-// FUNCTION: แสดงหน้าต่างโหลดข้อมูล
+// FUNCTION: แสดง loading indicator แบบใหม่
 function showLoading(message = 'กำลังโหลด...') {
+    // Create overlay if not exists
     let overlay = document.getElementById('loadingOverlay');
     if (!overlay) {
         overlay = document.createElement('div');
         overlay.id = 'loadingOverlay';
-        overlay.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            color: white;
-            font-size: 18px;
-        `;
+        overlay.className = 'loading-overlay';
         document.body.appendChild(overlay);
     }
-    
-    overlay.innerHTML = `
-        <div style="text-align: center;">
-            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 1rem;"></i>
-            <div>${message}</div>
-        </div>
+    overlay.style.display = 'block';
+
+    // Create loading indicator if not exists
+    let indicator = document.getElementById('loadingIndicator');
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'loadingIndicator';
+        indicator.className = 'loading-indicator';
+        document.body.appendChild(indicator);
+    }
+
+    // Update content
+    indicator.innerHTML = `
+        <div class="loading-spinner"></div>
+        <p class="loading-text">${message}</p>
     `;
-    overlay.style.display = 'flex';
+    indicator.style.display = 'block';
 }
 
-// FUNCTION: ซ่อนหน้าต่างโหลดข้อมูล
+// FUNCTION: ซ่อน loading indicator
 function hideLoading() {
     const overlay = document.getElementById('loadingOverlay');
     if (overlay) {
         overlay.style.display = 'none';
+    }
+
+    const indicator = document.getElementById('loadingIndicator');
+    if (indicator) {
+        indicator.style.display = 'none';
     }
 }
 

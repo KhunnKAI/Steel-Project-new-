@@ -27,7 +27,9 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>บันทึกการเคลื่อนไหวสินค้า - ระบบจัดการร้านค้า</title>
+    <title>บันทึกการเคลื่อนไหวสินค้า - ช้างเหล็กไทย</title>
+    <link rel="icon" type="image/png" href="image\logo_cropped.png">
+    
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -44,6 +46,58 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             font-family: 'Inter';
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
+        }
+
+        /* ========================
+           LOADING INDICATOR STYLES
+           ======================== */
+        .loading-indicator {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            min-width: 250px;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #990000;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-weight: 500;
+            font-size: 16px;
+            margin: 0;
+        }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 9998;
         }
 
         /* ========================
@@ -129,10 +183,6 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
             text-align: center;
             transition: transform 0.3s ease;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
         }
 
         .stat-number {
@@ -249,8 +299,11 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
         }
 
         .reset-all-btn {
+            background: linear-gradient(45deg, #6c757d, #868e96);
+            width: 100%;
+            box-shadow: 0 6px 20px rgba(198, 198, 198, 0.4);
+
             padding: 12px 20px;
-            background: linear-gradient(45deg, #dc3545, #c82333);
             color: white;
             border: none;
             border-radius: 12px;
@@ -262,7 +315,6 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             display: flex;
             align-items: center;
             gap: 8px;
-            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
             text-transform: uppercase;
             letter-spacing: 0.5px;
             flex: 1;
@@ -270,14 +322,17 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
         }
 
         .reset-all-btn:hover {
-            background: linear-gradient(45deg, #c82333, #bd2130);
+            background: linear-gradient(45deg, #5a6268, #6c757d);
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+            box-shadow: 0 6px 20px rgba(198, 198, 198, 0.4);
         }
 
         .search-filter-btn {
+            background: linear-gradient(45deg, #dc3545, #c82333);
+            flex: 1;
+            justify-content: center;
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
             padding: 12px 20px;
-            background: linear-gradient(45deg, #28a745, #20c997);
             color: white;
             border: none;
             border-radius: 12px;
@@ -289,17 +344,14 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             display: flex;
             align-items: center;
             gap: 8px;
-            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            flex: 1;
-            justify-content: center;
         }
 
         .search-filter-btn:hover {
-            background: linear-gradient(45deg, #20c997, #17a2b8);
+            background: linear-gradient(45deg, #c82333, #bd2130);
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
         }
 
         /* ========================
@@ -476,6 +528,12 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
     </style>
 </head>
 <body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay"></div>
+
+    <!-- Loading Indicator -->
+    <div class="loading-indicator" id="loadingIndicator"></div>
+
     <!-- ========================
          HEADER SECTION
          ======================== -->
@@ -525,7 +583,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             </div>
             <div class="filters-row">
                 <div class="filter-group">
-                    <label><i class="fas fa-tags"></i> ประเภทการเคลื่อนไหว</label>
+                    <label>ประเภทการเคลื่อนไหว</label>
                     <select id="movementTypeFilter">
                         <option value="">ทั้งหมด</option>
                         <option value="in">รับเข้า</option>
@@ -534,15 +592,15 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label><i class="fas fa-calendar-alt"></i> วันที่เริ่มต้น</label>
+                    <label></i> วันที่เริ่มต้น</label>
                     <input type="date" id="startDateFilter">
                 </div>
                 <div class="filter-group">
-                    <label><i class="fas fa-calendar-check"></i> วันที่สิ้นสุด</label>
+                    <label>วันที่สิ้นสุด</label>
                     <input type="date" id="endDateFilter">
                 </div>
                 <div class="filter-group">
-                    <label><i class="fas fa-user"></i> ผู้ดำเนินการ</label>
+                    <label>ผู้ดำเนินการ</label>
                     <input type="text" id="userFilter" placeholder="ชื่อผู้ดำเนินการ">
                 </div>
                 <div class="filter-all">

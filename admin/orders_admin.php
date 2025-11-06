@@ -19,7 +19,9 @@ if (!$current_admin) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>จัดการคำสั่งซื้อ - ระบบจัดการร้านค้า</title>
+    <title>จัดการคำสั่งซื้อ - ช้างเหล็กไทย</title>
+    <link rel="icon" type="image/png" href="image\logo_cropped.png">
+    
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="sidebar_admin.css">
@@ -299,25 +301,27 @@ if (!$current_admin) {
         }
 
         .btn-filter-search {
-            background: linear-gradient(45deg, #990000, #cc0000);
+            background: linear-gradient(45deg, #dc3545, #c82333);
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
             color: white;
         }
 
         .btn-filter-search:hover {
-            background: linear-gradient(45deg, #770000, #990000);
-            box-shadow: 0 4px 12px rgba(153, 0, 0, 0.3);
+            background: linear-gradient(45deg, #c82333, #bd2130);
             transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
         }
 
         .btn-filter-reset {
             background: linear-gradient(45deg, #6c757d, #868e96);
+            box-shadow: 0 6px 20px rgba(198, 198, 198, 0.4);
             color: white;
         }
 
         .btn-filter-reset:hover {
             background: linear-gradient(45deg, #5a6268, #6c757d);
-            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
             transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(198, 198, 198, 0.4);
         }
 
         /* ========================
@@ -1229,11 +1233,6 @@ if (!$current_admin) {
                         </div>
                     </h1>
                 </div>
-                <!-- Search Bar -->
-                <div class="search-container">
-                    <input type="text" id="searchInput" placeholder="ค้นหารหัสคำสั่งซื้อ, ชื่อลูกค้า..." autocomplete="off">
-                    <i class="fas fa-search"></i>
-                </div>
 
                 <button class="print-btn" onclick="window.location.href='printorders_admin.php'">
                     <i class="fas fa-print"></i> พิมพ์รายละเอียดคำสั่งซื้อ
@@ -1297,6 +1296,10 @@ if (!$current_admin) {
                     <div class="filter-group">
                         <label for="dateToFilter">ถึงวันที่</label>
                         <input type="date" id="dateToFilter">
+                    </div>
+                    <!-- Search Bar -->
+                    <div class="search-container">
+                        <input type="text" id="searchInput" placeholder="ค้นหารหัสคำสั่งซื้อ, ชื่อลูกค้า..." autocomplete="off">
                     </div>
                     <div style="display: flex; gap: 10px; align-items: flex-end;">
                         <button id="searchBtn" class="btn-filter-search" type="button">

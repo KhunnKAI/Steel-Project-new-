@@ -1,5 +1,7 @@
 <?php
-// Include config file for database connection and session management
+// ========================
+// INITIALIZATION
+// ========================
 require_once 'config.php';
 
 header('Content-Type: application/json; charset=utf-8');
@@ -7,22 +9,24 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
-// ----------------------------------------
-// Error & Exception Handling
-// ----------------------------------------
+// ========================
+// ERROR HANDLING
+// ========================
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 
 $log_file = __DIR__ . '/error_log_get_admin.log';
 
+// FUNCTION: ตั้งค่า error handler ที่กำหนดเอง
 set_error_handler(function ($severity, $message, $file, $line) use ($log_file) {
     $log = "[" . date('Y-m-d H:i:s') . "] ERROR: $message in $file on line $line\n";
     error_log($log, 3, $log_file);
     throw new ErrorException($message, 0, $severity, $file, $line);
 });
 
+// FUNCTION: ตั้งค่า exception handler ที่กำหนดเอง
 set_exception_handler(function ($e) use ($log_file) {
-    $log = "[" . date('Y-m-d H:i:s') . "] EXCEPTION: " . $e->getMessage() . " in " . $e->getFile() . " line " . $e->getLine() . "\n";
+    $log = "[" . date('Y-m-d H:i:s') . "] EXCEPTION: " . $e->getMessage() . "\n";
     error_log($log, 3, $log_file);
 
     http_response_code(500);
@@ -33,21 +37,17 @@ set_exception_handler(function ($e) use ($log_file) {
     exit;
 });
 
+// Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
 
-// Check if user is logged in (optional - remove if not needed)
-// requireLogin();
-
+// ========================
+// MAIN LOGIC
+// ========================
 try {
-    // Use the PDO connection from config.php
-    // $pdo is already available from config.php
-    
-    // --------------------------
-    // Query Parameters
-    // --------------------------
+    // FUNCTION: ดึงค่า query parameters
     $admin_id   = $_GET['admin_id']   ?? null;
     $status     = $_GET['status']     ?? null;
     $department = $_GET['department'] ?? null;
@@ -57,9 +57,7 @@ try {
     $limit      = max(1, (int)($_GET['limit'] ?? 10));
     $offset     = ($page - 1) * $limit;
 
-    // --------------------------
-    // Base SQL - Updated table name to match your database
-    // --------------------------
+    // FUNCTION: สร้าง SQL query แบบไดนามิก
     $sql = "SELECT admin_id, fullname, position, department, phone, status, created_at, updated_at 
             FROM Admin WHERE 1=1";
     $params = [];
@@ -85,9 +83,7 @@ try {
         $params[':search'] = "%$search%";
     }
 
-    // --------------------------
-    // Count total
-    // --------------------------
+    // FUNCTION: นับจำนวน admin ทั้งหมด
     $count_sql = str_replace(
         "SELECT admin_id, fullname, position, department, phone, status, created_at, updated_at FROM Admin",
         "SELECT COUNT(*) as total FROM Admin",
@@ -102,9 +98,7 @@ try {
     $total_records = $count_row && isset($count_row['total']) ? (int)$count_row['total'] : 0;
     $total_pages   = $limit > 0 ? ceil($total_records / $limit) : 1;
 
-    // --------------------------
-    // Main Query
-    // --------------------------
+    // FUNCTION: ดึงข้อมูล admin พร้อมการ pagination
     $sql .= " ORDER BY created_at DESC";
     if (!$admin_id) {
         $sql .= " LIMIT :limit OFFSET :offset";
@@ -121,28 +115,27 @@ try {
     $stmt->execute();
     $admins = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // --------------------------
-    // Format data
-    // --------------------------
+    // FUNCTION: จัดรูปแบบข้อมูล (แปลเป็นไทย, จัดรูปแบบวันที่)
     foreach ($admins as &$admin) {
         $admin['created_at_formatted'] = date('d/m/Y H:i', strtotime($admin['created_at']));
         $admin['updated_at_formatted'] = $admin['updated_at'] ? date('d/m/Y H:i', strtotime($admin['updated_at'])) : null;
 
         $dept_thai = [
             'management' => 'บริหาร',
-            'sales'      => 'ขาย',
-            'warehouse'  => 'คลังสินค้า',
-            'logistics'  => 'ขนส่ง',
+            'sales' => 'ขาย',
+            'warehouse' => 'คลังสินค้า',
+            'logistics' => 'ขนส่ง',
             'accounting' => 'บัญชี',
-            'it'         => 'เทคโนโลยีสารสนเทศ'
+            'it' => 'เทคโนโลยีสารสนเทศ'
         ];
+        
         $position_thai = [
-            'manager'    => 'ผู้จัดการ',
-            'sales'      => 'พนักงานขาย',
-            'warehouse'  => 'พนักงานคลัง',
-            'shipping'   => 'พนักงานขนส่ง',
+            'manager' => 'ผู้จัดการ',
+            'sales' => 'พนักงานขาย',
+            'warehouse' => 'พนักงานคลัง',
+            'shipping' => 'พนักงานขนส่ง',
             'accounting' => 'พนักงานบัญชี',
-            'super'      => 'ผู้ดูแลระบบ'
+            'super' => 'ผู้ดูแลระบบ'
         ];
 
         $admin['department_thai'] = $dept_thai[$admin['department']] ?? $admin['department'];
@@ -150,9 +143,7 @@ try {
         $admin['status_thai']     = $admin['status'] === 'active' ? 'ใช้งานอยู่' : 'ไม่ได้ใช้งาน';
     }
 
-    // --------------------------
-    // Response
-    // --------------------------
+    // FUNCTION: คำนวณสรุปสถิติ (เฉพาะเมื่อไม่มี filter)
     $response = [
         'success' => true,
         'data' => $admin_id ? ($admins[0] ?? null) : $admins,
@@ -163,15 +154,14 @@ try {
             'records_per_page' => $limit
         ],
         'summary' => [
-            'total'        => $total_records,
-            'active'       => 0,
-            'inactive'     => 0,
-            'by_department'=> [],
-            'by_position'  => []
+            'total'          => $total_records,
+            'active'         => 0,
+            'inactive'       => 0,
+            'by_department'  => [],
+            'by_position'    => []
         ]
     ];
 
-    // Summary เฉพาะตอนที่ไม่มี filter
     if (!$admin_id && empty($search) && empty($status) && empty($department) && empty($position)) {
         $summary_stmt = $pdo->query("
             SELECT status, department, position, COUNT(*) as count
@@ -200,7 +190,7 @@ try {
     echo json_encode($response, JSON_UNESCAPED_UNICODE);
 
 } catch (PDOException $e) {
-    error_log("[" . date('Y-m-d H:i:s') . "] PDO ERROR: " . $e->getMessage() . "\n", 3, $log_file);
+    error_log("[" . date('Y-m-d H:i:s') . "] PDO ERROR: " . $e->getMessage(), 3, $log_file);
     http_response_code(500);
     echo json_encode([
         'success' => false,

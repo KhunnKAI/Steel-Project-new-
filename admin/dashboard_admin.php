@@ -19,7 +19,9 @@ if (!$current_admin) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>แดชบอร์ด - ระบบจัดการร้านค้า</title>
+    <title>แดชบอร์ด - ช้างเหล็กไทย</title>
+    <link rel="icon" type="image/png" href="image\logo_cropped.png">
+    
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
@@ -108,6 +110,34 @@ if (!$current_admin) {
             justify-content: center;
             color: white;
             font-weight: bold;
+        }
+
+        /* ========================
+           LOADING INDICATOR
+           ======================== */
+        .loading-container {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #990000;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         /* ========================
@@ -409,25 +439,8 @@ if (!$current_admin) {
         }
 
         /* ========================
-           LOADING & ERROR STATES
+           ERROR STATES
            ======================== */
-        .loading-indicator {
-            display: none;
-            text-align: center;
-            padding: 20px;
-            color: #666;
-        }
-
-        .loading-indicator i {
-            font-size: 24px;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
         .error-message {
             display: none;
             background: #f8d7da;
@@ -515,8 +528,8 @@ if (!$current_admin) {
             </div>
 
             <!-- Loading Indicator -->
-            <div class="loading-indicator">
-                <i class="fas fa-spinner"></i>
+            <div class="loading-container" id="loadingIndicator">
+                <div class="loading-spinner"></div>
                 <div>กำลังโหลดข้อมูล...</div>
             </div>
 

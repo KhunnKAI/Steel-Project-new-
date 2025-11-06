@@ -472,7 +472,7 @@ class DashboardManager {
         return statusMap[statusCode] || 'status-unknown';
     }
 
-    // FUNCTION: คำนวณเวลาที่ผ่านมา
+    // FUNCTION: คำนวดเวลาที่ผ่านมา
     getTimeAgo(datetime) {
         try {
             const now = new Date();
@@ -498,22 +498,24 @@ class DashboardManager {
     // UI STATE MANAGEMENT
     // ========================
 
-    // FUNCTION: แสดงสถานะการโหลด
+    // FUNCTION: แสดงสถานะการโหลด (แบบ orders_admin.js)
     showLoadingStates() {
-        const loadingElements = document.querySelectorAll('.loading-indicator');
-        const contentElements = document.querySelectorAll('.dashboard-content');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const dashboardContent = document.querySelector('.dashboard-content');
 
-        loadingElements.forEach(el => el.style.display = 'block');
-        contentElements.forEach(el => el.style.opacity = '0.5');
+        if (loadingIndicator) {
+            loadingIndicator.style.display = 'block';
+        }
     }
 
-    // FUNCTION: ซ่อนสถานะการโหลด
+    // FUNCTION: ซ่อนสถานะการโหลด (แบบ orders_admin.js)
     hideLoadingStates() {
-        const loadingElements = document.querySelectorAll('.loading-indicator');
-        const contentElements = document.querySelectorAll('.dashboard-content');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const dashboardContent = document.querySelector('.dashboard-content');
 
-        loadingElements.forEach(el => el.style.display = 'none');
-        contentElements.forEach(el => el.style.opacity = '1');
+        if (loadingIndicator) {
+            loadingIndicator.style.display = 'none';
+        }
     }
 
     // FUNCTION: แสดงข้อความแจ้งเตือน

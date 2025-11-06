@@ -1,44 +1,53 @@
 <?php
-// Remove session_start() from here since config.php handles it properly
-require_once 'controllers/config.php';
+// ========================
+// * INITIALIZATION & SECURITY *
+// ========================
+// SECTION: โหลดคอนฟิกและตรวจสอบการเข้าถึง
 
-// Require login to access this page
+require_once 'controllers/config.php';
 requireLogin();
 
-// Get current admin information
 $current_admin = getCurrentAdmin();
 if (!$current_admin) {
-    // If admin not found in database, logout
     header("Location: controllers/logout.php");
     exit();
 }
 
-$allowed_roles = ['manager', 'super', 'accounting'];
+// FUNCTION: ตรวจสอบสิทธิ์ของผู้ใช้
 
+$allowed_roles = ['manager', 'super', 'accounting'];
 if (!isset($current_admin['position']) || !in_array($current_admin['position'], $allowed_roles)) {
-    // Set error message
     $_SESSION['error'] = "คุณไม่มีสิทธิ์เข้าถึงหน้านี้";
-    
-    // Redirect to access denied page
     header("Location: accessdenied_admin.html");
     exit();
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="th">
 <head>
+    <!-- ========================
+         * META & TITLE *
+         ======================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>รายงาน - ระบบจัดการร้านค้า</title>
+    <title>รายงาน - ช้างเหล็กไทย</title>
+    <link rel="icon" type="image/png" href="image\logo_cropped.png">
+
+    <!-- ========================
+         * EXTERNAL STYLESHEETS & FONTS *
+         ======================== -->
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="sidebar_admin.css">
 
-
-    
+    <!-- ========================
+         * INTERNAL STYLES *
+         ======================== -->
     <style>
+        /* ========================
+           * RESET & BASE STYLES *
+           ======================== */
+
         * {
             margin: 0;
             padding: 0;
@@ -50,6 +59,10 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
         }
+
+        /* ========================
+           * NAVBAR TOGGLE *
+           ======================== */
 
         .navbar-toggle {
             position: fixed;
@@ -72,6 +85,10 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             transform: scale(1.05);
         }
 
+        /* ========================
+           * CONTAINER & LAYOUT *
+           ======================== */
+
         .container {
             display: flex;
             min-height: 100vh;
@@ -84,6 +101,10 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             transition: all 0.3s ease;
             min-height: 100vh;
         }
+
+        /* ========================
+           * HEADER SECTION *
+           ======================== */
 
         .header {
             display: flex;
@@ -120,13 +141,30 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             font-weight: bold;
         }
 
-        /* Report Filter Section */
+        /* ========================
+           * FILTER SECTION *
+           ======================== */
+
         .filter-section {
-            background: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-            margin-bottom: 30px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            padding: 25px 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            position: relative;
+        }
+
+        .filter-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #990000, #cc0000, #ff6b6b);
+            border-radius: 20px 20px 0 0;
         }
 
         .filter-title {
@@ -181,6 +219,10 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             justify-content: flex-end;
         }
 
+        /* ========================
+           * BUTTON STYLES *
+           ======================== */
+
         .btn {
             padding: 12px 24px;
             border: none;
@@ -196,34 +238,45 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
         }
 
         .btn-primary {
-            background: #990000;
+            background: linear-gradient(45deg, #dc3545, #c82333);
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
             color: white;
         }
 
         .btn-primary:hover {
-            background: #770000;
+            background: linear-gradient(45deg, #c82333, #bd2130);
             transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(220, 53, 69, 0.5);
         }
 
         .btn-secondary {
-            background: #6c757d;
+            background: linear-gradient(45deg, #6c757d, #868e96);
+            box-shadow: 0 6px 20px rgba(198, 198, 198, 0.4);
             color: white;
         }
 
         .btn-secondary:hover {
-            background: #545b62;
+            background: linear-gradient(45deg, #5a6268, #6c757d);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(198, 198, 198, 0.5);
         }
 
         .btn-export {
-            background: #28a745;
+            background: linear-gradient(45deg, #28a745, #20c997);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
             color: white;
         }
 
         .btn-export:hover {
-            background: #218838;
+            background: linear-gradient(45deg, #20c997, #17a2b8);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
         }
 
-        /* Report Tabs */
+        /* ========================
+           * REPORT TABS *
+           ======================== */
+
         .report-tabs {
             display: flex;
             background: white;
@@ -261,7 +314,10 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             background: #f5f5f5;
         }
 
-        /* Report Content */
+        /* ========================
+           * REPORT CONTENT *
+           ======================== */
+
         .report-content {
             display: none;
         }
@@ -288,7 +344,10 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             gap: 10px;
         }
 
-        /* Loading indicator */
+        /* ========================
+           * LOADING INDICATOR *
+           ======================== */
+
         .loading {
             display: none;
             position: fixed;
@@ -320,7 +379,10 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             100% { transform: rotate(360deg); }
         }
 
-        /* Summary Cards */
+        /* ========================
+           * SUMMARY CARDS *
+           ======================== */
+
         .summary-cards {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -365,7 +427,10 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             font-size: 14px;
         }
 
-        /* Search box */
+        /* ========================
+           * SEARCH BOX *
+           ======================== */
+
         .search-box {
             margin-bottom: 15px;
         }
@@ -378,9 +443,19 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             border-radius: 8px;
             font-size: 14px;
             font-family: 'Inter';
+            transition: all 0.3s ease;
         }
 
-        /* Data Table */
+        .search-box input:focus {
+            outline: none;
+            border-color: #990000;
+            box-shadow: 0 0 0 3px rgba(153, 0, 0, 0.1);
+        }
+
+        /* ========================
+           * DATA TABLE *
+           ======================== */
+
         .table-container {
             overflow-x: auto;
         }
@@ -417,13 +492,12 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             background: #f8f9fa;
         }
 
-        .text-right {
-            text-align: right !important;
-        }
+        .text-right { text-align: right !important; }
+        .text-center { text-align: center !important; }
 
-        .text-center {
-            text-align: center !important;
-        }
+        /* ========================
+           * STATUS BADGES *
+           ======================== */
 
         .status-badge {
             padding: 6px 12px;
@@ -438,6 +512,14 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
         .status-low-stock { background: #fff3cd; color: #856404; }
         .status-out-of-stock { background: #f8d7da; color: #721c24; }
         .status-critical { background: #f8d7da; color: #721c24; }
+        .status-ok { background: #d4edda; color: #155724; }
+        .status-low { background: #fff3cd; color: #856404; }
+        .status-normal { background: #d4edda; color: #155724; }
+        .status-urgent { background: #f8d7da; color: #721c24; }
+
+        /* ========================
+           * MOVEMENT COLORS *
+           ======================== */
 
         .movement-in { color: #28a745; font-weight: 600; }
         .movement-out { color: #dc3545; font-weight: 600; }
@@ -447,9 +529,17 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
         .movement-negative { color: #dc3545; }
         .movement-neutral { color: #6c757d; }
 
+        /* ========================
+           * URGENCY COLORS *
+           ======================== */
+
         .urgency-urgent { color: #dc3545; font-weight: bold; }
         .urgency-warning { color: #ffc107; font-weight: bold; }
         .urgency-normal { color: #28a745; }
+
+        /* ========================
+           * RESPONSIVE DESIGN *
+           ======================== */
 
         @media screen and (max-width: 768px) {
             .navbar-toggle {
@@ -481,12 +571,11 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             .data-table {
                 font-size: 14px;
             }
-            
+
             .data-table th,
             .data-table td {
                 padding: 10px 8px;
             }
-
         }
 
         @media screen and (max-width: 480px) {
@@ -499,14 +588,23 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
 </head>
 
 <body>
+    <!-- ========================
+         * NAVBAR TOGGLE BUTTON *
+         ======================== -->
     <div class="navbar-toggle" onclick="toggleSidebar()">
         <i class="fas fa-bars"></i>
     </div>
 
+    <!-- ========================
+         * MAIN CONTAINER *
+         ======================== -->
     <div class="container">
         <?php include 'sidebar_admin.php'; ?>
         
         <main class="main-content">
+            <!-- ========================
+                 * HEADER SECTION *
+                 ======================== -->
             <div class="header">
                 <h1><i class="fas fa-chart-bar"></i> รายงาน</h1>
                 <div class="user-info">
@@ -519,7 +617,9 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                 </div>
             </div>
 
-            <!-- Filter Section -->
+            <!-- ========================
+                 * FILTER SECTION *
+                 ======================== -->
             <div class="filter-section">
                 <div class="filter-title">
                     <i class="fas fa-filter"></i>
@@ -558,7 +658,9 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                 </div>
             </div>
 
-            <!-- Report Tabs -->
+            <!-- ========================
+                 * REPORT TABS *
+                 ======================== -->
             <div class="report-tabs">
                 <button class="tab-button active" onclick="showReport('sales')">
                     <i class="fas fa-chart-line"></i>
@@ -582,13 +684,17 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                 </button>
             </div>
 
-            <!-- Loading Indicator -->
+            <!-- ========================
+                 * LOADING INDICATOR *
+                 ======================== -->
             <div class="loading" id="loading-indicator">
                 <div class="loading-spinner"></div>
                 <p>กำลังโหลดข้อมูล...</p>
             </div>
 
-            <!-- Sales Report -->
+            <!-- ========================
+                 * SALES REPORT *
+                 ======================== -->
             <div id="sales-report" class="report-content active">
                 <div class="summary-cards">
                     <div class="summary-card sales">
@@ -635,9 +741,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td colspan="7" class="text-center">กำลังโหลดข้อมูล...</td>
-                                </tr>
+                                <tr><td colspan="7" class="text-center">กำลังโหลดข้อมูล...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -661,16 +765,16 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td colspan="6" class="text-center">กำลังโหลดข้อมูล...</td>
-                                </tr>
+                                <tr><td colspan="6" class="text-center">กำลังโหลดข้อมูล...</td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- Stock Report -->
+            <!-- ========================
+                 * STOCK REPORT *
+                 ======================== -->
             <div id="stock-report" class="report-content">
                 <div class="summary-cards">
                     <div class="summary-card products">
@@ -713,9 +817,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td colspan="7" class="text-center">กำลังโหลดข้อมูล...</td>
-                                </tr>
+                                <tr><td colspan="7" class="text-center">กำลังโหลดข้อมูล...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -734,21 +836,21 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                                     <th>ชื่อสินค้า</th>
                                     <th>คงเหลือ</th>
                                     <th>ขายเฉลี่ย/เดือน</th>
-                                    <th>คาดการณ์เหลือ</th>
+                                    <th>คาดการณ์สต็อก</th>
                                     <th>สถานะ</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td colspan="6" class="text-center">กำลังโหลดข้อมูล...</td>
-                                </tr>
+                                <tr><td colspan="6" class="text-center">กำลังโหลดข้อมูล...</td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- Movement Report -->
+            <!-- ========================
+                 * MOVEMENT REPORT *
+                 ======================== -->
             <div id="movement-report" class="report-content">
                 <div class="summary-cards">
                     <div class="summary-card sales">
@@ -793,16 +895,16 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td colspan="9" class="text-center">กำลังโหลดข้อมูล...</td>
-                                </tr>
+                                <tr><td colspan="9" class="text-center">กำลังโหลดข้อมูล...</td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- Shipping Report -->
+            <!-- ========================
+                 * SHIPPING REPORT *
+                 ======================== -->
             <div id="shipping-report" class="report-content">
                 <div class="summary-cards">
                     <div class="summary-card sales">
@@ -844,16 +946,16 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td colspan="6" class="text-center">กำลังโหลดข้อมูล...</td>
-                                </tr>
+                                <tr><td colspan="6" class="text-center">กำลังโหลดข้อมูล...</td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- Customer Report -->
+            <!-- ========================
+                 * CUSTOMER REPORT *
+                 ======================== -->
             <div id="customer-report" class="report-content">
                 <div class="summary-cards">
                     <div class="summary-card sales">
@@ -895,9 +997,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td colspan="6" class="text-center">กำลังโหลดข้อมูล...</td>
-                                </tr>
+                                <tr><td colspan="6" class="text-center">กำลังโหลดข้อมูล...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -906,7 +1006,10 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
         </main>
     </div>
 
-     <script src="sidebar_admin.js"></script>
+    <!-- ========================
+         * SCRIPTS *
+         ======================== -->
+    <script src="sidebar_admin.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="reports_admin.js"></script>
 </body>

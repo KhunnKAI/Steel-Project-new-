@@ -763,16 +763,6 @@ function applySorting() {
     });
 }
 
-// FUNCTION: ล้างตัวกรองวันที่
-function clearDateFilters() {
-    ['startDateFilter', 'endDateFilter'].forEach(id => {
-        const el = document.getElementById(id); 
-        if (el) el.value = '';
-    });
-    applyFilters(); 
-    showNotification('ล้างตัวกรองวันที่แล้ว', 'info');
-}
-
 // FUNCTION: รีเซ็ตตัวกรองทั้งหมด
 function resetAllFilters() {
     const filters = [
@@ -1099,7 +1089,7 @@ const globalFunctions = {
     viewProduct, editProduct, deleteProduct, openAddModal, closeModal, closeViewModal,
     editProductFromView: () => { if (currentViewId) { closeViewModal(); editProduct(currentViewId); } },
     deleteProductFromView: () => { if (currentViewId) { closeViewModal(); deleteProduct(currentViewId); } },
-    changeMainImage, changePage, clearDateFilters, resetAllFilters,
+    changeMainImage, changePage, resetAllFilters,
     viewProductImages, viewImage, removeImage, closeImageGallery, navigateImage,
     onSortChange: () => { applySorting(); renderProducts(); }, 
     applyFilters,

@@ -1,9 +1,20 @@
 <?php
+// ========================
+// SECURITY & CONFIGURATION
+// ========================
+
+// FUNCTION: โหลดการตั้งค่าและตรวจสอบการเข้าสู่ระบบ
 require_once 'config.php';
 requireLogin();
 
+// FUNCTION: ตั้งค่า Header เป็น JSON
 header('Content-Type: application/json; charset=utf-8');
 
+// ========================
+// MAIN HANDLER
+// ========================
+
+// FUNCTION: ประมวลผลคำขอรายงาน (Route report_type ไปยังฟังก์ชันที่เหมาะสม)
 try {
     $report_type = $_GET['type'] ?? '';
     $start_date = $_GET['start_date'] ?? date('Y-m-01');
@@ -65,25 +76,16 @@ try {
     echo json_encode(['error' => $e->getMessage()]);
 }
 
-// Sales Summary - แก้ให้ return object แทน array และแยบคิวรี่ยอดขายกับคำสั่งซื้อ
+// ========================
+// SALES REPORTS
+// ========================
+
+// FUNCTION: ดึงข้อมูลสรุปการขาย (ยอดขาย, ค่าเฉลี่ย, ลูกค้าใหม่, อัตราการเติบโต)
 function getSalesSummary($pdo, $start_date, $end_date, $category = 'all') {
     $date_end_param = $end_date . ' 23:59:59';
     $params = [$start_date, $date_end_param];
 
-    // --- 1. Query for Sales and Averages (Current Period) ---
-    $sales_sql = "
-        SELECT 
-            COALESCE(SUM(o.total_amount), 0) as total_sales,
-            COALESCE(SUM(o.total_novat), 0) as total_sales_no_vat,
-            COALESCE(SUM(o.shipping_fee), 0) as total_shipping,
-            COALESCE(AVG(o.total_amount), 0) as avg_order_value,
-            COUNT(DISTINCT o.user_id) as unique_customers
-        FROM Orders o
-    ";
-    
-    $sales_where = "WHERE o.created_at BETWEEN ? AND ? AND o.status NOT IN ('status05','status01')";
-    $sales_params = $params;
-
+    // --- Query: ยอดขายและค่าเฉลี่ย (งวดปัจจุบัน) ---
     if ($category !== 'all') {
         $sales_sql = "
             SELECT
@@ -128,43 +130,42 @@ function getSalesSummary($pdo, $start_date, $end_date, $category = 'all') {
     $sales_stmt->execute($sales_params);
     $sales_result = $sales_stmt->fetch(PDO::FETCH_ASSOC);
     
-    // --- 2. Query for Total Orders (Current Period) ---
-    $orders_sql = "
-        SELECT 
-            COUNT(DISTINCT o.order_id) as total_orders
-        FROM Orders o
-    ";
-    
-    $orders_where = "WHERE o.created_at BETWEEN ? AND ? AND o.status NOT IN ('status05')";
-    $orders_params = $params;
-
+    // --- Query: จำนวนคำสั่งซื้อทั้งหมด (งวดปัจจุบัน) ---
     if ($category !== 'all') {
-        $orders_sql .= "
+        $orders_sql = "
+            SELECT COUNT(DISTINCT o.order_id) as total_orders
+            FROM Orders o
             INNER JOIN OrderItem oi ON o.order_id = oi.order_id
             INNER JOIN Product p ON oi.product_id = p.product_id
-            $orders_where AND p.category_id = ?
+            WHERE o.created_at BETWEEN ? AND ? 
+            AND o.status NOT IN ('status05')
+            AND p.category_id = ?
         ";
-        $orders_params[] = $category;
+        $orders_params = [$start_date, $date_end_param, $category];
     } else {
-        $orders_sql .= $orders_where;
+        $orders_sql = "
+            SELECT COUNT(DISTINCT o.order_id) as total_orders
+            FROM Orders o
+            WHERE o.created_at BETWEEN ? AND ? 
+            AND o.status NOT IN ('status05')
+        ";
+        $orders_params = $params;
     }
     
     $orders_stmt = $pdo->prepare($orders_sql);
     $orders_stmt->execute($orders_params);
     $orders_result = $orders_stmt->fetch(PDO::FETCH_ASSOC);
 
-    // --- 3. Calculate Growth Rate ---
-    // คำนวนจำนวนวันของช่วงเวลา
+    // --- คำนวณ: อัตราการเติบโต (Growth Rate) ---
     $date1 = new DateTime($start_date);
     $date2 = new DateTime($end_date);
     $interval = $date1->diff($date2);
     $days = $interval->days;
     
-    // คำนวนช่วงเวลาก่อนหน้า (ระยะเวลาเท่ากัน)
     $prev_end_date = date('Y-m-d', strtotime($start_date . ' -1 day'));
     $prev_start_date = date('Y-m-d', strtotime($prev_end_date . " -$days days"));
     
-    // Query ยอดขายช่วงก่อนหน้า
+    // --- Query: ยอดขายช่วงอ่านหน้า (ระยะเวลาเดียวกัน) ---
     if ($category !== 'all') {
         $prev_sales_sql = "
             SELECT COALESCE(SUM(sub.total_amount), 0) as prev_total_sales
@@ -194,7 +195,7 @@ function getSalesSummary($pdo, $start_date, $end_date, $category = 'all') {
     $prev_stmt->execute($prev_params);
     $prev_result = $prev_stmt->fetch(PDO::FETCH_ASSOC);
     
-    // คำนวน Growth Rate
+    // --- คำนวณ: Growth Rate ---
     $current_sales = $sales_result['total_sales'] ?? 0;
     $previous_sales = $prev_result['prev_total_sales'] ?? 0;
     
@@ -202,10 +203,10 @@ function getSalesSummary($pdo, $start_date, $end_date, $category = 'all') {
     if ($previous_sales > 0) {
         $growth_rate = round((($current_sales - $previous_sales) / $previous_sales) * 100, 2);
     } elseif ($current_sales > 0) {
-        $growth_rate = 100; // เติบโต 100% ถ้าไม่มียอดขายช่วงก่อน
+        $growth_rate = 100;
     }
 
-    // --- 4. Combine and Return ---
+    // --- รวมและส่งคืนผลลัพธ์ ---
     if ($sales_result && $orders_result) {
         return array_merge($orders_result, $sales_result, ['growth_rate' => $growth_rate]);
     }
@@ -221,7 +222,7 @@ function getSalesSummary($pdo, $start_date, $end_date, $category = 'all') {
     ];
 }
 
-// Sales by Product - แก้ field names ให้ตรงกับ JS
+// FUNCTION: ดึงข้อมูลการขายตามสินค้า (ปริมาณ, ยอดขาย, ราคาเฉลี่ย)
 function getSalesByProduct($pdo, $start_date, $end_date, $category = 'all') {
     $sql = "
         SELECT 
@@ -258,7 +259,7 @@ function getSalesByProduct($pdo, $start_date, $end_date, $category = 'all') {
     return $stmt->fetchAll();
 }
 
-// Top Products - แก้ field names ให้ตรงกับ JS
+// FUNCTION: ดึงข้อมูล 20 สินค้าขายดี (ปริมาณขาย, รายได้, ความถี่การสั่งซื้อ)
 function getTopProducts($pdo, $start_date, $end_date, $category = 'all') {
     $sql = "
         SELECT 
@@ -296,7 +297,11 @@ function getTopProducts($pdo, $start_date, $end_date, $category = 'all') {
     return $stmt->fetchAll();
 }
 
-// Stock Summary - แก้ให้ return array ของ products
+// ========================
+// STOCK REPORTS
+// ========================
+
+// FUNCTION: ดึงข้อมูลสรุปสต็อก (ปริมาณ, ราคา, วันที่รับเข้า, วันที่ยังคงมี)
 function getStockSummary($pdo, $category = 'all') {
     $sql = "
         SELECT 
@@ -331,7 +336,7 @@ function getStockSummary($pdo, $category = 'all') {
     return $stmt->fetchAll();
 }
 
-// Stock Movement - แก้ field names
+// FUNCTION: ดึงข้อมูลการเคลื่อนไหวสต็อก (ปรับปรุง, ลดลง, หมายเหตุ)
 function getStockMovement($pdo, $start_date, $end_date) {
     $sql = "
         SELECT 
@@ -360,7 +365,7 @@ function getStockMovement($pdo, $start_date, $end_date) {
     return $stmt->fetchAll();
 }
 
-// Reorder Point - แก้ field names และ SQL query
+// FUNCTION: ดึงข้อมูลจุดสั่งซื้อใหม่ (สต็อกคงเหลือ, การขายเฉลี่ยรายวัน, สถานะเร่งด่วน)
 function getReorderPoint($pdo, $category = 'all') {
     $sql = "
         SELECT 
@@ -434,7 +439,7 @@ function getReorderPoint($pdo, $category = 'all') {
     return $stmt->fetchAll();
 }
 
-// Stock Value - แก้ให้ return object สำหรับ summary
+// FUNCTION: ดึงข้อมูลมูลค่าสต็อกทั้งหมด (สรุป)
 function getStockValue($pdo, $category = 'all') {
     $sql = "
         SELECT 
@@ -457,7 +462,11 @@ function getStockValue($pdo, $category = 'all') {
     return $result ?: ['total_value' => 0];
 }
 
-// Shipping Summary - แก้ให้ return object
+// ========================
+// SHIPPING REPORTS
+// ========================
+
+// FUNCTION: ดึงข้อมูลสรุปการจัดส่ง (จำนวนคำสั่งซื้อ, ค่าส่ง)
 function getShippingSummary($pdo, $start_date, $end_date) {
     $stmt = $pdo->prepare("
         SELECT 
@@ -480,7 +489,7 @@ function getShippingSummary($pdo, $start_date, $end_date) {
     ];
 }
 
-// Shipping by Zone - แก้ field names
+// FUNCTION: ดึงข้อมูลการจัดส่งตามเขตพื้นที่ (ยอดขาย, จำนวน, ค่าเฉลี่ย)
 function getShippingByZone($pdo, $start_date, $end_date) {
     $stmt = $pdo->prepare("
         SELECT 
@@ -506,7 +515,11 @@ function getShippingByZone($pdo, $start_date, $end_date) {
     return $stmt->fetchAll();
 }
 
-// Customer Summary - แก้ให้ return object
+// ========================
+// CUSTOMER REPORTS
+// ========================
+
+// FUNCTION: ดึงข้อมูลสรุปลูกค้า (ลูกค้าใหม่, ลูกค้ากลับมา, ค่าเฉลี่ย)
 function getCustomerSummary($pdo, $start_date, $end_date) {
     $stmt = $pdo->prepare("
         SELECT 
@@ -524,10 +537,10 @@ function getCustomerSummary($pdo, $start_date, $end_date) {
             AND o.status NOT IN ('status05')
     ");
     $stmt->execute([
-        $start_date, $end_date . ' 23:59:59',  // new customers
-        $start_date,                           // returning customers check
-        $start_date, $end_date . ' 23:59:59',  // returning customers orders
-        $start_date, $end_date . ' 23:59:59'   // orders in period
+        $start_date, $end_date . ' 23:59:59',
+        $start_date,
+        $start_date, $end_date . ' 23:59:59',
+        $start_date, $end_date . ' 23:59:59'
     ]);
     $result = $stmt->fetch();
     
@@ -539,7 +552,7 @@ function getCustomerSummary($pdo, $start_date, $end_date) {
     ];
 }
 
-// Top Customers - แก้ field names
+// FUNCTION: ดึงข้อมูล 10 ลูกค้าซื้อมากที่สุด (จำนวน, ยอด, คำสั่งซื้อสุดท้าย)
 function getTopCustomers($pdo, $start_date, $end_date, $limit = 10) {
     $stmt = $pdo->prepare("
         SELECT 

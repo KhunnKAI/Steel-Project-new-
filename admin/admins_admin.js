@@ -1,4 +1,7 @@
-// Admin Management System - Fixed JavaScript
+// ========================
+// ADMIN MANAGEMENT SYSTEM
+// ========================
+
 class AdminManager {
     constructor() {
         this.staff = [];
@@ -7,14 +10,17 @@ class AdminManager {
         this.itemsPerPage = 10;
         this.currentEditId = null;
         this.apiBaseUrl = 'http://localhost/steelproject/admin/controllers/';
-        this.searchTimeout = null;
         
         this.initializeMappings();
         this.init();
     }
 
+    // ========================
+    // INITIALIZATION
+    // ========================
+
+    // FUNCTION: เริ่มต้นการแมปข้อมูล (บทบาท, แผนก)
     initializeMappings() {
-        // Role mapping with Thai translations
         this.roleMap = {
             'manager': { class: 'role-manager', text: 'ผู้จัดการ', avatar: '#6f42c1' },
             'sales': { class: 'role-sales', text: 'พนักงานขาย', avatar: '#fd7e14' },
@@ -24,7 +30,6 @@ class AdminManager {
             'super': { class: 'role-super', text: 'ผู้ดูแลระบบ', avatar: '#e83e8c' }
         };
 
-        // Department mapping with Thai translations
         this.departmentMap = {
             'management': 'บริหาร',
             'sales': 'ขาย',
@@ -35,6 +40,7 @@ class AdminManager {
         };
     }
 
+    // FUNCTION: เริ่มต้นระบบ
     async init() {
         try {
             await this.loadStaff();
@@ -46,7 +52,11 @@ class AdminManager {
         }
     }
 
-    // API Methods
+    // ========================
+    // API METHODS
+    // ========================
+
+    // FUNCTION: โหลดข้อมูลพนักงานจาก API
     async loadStaff() {
         try {
             const response = await fetch(`${this.apiBaseUrl}get_admin.php`);
@@ -60,44 +70,10 @@ class AdminManager {
             }
         } catch (error) {
             console.error('Error loading staff:', error);
-            // Fallback to sample data if API fails
-            this.loadSampleData();
         }
     }
 
-    loadSampleData() {
-        this.staff = [
-            {
-                admin_id: "EMP1001",
-                fullname: "นายวิชัย ผู้จัดการ",
-                phone: "089-123-4567",
-                position: "manager",
-                department: "management",
-                status: "active",
-                created_at: "2024-01-01 09:00:00"
-            },
-            {
-                admin_id: "EMP2305", 
-                fullname: "นางสาวสุดา นักขาย",
-                phone: "081-987-6543",
-                position: "sales",
-                department: "sales", 
-                status: "active",
-                created_at: "2024-01-15 10:00:00"
-            },
-            {
-                admin_id: "EMP9999",
-                fullname: "นายระบบ ผู้ดูแล",
-                phone: "080-000-1234", 
-                position: "super",
-                department: "it",
-                status: "active",
-                created_at: "2024-01-01 08:00:00"
-            }
-        ];
-        this.filteredStaff = [...this.staff];
-    }
-
+    // FUNCTION: บันทึกข้อมูลพนักงาน (สร้างหรืออัปเดต)
     async saveStaff(staffData) {
         try {
             const url = this.currentEditId 
@@ -112,9 +88,7 @@ class AdminManager {
 
             const response = await fetch(url, {
                 method: method,
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(staffData)
             });
 
@@ -122,13 +96,11 @@ class AdminManager {
             
             if (result.success) {
                 if (this.currentEditId) {
-                    // Update existing staff
                     const index = this.staff.findIndex(s => s.admin_id === this.currentEditId);
                     if (index !== -1) {
                         this.staff[index] = { ...this.staff[index], ...result.data };
                     }
                 } else {
-                    // Add new staff
                     this.staff.push(result.data);
                 }
                 
@@ -143,6 +115,7 @@ class AdminManager {
         }
     }
 
+    // FUNCTION: ลบข้อมูลพนักงาน
     async deleteStaff(adminId) {
         try {
             const response = await fetch(`${this.apiBaseUrl}manage_admin.php?admin_id=${adminId}`, {
@@ -165,13 +138,13 @@ class AdminManager {
             } else {
                 throw new Error(result.message);
             }
-
         } catch (error) {
             console.error('Error deleting staff:', error);
             return { success: false, message: error.message };
         }
     }
 
+    // FUNCTION: สลับสถานะพนักงาน (ใช้งาน/ไม่ใช้งาน)
     async toggleStaffStatus(adminId) {
         try {
             const staff = this.staff.find(s => s.admin_id === adminId);
@@ -181,9 +154,7 @@ class AdminManager {
             
             const response = await fetch(`${this.apiBaseUrl}manage_admin.php`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     admin_id: adminId,
                     status: newStatus
@@ -205,61 +176,68 @@ class AdminManager {
         }
     }
 
-    // UI Methods
+    // ========================
+    // EVENT LISTENERS
+    // ========================
+
+    // FUNCTION: ตั้งค่า Event Listeners สำหรับการค้นหา/กรอง
     setupEventListeners() {
-        // Search and filter events
-        const searchInput = document.getElementById('searchInput');
-        const roleFilter = document.getElementById('roleFilter');
-        const departmentFilter = document.getElementById('departmentFilter');
-        const statusFilter = document.getElementById('statusFilter');
-        const sortFilter = document.getElementById('sortFilter');
+        const elements = {
+            searchInput: document.getElementById('searchInput'),
+            searchBtn: document.getElementById('searchBtn'),
+            resetBtn: document.getElementById('resetBtn'),
+            roleFilter: document.getElementById('roleFilter'),
+            departmentFilter: document.getElementById('departmentFilter'),
+            statusFilter: document.getElementById('statusFilter'),
+            sortFilter: document.getElementById('sortFilter'),
+            staffForm: document.getElementById('staffForm'),
+            staffRole: document.getElementById('staffRole'),
+            staffDepartment: document.getElementById('staffDepartment'),
+            passwordInput: document.getElementById('staffPassword')
+        };
 
-        if (searchInput) {
-            searchInput.addEventListener('input', this.debounceSearch.bind(this));
+        if (elements.searchBtn) {
+            elements.searchBtn.addEventListener('click', this.applyFilters.bind(this));
         }
 
-        if (roleFilter) {
-            roleFilter.addEventListener('change', this.applyFilters.bind(this));
+        if (elements.resetBtn) {
+            elements.resetBtn.addEventListener('click', this.resetFilters.bind(this));
         }
 
-        if (departmentFilter) {
-            departmentFilter.addEventListener('change', this.applyFilters.bind(this));
+        if (elements.sortFilter) {
+            elements.sortFilter.addEventListener('change', this.onSortChange.bind(this));
         }
 
-        if (statusFilter) {
-            statusFilter.addEventListener('change', this.applyFilters.bind(this));
+        if (elements.staffForm) {
+            elements.staffForm.addEventListener('submit', this.handleFormSubmit.bind(this));
         }
 
-        if (sortFilter) {
-            sortFilter.addEventListener('change', this.onSortChange.bind(this));
+        if (elements.staffRole) {
+            elements.staffRole.addEventListener('change', this.updateDepartmentAndPermissions.bind(this));
         }
 
-        // Form events
-        const staffForm = document.getElementById('staffForm');
-        if (staffForm) {
-            staffForm.addEventListener('submit', this.handleFormSubmit.bind(this));
+        if (elements.staffDepartment) {
+            elements.staffDepartment.addEventListener('change', this.generateStaffCode.bind(this));
         }
 
-        const staffRole = document.getElementById('staffRole');
-        if (staffRole) {
-            staffRole.addEventListener('change', this.updateDepartmentAndPermissions.bind(this));
+        if (elements.passwordInput) {
+            elements.passwordInput.addEventListener('input', (e) => this.updatePasswordStrength(e.target.value));
         }
 
-        const staffDepartment = document.getElementById('staffDepartment');
-        if (staffDepartment) {
-            staffDepartment.addEventListener('change', this.generateStaffCode.bind(this));
+        if (elements.searchInput) {
+            elements.searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.applyFilters();
+                }
+            });
         }
 
-        const passwordInput = document.getElementById('staffPassword');
-        if (passwordInput) {
-            passwordInput.addEventListener('input', (e) => this.updatePasswordStrength(e.target.value));
-        }
-
-        // Modal events
         this.setupModalEvents();
         this.setupKeyboardShortcuts();
     }
 
+    // FUNCTION: ตั้งค่า Events สำหรับโมดัล
     setupModalEvents() {
         const staffModal = document.getElementById('staffModal');
         const staffDetailsModal = document.getElementById('staffDetailsModal');
@@ -280,7 +258,6 @@ class AdminManager {
             });
         }
 
-        // Escape key to close modals
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 this.closeModal();
@@ -289,15 +266,14 @@ class AdminManager {
         });
     }
 
+    // FUNCTION: ตั้งค่าปุ่มลัดแป้นพิมพ์
     setupKeyboardShortcuts() {
         document.addEventListener('keydown', (e) => {
-            // Ctrl+N or Cmd+N for new staff
             if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
                 e.preventDefault();
                 this.openAddModal();
             }
             
-            // Ctrl+F or Cmd+F for search focus
             if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
                 e.preventDefault();
                 const searchInput = document.getElementById('searchInput');
@@ -306,7 +282,11 @@ class AdminManager {
         });
     }
 
-    // Form handling
+    // ========================
+    // FORM HANDLING
+    // ========================
+
+    // FUNCTION: จัดการการส่งแบบฟอร์ม
     async handleFormSubmit(e) {
         e.preventDefault();
         
@@ -325,6 +305,7 @@ class AdminManager {
         }
     }
 
+    // FUNCTION: ดึงข้อมูลจากแบบฟอร์ม
     getFormData() {
         return {
             admin_id: document.getElementById('staffCode')?.value || '',
@@ -337,17 +318,17 @@ class AdminManager {
         };
     }
 
+    // FUNCTION: ตรวจสอบความถูกต้องของแบบฟอร์ม
     validateForm() {
         const password = document.getElementById('staffPassword')?.value || '';
         const passwordConfirm = document.getElementById('staffPasswordConfirm')?.value || '';
         const fullname = document.getElementById('staffName')?.value || '';
 
         if (!fullname.trim()) {
-            this.showNotification('กรุณาระบุชื่อ-นามสกุล', 'error');
+            this.showNotification('กรุณาระบุชื่อ-สกุล', 'error');
             return false;
         }
 
-        // Check password for new staff only
         if (!this.currentEditId && document.getElementById('passwordGroup')?.style.display !== 'none') {
             if (password.length < 8) {
                 this.showNotification('รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร', 'error');
@@ -363,48 +344,44 @@ class AdminManager {
         return true;
     }
 
-    // Password utilities
+    // ========================
+    // PASSWORD MANAGEMENT
+    // ========================
+
+    // FUNCTION: สร้างรหัสผ่านแบบสุ่ม
     generateRandomPassword() {
         const letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
         const numbers = '0123456789';
         
         let password = '';
-        
-        // Generate 4 random letters (mixed case)
         for (let i = 0; i < 4; i++) {
             password += letters.charAt(Math.floor(Math.random() * letters.length));
         }
-        
-        // Generate 4 random numbers
         for (let i = 0; i < 4; i++) {
             password += numbers.charAt(Math.floor(Math.random() * numbers.length));
         }
         
-        // Set password in both fields
         const passwordField = document.getElementById('staffPassword');
         const confirmField = document.getElementById('staffPasswordConfirm');
-        
         if (passwordField) passwordField.value = password;
         if (confirmField) confirmField.value = password;
         
-        // Show generated password display
         const display = document.getElementById('generatedPasswordDisplay');
         const passwordText = document.getElementById('generatedPasswordText');
-        
         if (display && passwordText) {
             passwordText.textContent = password;
             display.style.display = 'block';
             display.classList.add('password-generated');
-            
             setTimeout(() => {
                 display.classList.remove('password-generated');
             }, 300);
         }
         
         this.updatePasswordStrength(password);
-        this.showNotification('สร้างรหัสผ่านใหม่แล้ว: ' + password, 'success');
+        this.showNotification('สร้างรหัสผ่านให้แล้ว: ' + password, 'success');
     }
 
+    // FUNCTION: สลับการมองเห็นรหัสผ่าน
     togglePasswordVisibility(inputId, button) {
         const input = document.getElementById(inputId);
         const icon = button?.querySelector('i');
@@ -422,6 +399,7 @@ class AdminManager {
         }
     }
 
+    // FUNCTION: คัดลอกรหัสผ่านไปยังคลิปบอร์ด
     async copyPassword() {
         const passwordText = document.getElementById('generatedPasswordText')?.textContent;
         if (!passwordText) return;
@@ -430,7 +408,6 @@ class AdminManager {
             await navigator.clipboard.writeText(passwordText);
             this.showNotification('คัดลอกรหัสผ่านแล้ว', 'success');
         } catch (err) {
-            // Fallback for older browsers
             const textArea = document.createElement('textarea');
             textArea.value = passwordText;
             document.body.appendChild(textArea);
@@ -441,266 +418,7 @@ class AdminManager {
         }
     }
 
-    // Staff code generation - Updated to auto-generate when opening add modal
-    generateStaffCode() {
-        const staffCodeInput = document.getElementById('staffCode');
-        
-        if (!staffCodeInput) return;
-
-        // Generate a random 4-digit number
-        const randomNumber = Math.floor(1000 + Math.random() * 9000);
-        const newCode = `EMP${randomNumber}`;
-        
-        // Check if this code already exists in the current staff list
-        const existingCodes = this.staff.map(s => s.admin_id);
-        
-        // If code exists, generate a new one (recursive approach with safety limit)
-        if (existingCodes.includes(newCode)) {
-            let attempts = 0;
-            let uniqueCode = newCode;
-            
-            while (existingCodes.includes(uniqueCode) && attempts < 100) {
-                const newRandomNumber = Math.floor(1000 + Math.random() * 9000);
-                uniqueCode = `EMP${newRandomNumber}`;
-                attempts++;
-            }
-            
-            staffCodeInput.value = uniqueCode;
-        } else {
-            staffCodeInput.value = newCode;
-        }
-    }
-
-    getStatusInfo(status) {
-        const statusMap = {
-            'active': { class: 'status-active', text: 'ใช้งานอยู่' },
-            'inactive': { class: 'status-inactive', text: 'ไม่ได้ใช้งาน' }
-        };
-        return statusMap[status] || { class: 'status-inactive', text: 'ไม่ทราบ' };
-    }
-
-    getRoleInfo(position) {
-        return this.roleMap[position] || { class: 'role-other', text: position, avatar: '#666' };
-    }
-
-    getInitials(name) {
-        return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-    }
-
-    // Filtering and searching
-    debounceSearch() {
-        clearTimeout(this.searchTimeout);
-        this.searchTimeout = setTimeout(() => this.applyFilters(), 300);
-    }
-
-    applyFilters() {
-        const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
-        const roleFilter = document.getElementById('roleFilter')?.value || '';
-        const departmentFilter = document.getElementById('departmentFilter')?.value || '';
-        const statusFilter = document.getElementById('statusFilter')?.value || '';
-
-        this.filteredStaff = this.staff.filter(person => {
-            const matchesSearch = person.fullname.toLowerCase().includes(searchTerm) ||
-                                this.getRoleInfo(person.position).text.toLowerCase().includes(searchTerm) ||
-                                (person.admin_id && person.admin_id.toLowerCase().includes(searchTerm));
-            
-            const matchesRole = !roleFilter || person.position === roleFilter;
-            const matchesDepartment = !departmentFilter || person.department === departmentFilter;
-            const matchesStatus = !statusFilter || person.status === statusFilter;
-
-            return matchesSearch && matchesRole && matchesDepartment && matchesStatus;
-        });
-
-        this.applySorting();
-        this.currentPage = 1;
-        this.renderStaff();
-    }
-
-    applySorting() {
-        const sortBy = document.getElementById('sortFilter')?.value || 'name';
-        
-        this.filteredStaff.sort((a, b) => {
-            switch (sortBy) {
-                case 'name':
-                    return a.fullname.localeCompare(b.fullname, 'th');
-                case 'role':
-                    return a.position.localeCompare(b.position);
-                case 'department':
-                    return a.department.localeCompare(b.department);
-                case 'created':
-                    return new Date(b.created_at) - new Date(a.created_at);
-                default:
-                    return 0;
-            }
-        });
-    }
-
-    onSortChange() {
-        this.applySorting();
-        this.renderStaff();
-    }
-
-    // Modal methods
-    openAddModal() {
-        const modalTitle = document.getElementById('modalTitle');
-        const staffForm = document.getElementById('staffForm');
-        const staffActive = document.getElementById('staffActive');
-        const passwordGroup = document.getElementById('passwordGroup');
-        const passwordConfirmGroup = document.getElementById('passwordConfirmGroup');
-        const generatedPasswordDisplay = document.getElementById('generatedPasswordDisplay');
-        const passwordStrength = document.getElementById('passwordStrength');
-        const staffCode = document.getElementById('staffCode');
-        
-        if (modalTitle) modalTitle.textContent = 'เพิ่มพนักงานใหม่';
-        if (staffForm) staffForm.reset();
-        if (staffActive) staffActive.checked = true;
-        
-        this.currentEditId = null;
-        
-        // Show password fields for new staff
-        if (passwordGroup) passwordGroup.style.display = 'block';
-        if (passwordConfirmGroup) passwordConfirmGroup.style.display = 'block';
-        
-        const passwordField = document.getElementById('staffPassword');
-        const passwordConfirmField = document.getElementById('staffPasswordConfirm');
-        if (passwordField) passwordField.required = true;
-        if (passwordConfirmField) passwordConfirmField.required = true;
-        
-        // Hide generated password display
-        if (generatedPasswordDisplay) generatedPasswordDisplay.style.display = 'none';
-        if (passwordStrength) passwordStrength.style.display = 'none';
-        
-        // Clear and generate new staff code immediately
-        if (staffCode) staffCode.value = '';
-        this.generateStaffCode(); // Generate staff code right when opening modal
-        
-        // Set default values
-        this.updateDepartmentAndPermissions();
-        
-        const staffModal = document.getElementById('staffModal');
-        if (staffModal) staffModal.style.display = 'block';
-    }
-
-    closeModal() {
-        const staffModal = document.getElementById('staffModal');
-        if (staffModal) staffModal.style.display = 'none';
-        this.currentEditId = null;
-    }
-
-    closeStaffDetailsModal() {
-        const staffDetailsModal = document.getElementById('staffDetailsModal');
-        if (staffDetailsModal) staffDetailsModal.style.display = 'none';
-    }
-
-    // Staff CRUD operations
-    viewStaffDetails(adminId) {
-        const person = this.staff.find(s => s.admin_id === adminId);
-        if (!person) return;
-
-        const roleInfo = this.getRoleInfo(person.position);
-        const statusInfo = this.getStatusInfo(person.status);
-        const departmentName = this.departmentMap[person.department] || person.department;
-
-        // Populate staff details
-        const elements = {
-            title: document.getElementById('staffDetailsTitle'),
-            name: document.getElementById('detailName'),
-            phone: document.getElementById('detailPhone'),
-            code: document.getElementById('detailCode'),
-            role: document.getElementById('detailRole'),
-            department: document.getElementById('detailDepartment'),
-            status: document.getElementById('detailStatus')
-        };
-
-        if (elements.title) elements.title.textContent = `รายละเอียดพนักงาน - ${person.fullname}`;
-        if (elements.name) elements.name.textContent = person.fullname;
-        if (elements.phone) elements.phone.textContent = person.phone || 'ไม่ระบุ';
-        if (elements.code) elements.code.textContent = person.admin_id || 'ไม่ระบุ';
-        if (elements.role) elements.role.innerHTML = `<span class="role-badge ${roleInfo.class}">${roleInfo.text}</span>`;
-        if (elements.department) elements.department.textContent = departmentName;
-        if (elements.status) elements.status.innerHTML = `<span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>`;
-
-        const staffDetailsModal = document.getElementById('staffDetailsModal');
-        if (staffDetailsModal) staffDetailsModal.style.display = 'block';
-    }
-
-    editStaff(adminId) {
-        const person = this.staff.find(s => s.admin_id === adminId);
-        if (!person) return;
-
-        this.currentEditId = adminId;
-        
-        const elements = {
-            modalTitle: document.getElementById('modalTitle'),
-            staffName: document.getElementById('staffName'),
-            staffPhone: document.getElementById('staffPhone'),
-            staffCode: document.getElementById('staffCode'),
-            staffRole: document.getElementById('staffRole'),
-            staffDepartment: document.getElementById('staffDepartment'),
-            staffActive: document.getElementById('staffActive'),
-            passwordGroup: document.getElementById('passwordGroup'),
-            passwordConfirmGroup: document.getElementById('passwordConfirmGroup'),
-            staffPassword: document.getElementById('staffPassword'),
-            staffPasswordConfirm: document.getElementById('staffPasswordConfirm')
-        };
-
-        if (elements.modalTitle) elements.modalTitle.textContent = 'แก้ไขข้อมูลพนักงาน';
-        if (elements.staffName) elements.staffName.value = person.fullname;
-        if (elements.staffPhone) elements.staffPhone.value = person.phone || '';
-        if (elements.staffCode) elements.staffCode.value = person.admin_id || '';
-        if (elements.staffRole) elements.staffRole.value = person.position;
-        if (elements.staffDepartment) elements.staffDepartment.value = person.department;
-        if (elements.staffActive) elements.staffActive.checked = person.status === 'active';
-        
-        // Hide password fields for editing
-        if (elements.passwordGroup) elements.passwordGroup.style.display = 'none';
-        if (elements.passwordConfirmGroup) elements.passwordConfirmGroup.style.display = 'none';
-        if (elements.staffPassword) elements.staffPassword.required = false;
-        if (elements.staffPasswordConfirm) elements.staffPasswordConfirm.required = false;
-
-        this.updateDepartmentAndPermissions();
-
-        const staffModal = document.getElementById('staffModal');
-        if (staffModal) staffModal.style.display = 'block';
-    }
-
-    async toggleStatus(adminId) {
-        const person = this.staff.find(s => s.admin_id === adminId);
-        if (!person) return;
-
-        const newStatus = person.status === 'active' ? 'inactive' : 'active';
-        const statusText = newStatus === 'active' ? 'เปิดใช้งาน' : 'ปิดใช้งาน';
-        
-        if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการ${statusText} "${person.fullname}"?`)) {
-            const result = await this.toggleStaffStatus(adminId);
-            if (result.success) {
-                this.showNotification(result.message, 'success');
-            } else {
-                this.showNotification(result.message, 'error');
-            }
-        }
-    }
-
-    async confirmDelete(adminId) {
-        const person = this.staff.find(s => s.admin_id === adminId);
-        if (!person) return;
-        
-        if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบ "${person.fullname}"?\n\nการกระทำนี้ไม่สามารถย้อนกลับได้`)) {
-            const result = await this.deleteStaff(adminId);
-            if (result.success) {
-                this.showNotification(result.message, 'success');
-            } else {
-                this.showNotification(result.message, 'error');
-            }
-        }
-    }
-
-    // Helper method for role/department management
-    updateDepartmentAndPermissions() {
-        // This method can be empty since we removed permissions
-        // But we keep it to avoid breaking the event listeners
-    }
-
+    // FUNCTION: อัปเดตระดับความแข็งแรงของรหัสผ่าน
     updatePasswordStrength(password) {
         const strengthDiv = document.getElementById('passwordStrength');
         if (!strengthDiv || !password) return;
@@ -736,7 +454,300 @@ class AdminManager {
         strengthDiv.style.display = 'block';
     }
 
-    // Rendering methods
+    // ========================
+    // FILTERING & SEARCHING
+    // ========================
+
+    // FUNCTION: ใช้ตัวกรองการค้นหา
+    applyFilters() {
+        const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
+        const roleFilter = document.getElementById('roleFilter')?.value || '';
+        const departmentFilter = document.getElementById('departmentFilter')?.value || '';
+        const statusFilter = document.getElementById('statusFilter')?.value || '';
+
+        this.filteredStaff = this.staff.filter(person => {
+            const matchesSearch = person.fullname.toLowerCase().includes(searchTerm) ||
+                                this.getRoleInfo(person.position).text.toLowerCase().includes(searchTerm) ||
+                                (person.admin_id && person.admin_id.toLowerCase().includes(searchTerm));
+            
+            const matchesRole = !roleFilter || person.position === roleFilter;
+            const matchesDepartment = !departmentFilter || person.department === departmentFilter;
+            const matchesStatus = !statusFilter || person.status === statusFilter;
+
+            return matchesSearch && matchesRole && matchesDepartment && matchesStatus;
+        });
+
+        this.applySorting();
+        this.currentPage = 1;
+        this.renderStaff();
+    }
+
+    // FUNCTION: รีเซ็ตตัวกรองทั้งหมด
+    resetFilters() {
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) searchInput.value = '';
+
+        const roleFilter = document.getElementById('roleFilter');
+        if (roleFilter) roleFilter.value = '';
+
+        const departmentFilter = document.getElementById('departmentFilter');
+        if (departmentFilter) departmentFilter.value = '';
+
+        const statusFilter = document.getElementById('statusFilter');
+        if (statusFilter) statusFilter.value = '';
+
+        const sortFilter = document.getElementById('sortFilter');
+        if (sortFilter) sortFilter.value = 'name';
+
+        this.filteredStaff = [...this.staff];
+        this.applySorting();
+        this.currentPage = 1;
+        this.renderStaff();
+        
+        this.showNotification('รีเซ็ตตัวกรองแล้ว', 'info');
+    }
+
+    // FUNCTION: ใช้การเรียงลำดับ
+    applySorting() {
+        const sortBy = document.getElementById('sortFilter')?.value || 'name';
+        
+        this.filteredStaff.sort((a, b) => {
+            switch (sortBy) {
+                case 'name':
+                    return a.fullname.localeCompare(b.fullname, 'th');
+                case 'role':
+                    return a.position.localeCompare(b.position);
+                case 'department':
+                    return a.department.localeCompare(b.department);
+                case 'created':
+                    return new Date(b.created_at) - new Date(a.created_at);
+                default:
+                    return 0;
+            }
+        });
+    }
+
+    // FUNCTION: จัดการการเปลี่ยนแปลงการเรียงลำดับ
+    onSortChange() {
+        this.applySorting();
+        this.renderStaff();
+    }
+
+    // ========================
+    // MODAL MANAGEMENT
+    // ========================
+
+    // FUNCTION: เปิดโมดัลเพิ่มพนักงานใหม่
+    openAddModal() {
+        const elements = {
+            modalTitle: document.getElementById('modalTitle'),
+            staffForm: document.getElementById('staffForm'),
+            staffActive: document.getElementById('staffActive'),
+            passwordGroup: document.getElementById('passwordGroup'),
+            passwordConfirmGroup: document.getElementById('passwordConfirmGroup'),
+            generatedPasswordDisplay: document.getElementById('generatedPasswordDisplay'),
+            passwordStrength: document.getElementById('passwordStrength'),
+            staffCode: document.getElementById('staffCode'),
+            staffPassword: document.getElementById('staffPassword'),
+            staffPasswordConfirm: document.getElementById('staffPasswordConfirm'),
+            staffModal: document.getElementById('staffModal')
+        };
+        
+        if (elements.modalTitle) elements.modalTitle.textContent = 'เพิ่มพนักงานใหม่';
+        if (elements.staffForm) elements.staffForm.reset();
+        if (elements.staffActive) elements.staffActive.checked = true;
+        
+        this.currentEditId = null;
+        
+        if (elements.passwordGroup) elements.passwordGroup.style.display = 'block';
+        if (elements.passwordConfirmGroup) elements.passwordConfirmGroup.style.display = 'block';
+        if (elements.staffPassword) elements.staffPassword.required = true;
+        if (elements.staffPasswordConfirm) elements.staffPasswordConfirm.required = true;
+        
+        if (elements.generatedPasswordDisplay) elements.generatedPasswordDisplay.style.display = 'none';
+        if (elements.passwordStrength) elements.passwordStrength.style.display = 'none';
+        
+        if (elements.staffCode) elements.staffCode.value = '';
+        this.generateStaffCode();
+        
+        this.updateDepartmentAndPermissions();
+        
+        if (elements.staffModal) elements.staffModal.style.display = 'block';
+    }
+
+    // FUNCTION: ปิดโมดัลแบบฟอร์ม
+    closeModal() {
+        const staffModal = document.getElementById('staffModal');
+        if (staffModal) staffModal.style.display = 'none';
+        this.currentEditId = null;
+    }
+
+    // FUNCTION: ปิดโมดัลรายละเอียดพนักงาน
+    closeStaffDetailsModal() {
+        const staffDetailsModal = document.getElementById('staffDetailsModal');
+        if (staffDetailsModal) staffDetailsModal.style.display = 'none';
+    }
+
+    // ========================
+    // STAFF OPERATIONS
+    // ========================
+
+    // FUNCTION: ดูรายละเอียดพนักงาน
+    viewStaffDetails(adminId) {
+        const person = this.staff.find(s => s.admin_id === adminId);
+        if (!person) return;
+
+        const roleInfo = this.getRoleInfo(person.position);
+        const statusInfo = this.getStatusInfo(person.status);
+        const departmentName = this.departmentMap[person.department] || person.department;
+
+        const elements = {
+            title: document.getElementById('staffDetailsTitle'),
+            name: document.getElementById('detailName'),
+            phone: document.getElementById('detailPhone'),
+            code: document.getElementById('detailCode'),
+            role: document.getElementById('detailRole'),
+            department: document.getElementById('detailDepartment'),
+            status: document.getElementById('detailStatus')
+        };
+
+        if (elements.title) elements.title.textContent = `รายละเอียดพนักงาน - ${person.fullname}`;
+        if (elements.name) elements.name.textContent = person.fullname;
+        if (elements.phone) elements.phone.textContent = person.phone || 'ไม่ระบุ';
+        if (elements.code) elements.code.textContent = person.admin_id || 'ไม่ระบุ';
+        if (elements.role) elements.role.innerHTML = `<span class="role-badge ${roleInfo.class}">${roleInfo.text}</span>`;
+        if (elements.department) elements.department.textContent = departmentName;
+        if (elements.status) elements.status.innerHTML = `<span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>`;
+
+        const staffDetailsModal = document.getElementById('staffDetailsModal');
+        if (staffDetailsModal) staffDetailsModal.style.display = 'block';
+    }
+
+    // FUNCTION: แก้ไขข้อมูลพนักงาน
+    editStaff(adminId) {
+        const person = this.staff.find(s => s.admin_id === adminId);
+        if (!person) return;
+
+        this.currentEditId = adminId;
+        
+        const elements = {
+            modalTitle: document.getElementById('modalTitle'),
+            staffName: document.getElementById('staffName'),
+            staffPhone: document.getElementById('staffPhone'),
+            staffCode: document.getElementById('staffCode'),
+            staffRole: document.getElementById('staffRole'),
+            staffDepartment: document.getElementById('staffDepartment'),
+            staffActive: document.getElementById('staffActive'),
+            passwordGroup: document.getElementById('passwordGroup'),
+            passwordConfirmGroup: document.getElementById('passwordConfirmGroup'),
+            staffPassword: document.getElementById('staffPassword'),
+            staffPasswordConfirm: document.getElementById('staffPasswordConfirm')
+        };
+
+        if (elements.modalTitle) elements.modalTitle.textContent = 'แก้ไขข้อมูลพนักงาน';
+        if (elements.staffName) elements.staffName.value = person.fullname;
+        if (elements.staffPhone) elements.staffPhone.value = person.phone || '';
+        if (elements.staffCode) elements.staffCode.value = person.admin_id || '';
+        if (elements.staffRole) elements.staffRole.value = person.position;
+        if (elements.staffDepartment) elements.staffDepartment.value = person.department;
+        if (elements.staffActive) elements.staffActive.checked = person.status === 'active';
+        
+        if (elements.passwordGroup) elements.passwordGroup.style.display = 'none';
+        if (elements.passwordConfirmGroup) elements.passwordConfirmGroup.style.display = 'none';
+        if (elements.staffPassword) elements.staffPassword.required = false;
+        if (elements.staffPasswordConfirm) elements.staffPasswordConfirm.required = false;
+
+        this.updateDepartmentAndPermissions();
+
+        const staffModal = document.getElementById('staffModal');
+        if (staffModal) staffModal.style.display = 'block';
+    }
+
+    // FUNCTION: สลับสถานะพนักงาน (ใช้งาน/ไม่ใช้งาน) พร้อมยืนยัน
+    async toggleStatus(adminId) {
+        const person = this.staff.find(s => s.admin_id === adminId);
+        if (!person) return;
+
+        const newStatus = person.status === 'active' ? 'inactive' : 'active';
+        const statusText = newStatus === 'active' ? 'เปิดใช้งาน' : 'ปิดใช้งาน';
+        
+        if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการ${statusText} "${person.fullname}"?`)) {
+            const result = await this.toggleStaffStatus(adminId);
+            if (result.success) {
+                this.showNotification(result.message, 'success');
+            } else {
+                this.showNotification(result.message, 'error');
+            }
+        }
+    }
+
+    // FUNCTION: ลบพนักงาน พร้อมยืนยัน
+    async confirmDelete(adminId) {
+        const person = this.staff.find(s => s.admin_id === adminId);
+        if (!person) return;
+        
+        if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบ "${person.fullname}"?\n\nการกระทำนี้ไม่สามารถถอนกลับได้`)) {
+            const result = await this.deleteStaff(adminId);
+            if (result.success) {
+                this.showNotification(result.message, 'success');
+            } else {
+                this.showNotification(result.message, 'error');
+            }
+        }
+    }
+
+    // ========================
+    // UTILITY METHODS
+    // ========================
+
+    // FUNCTION: สร้างรหัสพนักงาน
+    generateStaffCode() {
+        const staffCodeInput = document.getElementById('staffCode');
+        if (!staffCodeInput) return;
+
+        const randomNumber = Math.floor(1000 + Math.random() * 9000);
+        let newCode = `EMP${randomNumber}`;
+        const existingCodes = this.staff.map(s => s.admin_id);
+
+        let attempts = 0;
+        while (existingCodes.includes(newCode) && attempts < 100) {
+            const newRandomNumber = Math.floor(1000 + Math.random() * 9000);
+            newCode = `EMP${newRandomNumber}`;
+            attempts++;
+        }
+
+        staffCodeInput.value = newCode;
+    }
+
+    // FUNCTION: ดึงข้อมูลสถานะ
+    getStatusInfo(status) {
+        const statusMap = {
+            'active': { class: 'status-active', text: 'ใช้งานอยู่' },
+            'inactive': { class: 'status-inactive', text: 'ไม่ได้ใช้งาน' }
+        };
+        return statusMap[status] || { class: 'status-inactive', text: 'ไม่ทราบ' };
+    }
+
+    // FUNCTION: ดึงข้อมูลบทบาท
+    getRoleInfo(position) {
+        return this.roleMap[position] || { class: 'role-other', text: position, avatar: '#666' };
+    }
+
+    // FUNCTION: ดึงอักษรตัวแรกของชื่อ
+    getInitials(name) {
+        return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+    }
+
+    // FUNCTION: อัปเดตแผนกและสิทธิ์
+    updateDepartmentAndPermissions() {
+        // ฟังก์ชันสำหรับ Event Listeners
+    }
+
+    // ========================
+    // RENDERING
+    // ========================
+
+    // FUNCTION: แสดงตารางพนักงาน
     renderStaff() {
         const tbody = document.getElementById('staffTableBody');
         if (!tbody) return;
@@ -798,6 +809,7 @@ class AdminManager {
         this.updateStats();
     }
 
+    // FUNCTION: แสดงเลขหน้า
     renderPagination() {
         const totalPages = Math.ceil(this.filteredStaff.length / this.itemsPerPage);
         const pagination = document.getElementById('pagination');
@@ -809,14 +821,12 @@ class AdminManager {
 
         let buttons = [];
         
-        // Previous button
         buttons.push(`
             <button onclick="adminManager.changePage(${this.currentPage - 1})" ${this.currentPage === 1 ? 'disabled' : ''}>
                 <i class="fas fa-chevron-left"></i>
             </button>
         `);
 
-        // Page numbers
         for (let i = 1; i <= totalPages; i++) {
             buttons.push(`
                 <button onclick="adminManager.changePage(${i})" ${i === this.currentPage ? 'class="active"' : ''}>
@@ -825,7 +835,6 @@ class AdminManager {
             `);
         }
 
-        // Next button
         buttons.push(`
             <button onclick="adminManager.changePage(${this.currentPage + 1})" ${this.currentPage === totalPages ? 'disabled' : ''}>
                 <i class="fas fa-chevron-right"></i>
@@ -835,6 +844,7 @@ class AdminManager {
         pagination.innerHTML = buttons.join('');
     }
 
+    // FUNCTION: เปลี่ยนหน้า
     changePage(page) {
         const totalPages = Math.ceil(this.filteredStaff.length / this.itemsPerPage);
         if (page >= 1 && page <= totalPages) {
@@ -843,6 +853,7 @@ class AdminManager {
         }
     }
 
+    // FUNCTION: อัปเดตสถิติ
     updateStats() {
         const stats = {
             total: this.filteredStaff.length,
@@ -867,7 +878,11 @@ class AdminManager {
         if (elements.warehouseCount) elements.warehouseCount.textContent = stats.warehouse;
     }
 
-    // Notification system
+    // ========================
+    // NOTIFICATIONS
+    // ========================
+
+    // FUNCTION: แสดงการแจ้งเตือน
     showNotification(message, type = 'info') {
         const notification = document.createElement('div');
         notification.style.cssText = `
@@ -893,13 +908,11 @@ class AdminManager {
         
         document.body.appendChild(notification);
         
-        // Show notification
         setTimeout(() => {
             notification.style.opacity = '1';
             notification.style.transform = 'translateX(0)';
         }, 100);
         
-        // Hide notification
         setTimeout(() => {
             notification.style.opacity = '0';
             notification.style.transform = 'translateX(100%)';
@@ -912,14 +925,16 @@ class AdminManager {
     }
 }
 
-// Initialize the admin manager when DOM is loaded
+// ========================
+// GLOBAL FUNCTIONS
+// ========================
+
 let adminManager;
 
 document.addEventListener('DOMContentLoaded', function() {
     adminManager = new AdminManager();
 });
 
-// Global functions for backward compatibility
 function openAddModal() {
     if (adminManager) adminManager.openAddModal();
 }
@@ -964,11 +979,6 @@ function toggleSidebar() {
     }
 }
 
-function showSection(section) {
-    // Implement if needed or leave empty
-}
-
-// Export for module usage
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = AdminManager;
 }

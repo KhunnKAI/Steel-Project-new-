@@ -1,5 +1,7 @@
 <?php
-// Include config file for database connection and session management
+// ========================
+// INITIALIZATION
+// ========================
 require_once 'config.php';
 
 header('Content-Type: application/json; charset=utf-8');
@@ -13,42 +15,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-// Check if user is logged in (optional - uncomment if needed)
-// requireLogin();
-
+// ========================
+// MAIN LOGIC
+// ========================
 try {
-    // Use the PDO connection from config.php
-    // $pdo is already available from config.php
-    
     $method = $_SERVER['REQUEST_METHOD'];
     
+    // ========================
+    // UPDATE ADMIN (PUT)
+    // ========================
     if ($method === 'PUT') {
-        // UPDATE ADMIN
+        // FUNCTION: ดึงและ validate ข้อมูล JSON input
         $json_input = file_get_contents('php://input');
         $input_data = json_decode($json_input, true);
         
         if (!isset($input_data['admin_id'])) {
-            throw new Exception('กรุณาระบุรหัสผู้ดูแล');
+            throw new Exception('กรุณาระบุรหัสผู้ดำเนินการ');
         }
         
         $admin_id = $input_data['admin_id'];
         
-        // Check if admin exists
+        // FUNCTION: ตรวจสอบว่า admin ที่ต้องการแก้ไขมีอยู่ในระบบ
         $check_stmt = $pdo->prepare("SELECT admin_id FROM Admin WHERE admin_id = ?");
         $check_stmt->execute([$admin_id]);
         if (!$check_stmt->fetch()) {
-            throw new Exception('ไม่พบผู้ดูแลรายการนี้');
+            throw new Exception('ไม่พบผู้ดำเนินการรายการนี้');
         }
         
-        // Validate status change if status is being updated
+        // FUNCTION: ตรวจสอบการเปลี่ยนแปลงสถานะ (ป้องกันลบ super admin)
         if (isset($input_data['status'])) {
             validateStatusChange($admin_id, $input_data['status'], $pdo);
         }
         
-        // Build dynamic update query
+        // FUNCTION: สร้าง update query แบบไดนามิก
         $update_fields = [];
         $update_params = [];
-        
         $allowed_fields = ['fullname', 'position', 'department', 'phone', 'status'];
         
         foreach ($allowed_fields as $field) {
@@ -58,53 +59,41 @@ try {
             }
         }
         
-        // Handle password update separately
+        // FUNCTION: อัพเดต password หากมีการส่งมา
         if (isset($input_data['password']) && !empty($input_data['password'])) {
             $update_fields[] = "password = ?";
             $update_params[] = password_hash($input_data['password'], PASSWORD_DEFAULT);
         }
         
         if (empty($update_fields)) {
-            throw new Exception('ไม่มีข้อมูลที่ต้องการอัพเดท');
+            throw new Exception('ไม่มีข้อมูลที่ต้องการอัพเดตได้');
         }
         
-        // Add updated_at and admin_id to params
         $update_fields[] = "updated_at = NOW()";
         $update_params[] = $admin_id;
         
+        // FUNCTION: ดำเนินการ update
         $sql = "UPDATE Admin SET " . implode(', ', $update_fields) . " WHERE admin_id = ?";
-        
         $stmt = $pdo->prepare($sql);
         $result = $stmt->execute($update_params);
         
         if ($result && $stmt->rowCount() > 0) {
-            // Get updated admin data
+            // FUNCTION: ดึงข้อมูล admin ที่อัพเดตแล้ว
             $get_stmt = $pdo->prepare("SELECT admin_id, fullname, position, department, phone, status, created_at, updated_at FROM Admin WHERE admin_id = ?");
             $get_stmt->execute([$admin_id]);
             $updated_admin = $get_stmt->fetch(PDO::FETCH_ASSOC);
             
-            // Format response
             if ($updated_admin) {
                 $updated_admin['created_at_formatted'] = date('d/m/Y H:i', strtotime($updated_admin['created_at']));
                 $updated_admin['updated_at_formatted'] = date('d/m/Y H:i', strtotime($updated_admin['updated_at']));
                 
-                // Add Thai translations
                 $dept_thai = [
-                    'management' => 'บริหาร',
-                    'sales' => 'ขาย', 
-                    'warehouse' => 'คลังสินค้า',
-                    'logistics' => 'ขนส่ง',
-                    'accounting' => 'บัญชี',
-                    'it' => 'เทคโนโลยีสารสนเทศ'
+                    'management' => 'บริหาร', 'sales' => 'ขาย', 'warehouse' => 'คลังสินค้า',
+                    'logistics' => 'ขนส่ง', 'accounting' => 'บัญชี', 'it' => 'เทคโนโลยีสารสนเทศ'
                 ];
-                
                 $position_thai = [
-                    'manager' => 'ผู้จัดการ',
-                    'sales' => 'พนักงานขาย',
-                    'warehouse' => 'พนักงานคลัง', 
-                    'shipping' => 'พนักงานขนส่ง',
-                    'accounting' => 'พนักงานบัญชี',
-                    'super' => 'ผู้ดูแลระบบ'
+                    'manager' => 'ผู้จัดการ', 'sales' => 'พนักงานขาย', 'warehouse' => 'พนักงานคลัง',
+                    'shipping' => 'พนักงานขนส่ง', 'accounting' => 'พนักงานบัญชี', 'super' => 'ผู้ดูแลระบบ'
                 ];
                 
                 $updated_admin['department_thai'] = $dept_thai[$updated_admin['department']] ?? $updated_admin['department'];
@@ -112,42 +101,39 @@ try {
                 $updated_admin['status_thai'] = $updated_admin['status'] === 'active' ? 'ใช้งานอยู่' : 'ไม่ได้ใช้งาน';
             }
             
-            // Log the change
-            logAdminChange($_SESSION['admin_id'] ?? 'SYSTEM', 'UPDATE', [
-                'target_admin_id' => $admin_id,
-                'changes' => array_intersect_key($input_data, array_flip($allowed_fields))
-            ], $pdo);
+            // FUNCTION: บันทึกการแก้ไข (audit log)
+            logAdminChange($_SESSION['admin_id'] ?? 'SYSTEM', 'UPDATE', ['target_admin_id' => $admin_id], $pdo);
             
             echo json_encode([
                 'success' => true,
-                'message' => 'อัพเดทข้อมูลผู้ดูแลเรียบร้อยแล้ว',
+                'message' => 'อัพเดตข้อมูลผู้ดำเนินการเรียบร้อยแล้ว',
                 'data' => $updated_admin
             ], JSON_UNESCAPED_UNICODE);
-            
         } else {
-            throw new Exception('ไม่สามารถอัพเดทข้อมูลได้ หรือไม่มีการเปลี่ยนแปลงข้อมูล');
+            throw new Exception('ไม่สามารถอัพเดตข้อมูลได้');
         }
         
     } elseif ($method === 'DELETE') {
-        // DELETE ADMIN
+        // ========================
+        // DELETE ADMIN (DELETE)
+        // ========================
         $admin_id = $_GET['admin_id'] ?? null;
         
         if (!$admin_id) {
-            throw new Exception('กรุณาระบุรหัสผู้ดูแล');
+            throw new Exception('กรุณาระบุรหัสผู้ดำเนินการ');
         }
         
-        // Check if admin exists and get info before deletion
+        // FUNCTION: ดึงข้อมูล admin ก่อนลบ
         $check_stmt = $pdo->prepare("SELECT admin_id, fullname, position FROM Admin WHERE admin_id = ?");
         $check_stmt->execute([$admin_id]);
         $admin_to_delete = $check_stmt->fetch(PDO::FETCH_ASSOC);
         
         if (!$admin_to_delete) {
-            throw new Exception('ไม่พบผู้ดูแลรายการนี้');
+            throw new Exception('ไม่พบผู้ดำเนินการรายการนี้');
         }
         
-        // Prevent deletion of super admin or critical roles (optional security)
+        // FUNCTION: ป้องกันลบ super admin คนสุดท้าย
         if ($admin_to_delete['position'] === 'super') {
-            // Count active super admins before deletion
             $count_stmt = $pdo->prepare("SELECT COUNT(*) as count FROM Admin WHERE position = 'super' AND status = 'active'");
             $count_stmt->execute();
             $super_count = $count_stmt->fetch()['count'];
@@ -157,23 +143,21 @@ try {
             }
         }
         
-        // Delete admin
+        // FUNCTION: ลบ admin
         $delete_stmt = $pdo->prepare("DELETE FROM Admin WHERE admin_id = ?");
         $result = $delete_stmt->execute([$admin_id]);
         
         if ($result && $delete_stmt->rowCount() > 0) {
-            // Log the deletion
-            logAdminChange($_SESSION['admin_id'] ?? 'SYSTEM', 'DELETE', [
-                'deleted_admin' => $admin_to_delete
-            ], $pdo);
+            // FUNCTION: บันทึกการลบ (audit log)
+            logAdminChange($_SESSION['admin_id'] ?? 'SYSTEM', 'DELETE', ['deleted_admin' => $admin_to_delete], $pdo);
             
             echo json_encode([
                 'success' => true,
-                'message' => "ลบผู้ดูแล '{$admin_to_delete['fullname']}' เรียบร้อยแล้ว",
+                'message' => "ลบผู้ดำเนินการ '{$admin_to_delete['fullname']}' เรียบร้อยแล้ว",
                 'deleted_admin' => $admin_to_delete
             ], JSON_UNESCAPED_UNICODE);
         } else {
-            throw new Exception('ไม่สามารถลบผู้ดูแลได้');
+            throw new Exception('ไม่สามารถลบข้อมูลได้');
         }
         
     } else {
@@ -186,7 +170,6 @@ try {
         'success' => false,
         'message' => 'Database error: ' . $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
-    
 } catch (Exception $e) {
     http_response_code(400);
     echo json_encode([
@@ -195,19 +178,16 @@ try {
     ], JSON_UNESCAPED_UNICODE);
 }
 
-// Additional utility functions for admin management
-
-/**
- * Validate admin status change
- */
+// ========================
+// UTILITY FUNCTIONS
+// ========================
+// FUNCTION: ตรวจสอบความถูกต้องของการเปลี่ยนสถานะ
 function validateStatusChange($admin_id, $new_status, $pdo) {
-    // Check if changing super admin status
     $stmt = $pdo->prepare("SELECT position FROM Admin WHERE admin_id = ?");
     $stmt->execute([$admin_id]);
     $admin = $stmt->fetch();
     
     if ($admin && $admin['position'] === 'super' && $new_status === 'inactive') {
-        // Count active super admins
         $count_stmt = $pdo->prepare("SELECT COUNT(*) as count FROM Admin WHERE position = 'super' AND status = 'active' AND admin_id != ?");
         $count_stmt->execute([$admin_id]);
         $count = $count_stmt->fetch()['count'];
@@ -220,57 +200,26 @@ function validateStatusChange($admin_id, $new_status, $pdo) {
     return true;
 }
 
-/**
- * Log admin changes (for audit trail)
- */
+// FUNCTION: บันทึกการเปลี่ยนแปลง (audit trail)
 function logAdminChange($admin_id, $action, $details, $pdo) {
     try {
-        // Create admin_log table if it doesn't exist
-        $pdo->exec("CREATE TABLE IF NOT EXISTS admin_log (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            admin_id VARCHAR(20) NOT NULL,
-            action VARCHAR(50) NOT NULL,
-            details JSON,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )");
-        
         $log_stmt = $pdo->prepare("INSERT INTO admin_log (admin_id, action, details, created_at) VALUES (?, ?, ?, NOW())");
         $log_stmt->execute([$admin_id, $action, json_encode($details)]);
     } catch (Exception $e) {
-        // Log silently fails - don't break main operation
         error_log("Admin log error: " . $e->getMessage());
     }
 }
 
-/**
- * Generate secure random password
- */
-function generateSecurePassword($length = 12) {
-    $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-    $password = '';
-    
-    for ($i = 0; $i < $length; $i++) {
-        $password .= $chars[random_int(0, strlen($chars) - 1)];
-    }
-    
-    return $password;
-}
-
-/**
- * Validate phone number format
- */
+// FUNCTION: ตรวจสอบหมายเลขโทรศัพท์ (ไทย)
 function validatePhoneNumber($phone) {
-    if (empty($phone)) return true; // Phone is optional
+    if (empty($phone)) return true;
     
-    // Remove all non-digits
     $clean_phone = preg_replace('/[^0-9]/', '', $phone);
     
-    // Check if it's a valid Thai mobile number
     if (preg_match('/^0[6-9][0-9]{8}$/', $clean_phone)) {
         return true;
     }
     
-    // Check if it's a valid Thai landline
     if (preg_match('/^0[2-5][0-9]{7}$/', $clean_phone)) {
         return true;
     }

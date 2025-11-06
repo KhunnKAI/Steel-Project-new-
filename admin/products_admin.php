@@ -37,7 +37,9 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>จัดการสินค้า - ระบบจัดการร้านค้า</title>
+    <title>จัดการสินค้า - ช้างเหล็กไทย</title>
+    <link rel="icon" type="image/png" href="image\logo_cropped.png">
+    
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="sidebar_admin.css">
@@ -156,7 +158,6 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
         /* ======================== */
         .add-btn,
         .stockmovement-btn,
-        .clear-dates-btn,
         .reset-all-btn,
         .search-filter-btn {
             padding: 12px 24px;
@@ -195,42 +196,30 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             background: linear-gradient(45deg, #0056b3, #004085);
         }
 
-        .clear-dates-btn {
-            background: linear-gradient(45deg, #6c757d, #495057);
-            height: fit-content;
-            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
-        }
-
-        .clear-dates-btn:hover {
-            background: linear-gradient(45deg, #5a6268, #343a40);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
-        }
-
         .reset-all-btn {
-            background: linear-gradient(45deg, #dc3545, #c82333);
+            background: linear-gradient(45deg, #6c757d, #868e96);
             width: 100%;
             justify-content: center;
-            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+            box-shadow: 0 6px 20px rgba(198, 198, 198, 0.4);
         }
 
         .reset-all-btn:hover {
-            background: linear-gradient(45deg, #c82333, #bd2130);
+            background: linear-gradient(45deg, #5a6268, #6c757d);
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+            box-shadow: 0 6px 20px rgba(198, 198, 198, 0.4);
         }
 
         .search-filter-btn {
-            background: linear-gradient(45deg, #28a745, #20c997);
+            background: linear-gradient(45deg, #dc3545, #c82333);
             flex: 1;
             justify-content: center;
-            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
         }
 
         .search-filter-btn:hover {
-            background: linear-gradient(45deg, #20c997, #17a2b8);
+            background: linear-gradient(45deg, #c82333, #bd2130);
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
         }
 
         /* ======================== */
@@ -668,7 +657,6 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             height: 100%;
             background: rgba(0, 0, 0, 0.5);
             z-index: 2000;
-            backdrop-filter: blur(5px);
         }
 
         .modal-content {
@@ -1410,10 +1398,6 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             <div class="header">
                 <h1><i class="fas fa-box"></i> จัดการสินค้า</h1>
                 <div class="add-stockmovement">
-                    <div class="search-container">
-                        <input type="text" id="searchInput" placeholder="ค้นหาชื่อสินค้า, ล็อต หรือรหัสสินค้า...">
-                        <i class="fas fa-search"></i>
-                    </div>
                     <button class="add-btn" onclick="openAddModal()">
                         <i class="fas fa-plus"></i> เพิ่มสินค้า
                     </button>
@@ -1446,9 +1430,10 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                     <h3>ตัวกรองข้อมูล</h3>
                     <div id="activeFiltersCount" class="filter-count-badge" style="display: none;">0</div>
                 </div>
+
                 <div class="filters-row">
                     <div class="filter-group">
-                        <label><i class="fas fa-tags"></i> หมวดหมู่</label>
+                        <label>หมวดหมู่</label>
                         <select id="categoryFilter">
                             <option value="">ทั้งหมด</option>
                             <option value="rebar">เหล็กเส้น</option>
@@ -1459,7 +1444,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                         </select>
                     </div>
                     <div class="filter-group">
-                        <label><i class="fas fa-warehouse"></i> สถานะสต็อก</label>
+                        <label>สถานะสต็อก</label>
                         <select id="stockFilter">
                             <option value="">ทั้งหมด</option>
                             <option value="high">สต็อกเพียงพอ</option>
@@ -1468,7 +1453,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                         </select>
                     </div>
                     <div class="filter-group">
-                        <label><i class="fas fa-sort"></i> เรียงตาม</label>
+                        <label>เรียงตาม</label>
                         <select id="sortFilter">
                             <option value="name">ชื่อสินค้า</option>
                             <option value="stock">จำนวนเหลือ</option>
@@ -1478,25 +1463,25 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                             <option value="supplier">ซัพพลายเออร์</option>
                         </select>
                     </div>
-                    <div class="date-range-group">
-                        <div class="date-input-wrapper">
-                            <label><i class="fas fa-calendar-alt"></i> วันที่รับเข้า ตั้งแต่</label>
-                            <input type="date" id="startDateFilter">
-                        </div>
-                        <div class="date-input-wrapper">
-                            <label><i class="fas fa-calendar-check"></i> ถึง</label>
-                            <input type="date" id="endDateFilter">
-                        </div>
-                        <button class="clear-dates-btn" onclick="clearDateFilters()">
-                            <i class="fas fa-times"></i> ล้างวันที่
-                        </button>
+
+                    <div class="filter-group">
+                        <label>วันที่เริ่มต้น</label>
+                        <input type="date" id="startDateFilter">
                     </div>
+                    <div class="filter-group">
+                        <label>วันที่สิ้นสุด</label>
+                        <input type="date" id="endDateFilter">
+                    </div>
+
                     <div class="filter-all">
+                        <div class="search-container">
+                            <input type="text" id="searchInput" placeholder="ค้นหาชื่อสินค้า, ล็อต หรือรหัสสินค้า...">
+                        </div>
                         <button class="reset-all-btn" onclick="resetAllFilters()">
                             <i class="fas fa-undo"></i> รีเซ็ต
                         </button>
                         <button class="search-filter-btn" onclick="applyFilters()">
-                            <i class="fas fa-search"></i> ค้นหา
+                                <i class="fas fa-search"></i> ค้นหา
                         </button>
                     </div>
                 </div>

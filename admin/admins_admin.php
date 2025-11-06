@@ -1,23 +1,32 @@
-<?php
-require_once 'controllers/config.php';
+<!-- ========================
+     ADMIN MANAGEMENT SYSTEM - PHP & HTML
+     ======================== -->
 
-// Require login to access this page
+<?php
+// ========================
+// SECURITY & AUTHENTICATION
+// ========================
+
+// FUNCTION: ตรวจสอบการเข้าสู่ระบบ (ต้องลงทะเบียนก่อนเข้าหน้านี้)
+require_once 'controllers/config.php';
 requireLogin();
 
-// Get current admin information
+// FUNCTION: ดึงข้อมูลผู้ดูแลปัจจุบัน
 $current_admin = getCurrentAdmin();
 if (!$current_admin) {
     header("Location: controllers/logout.php");
     exit();
 }
 
+// ========================
+// AUTHORIZATION CHECK
+// ========================
+
+// FUNCTION: ตรวจสอบสิทธิ์การเข้าถึง (เฉพาะ manager และ super admin)
 $allowed_roles = ['manager', 'super'];
 
 if (!isset($current_admin['position']) || !in_array($current_admin['position'], $allowed_roles)) {
-    // Set error message
     $_SESSION['error'] = "คุณไม่มีสิทธิ์เข้าถึงหน้านี้";
-    
-    // Redirect to access denied page
     header("Location: accessdenied_admin.html");
     exit();
 }
@@ -26,14 +35,25 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
 <!DOCTYPE html>
 <html lang="th">
 <head>
+    <!-- ========================
+         META & DOCUMENT INFO
+         ======================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>จัดการผู้ดูแล - ระบบจัดการร้านค้า</title>
+    <title>จัดการผู้ดูแล - ช้างเหล็กไทย</title>
+    <link rel="icon" type="image/png" href="image\logo_cropped.png">
+    
+    <!-- ========================
+         EXTERNAL RESOURCES
+         ======================== -->
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="sidebar_admin.css">
     
     <style>
+        /* ========================
+           GLOBAL STYLES
+           ======================== */
         * {
             margin: 0;
             padding: 0;
@@ -46,6 +66,9 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             min-height: 100vh;
         }
 
+        /* ========================
+           NAVBAR & TOGGLE
+           ======================== */
         .navbar-toggle {
             position: fixed;
             top: 20px;
@@ -67,6 +90,9 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             transform: scale(1.05);
         }
 
+        /* ========================
+           LAYOUT STRUCTURE
+           ======================== */
         .container {
             display: flex;
             min-height: 100vh;
@@ -80,6 +106,9 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             min-height: 100vh;
         }
 
+        /* ========================
+           HEADER SECTION
+           ======================== */
         .header {
             display: flex;
             justify-content: space-between;
@@ -103,33 +132,9 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             align-items: center;
         }
 
-        .search-container {
-            position: relative;
-        }
-
-        .search-container input[type="text"] {
-            padding: 12px 45px 12px 15px;
-            width: 350px;
-            border-radius: 10px;
-            border: 2px solid #e9ecef;
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
-
-        .search-container input[type="text"]:focus {
-            outline: none;
-            border-color: #990000;
-            box-shadow: 0 0 0 3px rgba(153, 0, 0, 0.1);
-        }
-
-        .search-container i {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #666;
-        }
-
+        /* ========================
+           BUTTON STYLES
+           ======================== */
         .add-btn {
             padding: 12px 24px;
             background: linear-gradient(45deg, #990000, #cc0000);
@@ -138,6 +143,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             border-radius: 10px;
             cursor: pointer;
             font-weight: 600;
+            font-family: 'Inter';
             display: flex;
             align-items: center;
             gap: 8px;
@@ -149,6 +155,9 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             box-shadow: 0 5px 15px rgba(153, 0, 0, 0.3);
         }
 
+        /* ========================
+           FILTERS SECTION
+           ======================== */
         .filters-section {
             background: white;
             padding: 20px 30px;
@@ -159,8 +168,8 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
 
         .filters-row {
             display: flex;
-            gap: 20px;
-            align-items: center;
+            gap: 15px;
+            align-items: flex-end;
             flex-wrap: wrap;
         }
 
@@ -168,21 +177,113 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             display: flex;
             flex-direction: column;
             gap: 5px;
+            min-width: 180px;
         }
 
         .filter-group label {
-            font-size: 14px;
+            font-size: 13px;
             color: #666;
-            font-weight: 500;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .filter-group select {
-            padding: 8px 12px;
+            padding: 10px 12px;
             border: 2px solid #e9ecef;
             border-radius: 8px;
             font-size: 14px;
+            font-family: 'Inter';
+            transition: all 0.3s ease;
         }
 
+        .filter-group select:focus {
+            outline: none;
+            border-color: #990000;
+            box-shadow: 0 0 0 3px rgba(153, 0, 0, 0.1);
+        }
+
+        .search-container {
+            position: relative;
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .search-container input {
+            width: 100%;
+            padding: 10px 40px 10px 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Inter';
+            transition: all 0.3s ease;
+        }
+
+        .search-container input:focus {
+            outline: none;
+            border-color: #990000;
+            box-shadow: 0 0 0 3px rgba(153, 0, 0, 0.1);
+        }
+
+        .search-container i {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+            pointer-events: none;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .btn-filter-search,
+        .btn-filter-reset {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: 'Inter';
+            font-size: 13px;
+            min-height: 40px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .btn-filter-search {
+            background: linear-gradient(45deg, #dc3545, #c82333);
+            color: white;
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+        }
+
+        .btn-filter-search:hover {
+            background: linear-gradient(45deg, #c82333, #bd2130);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+        }
+
+        .btn-filter-reset {
+            background: linear-gradient(45deg, #6c757d, #868e96);
+            color: white;
+            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+        }
+
+        .btn-filter-reset:hover {
+            background: linear-gradient(45deg, #5a6268, #6c757d);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+        }
+
+        /* ========================
+           STATISTICS CARDS
+           ======================== */
         .stats-row {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -225,6 +326,9 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             font-size: 14px;
         }
 
+        /* ========================
+           TABLE STYLES
+           ======================== */
         .table-container {
             background: white;
             border-radius: 15px;
@@ -256,6 +360,9 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             color: #555;
         }
 
+        /* ========================
+           STAFF INFO DISPLAY
+           ======================== */
         .staff-info {
             display: flex;
             align-items: center;
@@ -297,8 +404,13 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             background: #f8f9fa;
             padding: 2px 6px;
             border-radius: 4px;
+            display: inline-block;
+            width: fit-content;
         }
 
+        /* ========================
+           BADGE STYLES
+           ======================== */
         .role-badge {
             padding: 6px 12px;
             border-radius: 20px;
@@ -306,6 +418,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            display: inline-block;
         }
 
         .role-manager { background: #e7e3ff; color: #6f42c1; }
@@ -313,7 +426,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
         .role-warehouse { background: #cce5ff; color: #004085; }
         .role-shipping { background: #d4edda; color: #155724; }
         .role-accounting { background: #f8d7da; color: #721c24; }
-        .role-super { background: #ffe7f2ff; color: #e83e8c; }
+        .role-super { background: #ffe7f2; color: #e83e8c; }
 
         .status-badge {
             padding: 6px 12px;
@@ -322,11 +435,15 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            display: inline-block;
         }
 
         .status-active { background: #d4edda; color: #155724; }
         .status-inactive { background: #f8d7da; color: #721c24; }
 
+        /* ========================
+           ACTION BUTTONS
+           ======================== */
         .actions {
             display: flex;
             gap: 8px;
@@ -339,6 +456,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             border-radius: 8px;
             cursor: pointer;
             font-size: 12px;
+            font-family: 'Inter';
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
@@ -349,42 +467,21 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             transform: translateY(-2px);
         }
 
-        .view-btn {
-            background: linear-gradient(45deg, #17a2b8, #20c997);
-            color: white;
-        }
+        .view-btn { background: linear-gradient(45deg, #17a2b8, #20c997); color: white; }
+        .view-btn:hover { box-shadow: 0 4px 12px rgba(23, 162, 184, 0.4); }
 
-        .view-btn:hover {
-            box-shadow: 0 4px 12px rgba(23, 162, 184, 0.4);
-        }
+        .edit-btn { background: linear-gradient(45deg, #ffc107, #ffb300); color: white; }
+        .edit-btn:hover { box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4); }
 
-        .edit-btn {
-            background: linear-gradient(45deg, #ffc107, #ffb300);
-            color: white;
-        }
+        .toggle-btn { background: linear-gradient(45deg, #6c757d, #5a6268); color: white; }
+        .toggle-btn:hover { box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4); }
 
-        .edit-btn:hover {
-            box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
-        }
+        .delete-btn { background: linear-gradient(45deg, #dc3545, #c82333); color: white; }
+        .delete-btn:hover { box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4); }
 
-        .toggle-btn {
-            background: linear-gradient(45deg, #6c757d, #5a6268);
-            color: white;
-        }
-
-        .toggle-btn:hover {
-            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4);
-        }
-
-        .delete-btn {
-            background: linear-gradient(45deg, #dc3545, #c82333);
-            color: white;
-        }
-
-        .delete-btn:hover {
-            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
-        }
-
+        /* ========================
+           PAGINATION
+           ======================== */
         .pagination {
             display: flex;
             justify-content: center;
@@ -400,6 +497,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             background: white;
             border-radius: 8px;
             cursor: pointer;
+            font-family: 'Inter';
             transition: all 0.3s ease;
         }
 
@@ -410,7 +508,14 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             border-color: #990000;
         }
 
-        /* Modal Styles */
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* ========================
+           MODAL STYLES
+           ======================== */
         .modal {
             display: none;
             position: fixed;
@@ -447,6 +552,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
 
         .modal-header h2 {
             color: #333;
+            font-size: 20px;
         }
 
         .close-btn {
@@ -455,8 +561,17 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             font-size: 24px;
             cursor: pointer;
             color: #666;
+            transition: all 0.2s ease;
         }
 
+        .close-btn:hover {
+            color: #333;
+            transform: rotate(90deg);
+        }
+
+        /* ========================
+           FORM STYLES
+           ======================== */
         .form-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -484,6 +599,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             border-radius: 8px;
             font-size: 14px;
             font-family: 'Inter';
+            transition: all 0.3s ease;
         }
 
         .form-group input:focus,
@@ -491,6 +607,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
         .form-group textarea:focus {
             outline: none;
             border-color: #990000;
+            box-shadow: 0 0 0 3px rgba(153, 0, 0, 0.1);
         }
 
         .form-group input[type="checkbox"] {
@@ -504,56 +621,9 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             margin-top: 10px;
         }
 
-        .permissions-section {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 10px;
-        }
-
-        .permissions-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .permission-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px;
-            background: white;
-            border-radius: 6px;
-        }
-
-        .form-actions {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            margin-top: 20px;
-        }
-
-        .form-actions button {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            font-family: 'Inter';
-        }
-
-        .save-btn {
-            background: #990000;
-            color: white;
-        }
-
-        .cancel-form-btn {
-            background: #6c757d;
-            color: white;
-        }
-
-        /* Auto-generated field styles */
+        /* ========================
+           AUTO-GENERATED FIELD
+           ======================== */
         .auto-generated {
             background-color: #f8f9fa !important;
             cursor: not-allowed;
@@ -568,9 +638,12 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
 
         .auto-generated-label i {
             color: #28a745;
+            font-size: 12px;
         }
 
-        /* Password field styles */
+        /* ========================
+           PASSWORD FIELD STYLES
+           ======================== */
         .password-field {
             position: relative;
         }
@@ -618,6 +691,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             cursor: pointer;
             font-size: 12px;
             font-weight: 600;
+            font-family: 'Inter';
             transition: all 0.3s ease;
             white-space: nowrap;
             display: flex;
@@ -630,6 +704,9 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             box-shadow: 0 3px 10px rgba(40, 167, 69, 0.3);
         }
 
+        /* ========================
+           PASSWORD DISPLAY
+           ======================== */
         .password-display {
             background: #e8f5e8;
             border: 2px solid #28a745;
@@ -664,6 +741,9 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             background: #20a047;
         }
 
+        /* ========================
+           PASSWORD STRENGTH
+           ======================== */
         .password-strength {
             margin-top: 8px;
             padding: 8px 12px;
@@ -690,14 +770,68 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             border-left: 4px solid #28a745;
         }
 
-        .password-info {
-            font-size: 11px;
-            color: #666;
-            margin-top: 8px;
-            background: #e8f5e8;
-            padding: 8px 12px;
-            border-radius: 6px;
-            border-left: 3px solid #28a745;
+        /* ========================
+           FORM ACTIONS
+           ======================== */
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .form-actions button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: 'Inter';
+            transition: all 0.3s ease;
+        }
+
+        .save-btn {
+            background: #990000;
+            color: white;
+        }
+
+        .save-btn:hover {
+            box-shadow: 0 4px 12px rgba(153, 0, 0, 0.3);
+        }
+
+        .cancel-form-btn {
+            background: #6c757d;
+            color: white;
+        }
+
+        .cancel-form-btn:hover {
+            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+        }
+
+        /* ========================
+           ANIMATIONS
+           ======================== */
+        @keyframes passwordGenerated {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .password-generated {
+            animation: passwordGenerated 0.3s ease;
+        }
+
+        /* ========================
+           RESPONSIVE DESIGN
+           ======================== */
+        @media screen and (max-width: 1200px) {
+            .filters-row {
+                gap: 12px;
+            }
+
+            .filter-group {
+                min-width: 150px;
+            }
         }
 
         @media screen and (max-width: 768px) {
@@ -715,13 +849,39 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                 gap: 15px;
             }
 
-            .search-container input[type="text"] {
-                width: 100%;
+            .filters-section {
+                padding: 15px 20px;
             }
 
             .filters-row {
                 flex-direction: column;
-                align-items: stretch;
+                gap: 10px;
+            }
+
+            .filter-group {
+                width: 100%;
+                min-width: unset;
+            }
+
+            .search-container {
+                width: 100%;
+                min-width: unset;
+            }
+
+            .button-group {
+                width: 100%;
+                flex-direction: row;
+                gap: 10px;
+            }
+
+            .btn-filter-search,
+            .btn-filter-reset {
+                flex: 1;
+                justify-content: center;
+            }
+
+            .stats-row {
+                grid-template-columns: 1fr;
             }
 
             .staff-info {
@@ -749,9 +909,21 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             .password-controls {
                 flex-direction: column;
             }
+
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .form-actions button {
+                width: 100%;
+            }
         }
 
         @media screen and (max-width: 480px) {
+            .header h1 {
+                font-size: 20px;
+            }
+
             .actions button {
                 font-size: 11px;
                 padding: 6px 8px;
@@ -761,44 +933,48 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                 width: 95%;
                 padding: 20px;
             }
-        }
 
-        /* Animation for generated password */
-        @keyframes passwordGenerated {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
+            .modal-header h2 {
+                font-size: 18px;
+            }
 
-        .password-generated {
-            animation: passwordGenerated 0.3s ease;
+            .stat-number {
+                font-size: 20px;
+            }
         }
     </style>
 </head>
 
 <body>
+    <!-- ========================
+         NAVIGATION TOGGLE
+         ======================== -->
     <div class="navbar-toggle" onclick="toggleSidebar()">
         <i class="fas fa-bars"></i>
     </div>
 
+    <!-- ========================
+         MAIN CONTAINER
+         ======================== -->
     <div class="container">
-
         <?php include 'sidebar_admin.php'; ?>
 
         <main class="main-content">
+            <!-- ========================
+                 PAGE HEADER
+                 ======================== -->
             <div class="header">
                 <h1><i class="fas fa-users-cog"></i> จัดการผู้ดูแลและพนักงาน</h1>
                 <div class="search-add">
-                    <div class="search-container">
-                        <input type="text" id="searchInput" placeholder="ค้นหาชื่อ หรือบทบาท...">
-                        <i class="fas fa-search"></i>
-                    </div>
                     <button class="add-btn" onclick="openAddModal()">
                         <i class="fas fa-user-plus"></i> เพิ่มพนักงาน
                     </button>
                 </div>
             </div>
 
+            <!-- ========================
+                 STATISTICS CARDS
+                 ======================== -->
             <div class="stats-row">
                 <div class="stat-card total">
                     <div class="stat-number" id="totalStaff">0</div>
@@ -814,6 +990,9 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                 </div>
             </div>
 
+            <!-- ========================
+                 FILTER SECTION
+                 ======================== -->
             <div class="filters-section">
                 <div class="filters-row">
                     <div class="filter-group">
@@ -828,6 +1007,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                             <option value="super">ผู้ดูแลระบบ</option>
                         </select>
                     </div>
+
                     <div class="filter-group">
                         <label>แผนก</label>
                         <select id="departmentFilter">
@@ -840,6 +1020,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                             <option value="it">เทคโนโลยีสารสนเทศ</option>
                         </select>
                     </div>
+
                     <div class="filter-group">
                         <label>สถานะ</label>
                         <select id="statusFilter">
@@ -848,17 +1029,41 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                             <option value="inactive">ไม่ได้ใช้งาน</option>
                         </select>
                     </div>
+
                     <div class="filter-group">
-                        <label>เรียงตาม</label>
+                        <label>เรียงลำดับ</label>
                         <select id="sortFilter">
                             <option value="name">ชื่อ</option>
                             <option value="role">บทบาท</option>
                             <option value="department">แผนก</option>
+                            <option value="created">วันที่สร้าง</option>
                         </select>
+                    </div>
+
+                    <div class="filter-group" style="flex: 1; min-width: 250px;">
+                        <label>ค้นหา</label>
+                        <div class="search-container">
+                            <input type="text" id="searchInput" placeholder="ค้นหาชื่อพนักงาน, บทบาท, รหัส...">
+                            <i class="fas fa-search"></i>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button id="searchBtn" class="btn-filter-search" type="button" title="ค้นหาข้อมูล">
+                            <i class="fas fa-search"></i>
+                            <span>ค้นหา</span>
+                        </button>
+                        <button id="resetBtn" class="btn-filter-reset" type="button" title="รีเซ็ตทั้งหมด">
+                            <i class="fas fa-redo"></i>
+                            <span>รีเซ็ต</span>
+                        </button>
                     </div>
                 </div>
             </div>
 
+            <!-- ========================
+                 STAFF TABLE
+                 ======================== -->
             <div class="table-container">
                 <table id="staffTable">
                     <thead>
@@ -871,18 +1076,23 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                         </tr>
                     </thead>
                     <tbody id="staffTableBody">
-                        <!-- Staff rows will be dynamically inserted here -->
+                        <!-- FUNCTION: แทรกแถว Staff ด้วย JavaScript -->
                     </tbody>
                 </table>
             </div>
 
+            <!-- ========================
+                 PAGINATION
+                 ======================== -->
             <div class="pagination" id="pagination">
-                <!-- Pagination buttons will be inserted here -->
+                <!-- FUNCTION: สร้างปุ่มการแบ่งหน้า ด้วย JavaScript -->
             </div>
         </main>
     </div>
 
-    <!-- Add/Edit Staff Modal -->
+    <!-- ========================
+         MODAL: ADD/EDIT STAFF
+         ======================== -->
     <div id="staffModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -891,6 +1101,8 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
             </div>
             
             <form id="staffForm">
+                <!-- FUNCTION: ฟอร์มเพิ่ม/แก้ไข ข้อมูลพนักงาน -->
+                
                 <div class="form-row">
                     <div class="form-group">
                         <label>ชื่อ-นามสกุล *</label>
@@ -901,7 +1113,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                         <input type="tel" id="staffPhone" required placeholder="08X-XXX-XXXX">
                     </div>
                 </div>
-                
+
                 <div class="form-row">
                     <div class="form-group">
                         <label class="auto-generated-label">
@@ -977,6 +1189,7 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                         <label for="staffActive">เปิดใช้งานทันที</label>
                     </div>
                 </div>
+
                 <div class="form-actions">
                     <button type="button" class="cancel-form-btn" onclick="closeModal()">ยกเลิก</button>
                     <button type="submit" class="save-btn">บันทึก</button>
@@ -985,7 +1198,9 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
         </div>
     </div>
 
-    <!-- Staff Details Modal -->
+    <!-- ========================
+         MODAL: STAFF DETAILS
+         ======================== -->
     <div id="staffDetailsModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -993,9 +1208,12 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                 <button class="close-btn" onclick="closeStaffDetailsModal()">&times;</button>
             </div>
             
+            <!-- FUNCTION: แสดงข้อมูลส่วนตัวของพนักงาน -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
                 <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
-                    <h3 style="color: #333; margin-bottom: 15px;"><i class="fas fa-user"></i> ข้อมูลส่วนตัว</h3>
+                    <h3 style="color: #333; margin-bottom: 15px; font-size: 14px; font-weight: 600;">
+                        <i class="fas fa-user"></i> ข้อมูลส่วนตัว
+                    </h3>
                     <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                         <span style="font-weight: 600; color: #666;">ชื่อ:</span>
                         <span style="color: #333;" id="detailName"></span>
@@ -1004,14 +1222,17 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                         <span style="font-weight: 600; color: #666;">เบอร์โทร:</span>
                         <span style="color: #333;" id="detailPhone"></span>
                     </div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <div style="display: flex; justify-content: space-between;">
                         <span style="font-weight: 600; color: #666;">รหัสพนักงาน:</span>
                         <span style="color: #333;" id="detailCode"></span>
                     </div>
                 </div>
                 
+                <!-- FUNCTION: แสดงข้อมูลงานของพนักงาน -->
                 <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
-                    <h3 style="color: #333; margin-bottom: 15px;"><i class="fas fa-briefcase"></i> ข้อมูลงาน</h3>
+                    <h3 style="color: #333; margin-bottom: 15px; font-size: 14px; font-weight: 600;">
+                        <i class="fas fa-briefcase"></i> ข้อมูลงาน
+                    </h3>
                     <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                         <span style="font-weight: 600; color: #666;">บทบาท:</span>
                         <span id="detailRole"></span>
@@ -1020,28 +1241,18 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                         <span style="font-weight: 600; color: #666;">แผนก:</span>
                         <span style="color: #333;" id="detailDepartment"></span>
                     </div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <div style="display: flex; justify-content: space-between;">
                         <span style="font-weight: 600; color: #666;">สถานะ:</span>
                         <span id="detailStatus"></span>
                     </div>
                 </div>
             </div>
-
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
-                <h3 style="color: #333; margin-bottom: 15px;"><i class="fas fa-key"></i> สิทธิ์การใช้งาน</h3>
-                <div id="detailPermissions" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-                    <!-- Permissions will be inserted here -->
-                </div>
-            </div>
-
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-top: 20px;">
-                <h3 style="color: #333; margin-bottom: 15px;"><i class="fas fa-sticky-note"></i> หมายเหตุ</h3>
-                <p id="detailNotes" style="color: #666; line-height: 1.5;"></p>
-            </div>
         </div>
     </div>
 
-    
+    <!-- ========================
+         SCRIPTS
+         ======================== -->
     <script src="admins_admin.js"></script>
 
 </body>

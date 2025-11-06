@@ -1,9 +1,12 @@
-// Initialize the page
+// ========================
+// * INITIALIZATION *
+// ========================
+// FUNCTION: เริ่มต้นระบบเมื่อหน้าเพจโหลดเสร็จ
+
 document.addEventListener('DOMContentLoaded', async function() {
     updateCurrentTime();
     setInterval(updateCurrentTime, 1000);
     
-    // Set default date range (last 30 days)
     const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - 30);
@@ -11,33 +14,38 @@ document.addEventListener('DOMContentLoaded', async function() {
     document.getElementById('startDate').value = formatDate(startDate);
     document.getElementById('endDate').value = formatDate(endDate);
     
-    // Load default report
     await loadReport('sales');
-    
-    // Initialize event listeners
     initializeEventListeners();
 });
 
+
+// ========================
+// * EVENT LISTENERS *
+// ========================
+// FUNCTION: ตั้งค่าผู้ฟังเหตุการณ์สำหรับส่วนต่างๆ
+
 function initializeEventListeners() {
-    // Report type change handler
     const reportTypeSelect = document.getElementById('reportType');
     if (reportTypeSelect) {
         reportTypeSelect.addEventListener('change', function() {
-            const reportType = this.value;
-            showReport(reportType);
+            showReport(this.value);
         });
     }
     
-    // Apply filters button
     const applyButton = document.querySelector('.btn-primary');
     if (applyButton && !applyButton.hasAttribute('data-listener-added')) {
         applyButton.addEventListener('click', applyFilters);
         applyButton.setAttribute('data-listener-added', 'true');
     }
     
-    // Search functionality
     initializeTableSearch();
 }
+
+
+// ========================
+// * TIME & DATE UTILITIES *
+// ========================
+// FUNCTION: อัปเดตเวลาปัจจุบันในรูปแบบไทย
 
 function updateCurrentTime() {
     const now = new Date();
@@ -57,9 +65,36 @@ function updateCurrentTime() {
     }
 }
 
+// FUNCTION: จัดรูปแบบวันที่เป็น ISO 8601
+
 function formatDate(date) {
     return date.toISOString().split('T')[0];
 }
+
+// FUNCTION: จัดรูปแบบวันที่เป็นภาษาไทย
+
+function formatThaiDate(dateString) {
+    if (!dateString) return 'N/A';
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return 'N/A';
+        return date.toLocaleDateString('th-TH', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } catch (error) {
+        return 'N/A';
+    }
+}
+
+
+// ========================
+// * FORMATTING FUNCTIONS *
+// ========================
+// FUNCTION: จัดรูปแบบตัวเลขเป็นสกุลเงินบาท
 
 function formatCurrency(amount) {
     if (amount === null || amount === undefined || isNaN(amount)) {
@@ -71,6 +106,8 @@ function formatCurrency(amount) {
     }).format(amount);
 }
 
+// FUNCTION: จัดรูปแบบตัวเลขเป็นหลักพัน
+
 function formatNumber(number) {
     if (number === null || number === undefined || isNaN(number)) {
         return '0';
@@ -78,9 +115,13 @@ function formatNumber(number) {
     return new Intl.NumberFormat('th-TH').format(number);
 }
 
-// Report tab switching
+
+// ========================
+// * REPORT TAB MANAGEMENT *
+// ========================
+// FUNCTION: เปลี่ยนแท็บรายงาน
+
 function showReport(reportType) {
-    // Update tab buttons
     const tabs = document.querySelectorAll('.tab-button');
     tabs.forEach(tab => {
         tab.classList.remove('active');
@@ -90,7 +131,6 @@ function showReport(reportType) {
         }
     });
     
-    // Update report content
     const contents = document.querySelectorAll('.report-content');
     contents.forEach(content => content.classList.remove('active'));
     
@@ -99,22 +139,24 @@ function showReport(reportType) {
         targetContent.classList.add('active');
     }
     
-    // Update report type filter
     const reportTypeSelect = document.getElementById('reportType');
     if (reportTypeSelect) {
         reportTypeSelect.value = reportType;
     }
     
-    // Load report data
     loadReport(reportType);
 }
 
-// Load report data from backend API
+
+// ========================
+// * LOADING & API CALLS *
+// ========================
+// FUNCTION: โหลดรายงานตามประเภท
+
 async function loadReport(reportType) {
     showLoading();
     
     try {
-        // Get filter values with null checks (ลบ categoryId)
         const startDateElement = document.getElementById('startDate');
         const endDateElement = document.getElementById('endDate');
         
@@ -149,12 +191,16 @@ async function loadReport(reportType) {
     }
 }
 
+// FUNCTION: แสดงสถานะกำลังโหลด
+
 function showLoading() {
     const loading = document.querySelector('.loading');
     if (loading) {
         loading.style.display = 'block';
     }
 }
+
+// FUNCTION: ซ่อนสถานะกำลังโหลด
 
 function hideLoading() {
     const loading = document.querySelector('.loading');
@@ -163,7 +209,8 @@ function hideLoading() {
     }
 }
 
-// Fixed API call function to handle both single objects and arrays properly
+// FUNCTION: เรียก API เพื่อรับข้อมูลรายงาน
+
 async function apiCall(reportType, params = {}) {
     try {
         const url = new URL(window.location.origin + window.location.pathname.replace('reports_admin.php', '') + 'controllers/get_reports.php');
@@ -201,8 +248,13 @@ async function apiCall(reportType, params = {}) {
     }
 }
 
-// Sales Report - Fixed to handle proper data structure (removed period parameter)
-async function loadSalesReport(startDate, endDate, categoryId) {
+
+// ========================
+// * SALES REPORT *
+// ========================
+// FUNCTION: โหลดรายงานการขาย
+
+async function loadSalesReport(startDate, endDate) {
     try {
         const [summaryData, productData, topProductsData] = await Promise.allSettled([
             apiCall('sales_summary', { start_date: startDate, end_date: endDate, include_all: '1' }),
@@ -210,7 +262,6 @@ async function loadSalesReport(startDate, endDate, categoryId) {
             apiCall('top_products', { start_date: startDate, end_date: endDate })
         ]);
         
-        // Handle summary data
         if (summaryData.status === 'fulfilled') {
             const summary = summaryData.value;
             updateElement('total-sales', formatCurrency(summary.total_sales || 0));
@@ -219,38 +270,40 @@ async function loadSalesReport(startDate, endDate, categoryId) {
             updateElement('avg-order', formatCurrency(summary.avg_order_value || 0));
             updateElement('growth-rate', (summary.growth_rate || 0) + '%');
         } else {
-            console.error('Failed to load sales summary:', summaryData.reason);
-            // Set default values
-            updateElement('total-sales', '฿0');
-            updateElement('total-orders', '0');
-            updateElement('total-customers', '0');
-            updateElement('avg-order', '฿0');
-            updateElement('growth-rate', '0%');
+            setDefaultSalesValues();
         }
         
-        // Handle product data
         if (productData.status === 'fulfilled') {
             populateSalesTable(productData.value);
         } else {
-            console.error('Failed to load product data:', productData.reason);
             populateErrorTable('sales-table', 7);
         }
         
-        // Handle top products data
         if (topProductsData.status === 'fulfilled') {
             populateBestSellingTable(topProductsData.value);
         } else {
-            console.error('Failed to load top products data:', topProductsData.reason);
             populateErrorTable('best-selling-table', 6);
         }
         
     } catch (error) {
         console.error('Error loading sales report:', error);
-        showNotification('ไม่สามารถโหลดรายงานยอดขายได้', 'error');
+        showNotification('ไม่สามารถโหลดรายงานการขายได้', 'error');
         populateErrorTable('sales-table', 7);
         populateErrorTable('best-selling-table', 6);
     }
 }
+
+// FUNCTION: ตั้งค่าเริ่มต้นสำหรับรายงานการขาย
+
+function setDefaultSalesValues() {
+    updateElement('total-sales', '฿0');
+    updateElement('total-orders', '0');
+    updateElement('total-customers', '0');
+    updateElement('avg-order', '฿0');
+    updateElement('growth-rate', '0%');
+}
+
+// FUNCTION: เติมข้อมูลตารางการขายตามสินค้า
 
 function populateSalesTable(data) {
     const tbody = document.querySelector('#sales-table tbody');
@@ -276,6 +329,8 @@ function populateSalesTable(data) {
         `;
     });
 }
+
+// FUNCTION: เติมข้อมูลตารางสินค้าขายดี
 
 function populateBestSellingTable(data) {
     const tbody = document.querySelector('#best-selling-table tbody');
@@ -303,8 +358,13 @@ function populateBestSellingTable(data) {
     });
 }
 
-// Stock Report - Fixed to handle proper data structure
-async function loadStockReport(categoryId) {
+
+// ========================
+// * STOCK REPORT *
+// ========================
+// FUNCTION: โหลดรายงานสต็อก
+
+async function loadStockReport() {
     try {
         const [stockData, reorderData, stockValueData] = await Promise.allSettled([
             apiCall('stock_summary', {}),
@@ -312,11 +372,7 @@ async function loadStockReport(categoryId) {
             apiCall('stock_value', {})
         ]);
         
-        // Handle stock summary
-        let totalProducts = 0;
-        let lowStockCount = 0;
-        let urgentCount = 0;
-        let totalStockValue = 0;
+        let totalProducts = 0, lowStockCount = 0, urgentCount = 0, totalStockValue = 0;
         
         if (stockData.status === 'fulfilled') {
             const stock = Array.isArray(stockData.value) ? stockData.value : [stockData.value];
@@ -343,7 +399,6 @@ async function loadStockReport(categoryId) {
         updateElement('critical-stock-count', formatNumber(urgentCount));
         updateElement('total-stock-value', formatCurrency(totalStockValue));
         
-        // Populate tables
         if (stockData.status === 'fulfilled') {
             populateStockTable(stockData.value);
         } else {
@@ -364,12 +419,13 @@ async function loadStockReport(categoryId) {
     }
 }
 
+// FUNCTION: เติมข้อมูลตารางสต็อก
+
 function populateStockTable(data) {
     const tbody = document.querySelector('#stock-table tbody');
     if (!tbody) return;
     
     tbody.innerHTML = '';
-    
     const stockArray = Array.isArray(data) ? data : [data];
     
     if (stockArray.length === 0 || !stockArray[0]) {
@@ -394,12 +450,13 @@ function populateStockTable(data) {
     });
 }
 
+// FUNCTION: เติมข้อมูลตารางสินค้าที่ต้องสั่งซื้อใหม่
+
 function populateReorderTable(data) {
     const tbody = document.querySelector('#reorder-table tbody');
     if (!tbody) return;
     
     tbody.innerHTML = '';
-    
     const reorderArray = Array.isArray(data) ? data : [data];
     
     if (reorderArray.length === 0 || !reorderArray[0]) {
@@ -423,7 +480,12 @@ function populateReorderTable(data) {
     });
 }
 
-// Movement Report - Fixed to handle proper data structure
+
+// ========================
+// * MOVEMENT REPORT *
+// ========================
+// FUNCTION: โหลดรายงานการเคลื่อนไหวสต็อก
+
 async function loadMovementReport(startDate, endDate) {
     try {
         const movementData = await apiCall('stock_movement', {
@@ -433,10 +495,7 @@ async function loadMovementReport(startDate, endDate) {
         
         const movements = Array.isArray(movementData) ? movementData : [movementData];
         
-        // Calculate summary from movement data
-        let incomingCount = 0;
-        let outgoingCount = 0;
-        let stockAdjustments = 0;
+        let incomingCount = 0, outgoingCount = 0, stockAdjustments = 0;
         
         movements.forEach(item => {
             if (!item) return;
@@ -478,12 +537,13 @@ async function loadMovementReport(startDate, endDate) {
     }
 }
 
+// FUNCTION: เติมข้อมูลตารางการเคลื่อนไหวสต็อก
+
 function populateMovementTable(data) {
     const tbody = document.querySelector('#movement-table tbody');
     if (!tbody) return;
     
     tbody.innerHTML = '';
-    
     const movements = Array.isArray(data) ? data : [data];
     
     if (movements.length === 0 || !movements[0]) {
@@ -510,7 +570,12 @@ function populateMovementTable(data) {
     });
 }
 
-// Shipping Report - Fixed to handle proper data structure
+
+// ========================
+// * SHIPPING REPORT *
+// ========================
+// FUNCTION: โหลดรายงานการจัดส่ง
+
 async function loadShippingReport(startDate, endDate) {
     try {
         const [summaryData, zoneData] = await Promise.allSettled([
@@ -518,10 +583,7 @@ async function loadShippingReport(startDate, endDate) {
             apiCall('shipping_by_zone', { start_date: startDate, end_date: endDate })
         ]);
         
-        let deliveredOrders = 0;
-        let pendingOrders = 0;
-        let totalShippingFee = 0;
-        let avgShippingFee = 0;
+        let deliveredOrders = 0, pendingOrders = 0, totalShippingFee = 0, avgShippingFee = 0;
         
         if (summaryData.status === 'fulfilled') {
             const summary = summaryData.value;
@@ -558,12 +620,13 @@ async function loadShippingReport(startDate, endDate) {
     }
 }
 
+// FUNCTION: เติมข้อมูลตารางการจัดส่งตามโซน
+
 function populateShippingTable(data) {
     const tbody = document.querySelector('#shipping-table tbody');
     if (!tbody) return;
     
     tbody.innerHTML = '';
-    
     const zones = Array.isArray(data) ? data : [data];
     
     if (zones.length === 0 || !zones[0]) {
@@ -588,7 +651,12 @@ function populateShippingTable(data) {
     });
 }
 
-// Customer Report - Fixed to handle proper data structure
+
+// ========================
+// * CUSTOMER REPORT *
+// ========================
+// FUNCTION: โหลดรายงานลูกค้า
+
 async function loadCustomerReport(startDate, endDate) {
     try {
         const [summaryData, topCustomersData] = await Promise.allSettled([
@@ -596,10 +664,7 @@ async function loadCustomerReport(startDate, endDate) {
             apiCall('top_customers', { start_date: startDate, end_date: endDate })
         ]);
         
-        let newCustomers = 0;
-        let returningCustomers = 0;
-        let avgOrderValue = 0;
-        let avgOrdersPerCustomer = 0;
+        let newCustomers = 0, returningCustomers = 0, avgOrderValue = 0, avgOrdersPerCustomer = 0;
         
         if (summaryData.status === 'fulfilled') {
             const summary = summaryData.value;
@@ -627,12 +692,13 @@ async function loadCustomerReport(startDate, endDate) {
     }
 }
 
+// FUNCTION: เติมข้อมูลตารางลูกค้าชั้นนำ
+
 function populateCustomerTable(data) {
     const tbody = document.querySelector('#customer-table tbody');
     if (!tbody) return;
     
     tbody.innerHTML = '';
-    
     const customers = Array.isArray(data) ? data : [data];
     
     if (customers.length === 0 || !customers[0]) {
@@ -653,7 +719,12 @@ function populateCustomerTable(data) {
     });
 }
 
-// Helper functions
+
+// ========================
+// * HELPER & UTILITY FUNCTIONS *
+// ========================
+// FUNCTION: อัปเดตข้อมูลใน DOM element
+
 function updateElement(id, value) {
     const element = document.getElementById(id);
     if (element) {
@@ -661,12 +732,16 @@ function updateElement(id, value) {
     }
 }
 
+// FUNCTION: แสดงข้อมูลข้อผิดพลาดในตาราง
+
 function populateErrorTable(tableId, colSpan) {
     const tbody = document.querySelector(`#${tableId} tbody`);
     if (tbody) {
         tbody.innerHTML = `<tr><td colspan="${colSpan}" class="text-center">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>`;
     }
 }
+
+// FUNCTION: แปลงรหัสหมวดหมู่เป็นชื่อภาษาไทย
 
 function getCategoryNameThai(category) {
     const categories = {
@@ -676,8 +751,10 @@ function getCategoryNameThai(category) {
         'wm': 'เหล็กตะแกรง/ตาข่าย',
         'ot': 'อื่นๆ'
     };
-    return categories[category] || category || 'ไม่ระบุ';
+    return categories[category] || category || 'ไม่มีระบุ';
 }
+
+// FUNCTION: ตรวจสอบและคืนค่าสถานะสต็อก
 
 function getStockStatus(stock) {
     const stockNum = parseInt(stock) || 0;
@@ -690,6 +767,8 @@ function getStockStatus(stock) {
     }
 }
 
+// FUNCTION: แปลงสถานะสต็อกเป็นภาษาไทย
+
 function getStockStatusThai(status) {
     const statusMap = {
         'OK': 'ปกติ',
@@ -699,8 +778,10 @@ function getStockStatusThai(status) {
         'low': 'ใกล้หมด',
         'normal': 'ปกติ'
     };
-    return statusMap[status] || status || 'ไม่ทราบ';
+    return statusMap[status] || status || 'ไม่มีทราบ';
 }
+
+// FUNCTION: แปลงประเภทการเคลื่อนไหวจากฐานข้อมูลเป็นข้อมูลแสดงผล
 
 function getMovementTypeFromDB(changeType) {
     const types = {
@@ -713,8 +794,10 @@ function getMovementTypeFromDB(changeType) {
         'adjustment_in': { class: 'movement-in', text: 'ปรับเพิ่ม' },
         'adjustment_out': { class: 'movement-out', text: 'ปรับลด' }
     };
-    return types[changeType] || { class: '', text: changeType || 'ไม่ทราบ' };
+    return types[changeType] || { class: '', text: changeType || 'ไม่มีทราบ' };
 }
+
+// FUNCTION: แปลงประเภทอ้างอิงเป็นภาษาไทย
 
 function getReferenceThai(referenceType) {
     const references = {
@@ -726,8 +809,10 @@ function getReferenceThai(referenceType) {
         'sale': 'การขาย',
         'return': 'การคืนสินค้า'
     };
-    return references[referenceType] || referenceType || 'ไม่ระบุ';
+    return references[referenceType] || referenceType || 'ไม่มีระบุ';
 }
+
+// FUNCTION: ตรวจสอบระดับความเร่งด่วนตามจำนวนวัน
 
 function getUrgencyClass(days) {
     const daysNum = parseFloat(days);
@@ -736,24 +821,12 @@ function getUrgencyClass(days) {
     return 'urgency-normal';
 }
 
-function formatThaiDate(dateString) {
-    if (!dateString) return 'N/A';
-    try {
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) return 'N/A';
-        return date.toLocaleDateString('th-TH', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    } catch (error) {
-        return 'N/A';
-    }
-}
 
-// Filter functions
+// ========================
+// * FILTER & EXPORT FUNCTIONS *
+// ========================
+// FUNCTION: รีเซ็ตตัวกรองกลับไปค่าเริ่มต้น
+
 function resetFilters() {
     const endDate = new Date();
     const startDate = new Date();
@@ -770,6 +843,8 @@ function resetFilters() {
     showReport('sales');
 }
 
+// FUNCTION: ใช้งานตัวกรองและโหลดรายงานใหม่
+
 async function applyFilters() {
     const reportTypeEl = document.getElementById('reportType');
     const reportType = reportTypeEl ? reportTypeEl.value : 'sales';
@@ -782,11 +857,12 @@ async function applyFilters() {
     }
 }
 
-// Export Excel function - Generate Excel file using SheetJS
+// FUNCTION: ส่งออกรายงานเป็นไฟล์ Excel
+
 async function exportReport(format = 'excel') {
     const activeReport = document.querySelector('.report-content.active');
     if (!activeReport) {
-        showNotification('ไม่พบรายงานที่จะส่งออก', 'warning');
+        showNotification('ไม่มีรายงานที่จะส่งออก', 'warning');
         return;
     }
 
@@ -795,7 +871,6 @@ async function exportReport(format = 'excel') {
     let data = [];
 
     try {
-        // Extract data and set filename
         switch(reportType) {
             case 'sales':
                 data = extractTableData('sales-table');
@@ -828,7 +903,6 @@ async function exportReport(format = 'excel') {
         }
 
         if (format === 'excel') {
-            // ✅ Create workbook and worksheet here
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.aoa_to_sheet(data);
             XLSX.utils.book_append_sheet(wb, ws, "Report");
@@ -842,6 +916,8 @@ async function exportReport(format = 'excel') {
     }
 }
 
+// FUNCTION: ดึงข้อมูลจากตารางและจัดรูปแบบเป็นอาร์เรย์
+
 function extractTableData(tableId) {
     const table = document.getElementById(tableId);
     if (!table) return [];
@@ -849,7 +925,6 @@ function extractTableData(tableId) {
     const data = [];
     const headers = [];
 
-    // Extract headers
     const headerRow = table.querySelector('thead tr');
     if (headerRow) {
         Array.from(headerRow.cells).forEach(cell => {
@@ -858,7 +933,6 @@ function extractTableData(tableId) {
         data.push(headers);
     }
 
-    // Extract data rows
     const tbody = table.querySelector('tbody');
     if (tbody) {
         Array.from(tbody.rows).forEach(row => {
@@ -867,13 +941,11 @@ function extractTableData(tableId) {
                 Array.from(row.cells).forEach(cell => {
                     let text = cell.textContent.replace(/\s+/g, ' ').trim();
 
-                    // Remove status badge styling
                     const badge = cell.querySelector('.status-badge');
                     if (badge) {
                         text = badge.textContent.trim();
                     }
 
-                    // Try convert to number if possible
                     const num = text.replace(/,/g, '');
                     if (!isNaN(num) && num !== '') {
                         rowData.push(Number(num));
@@ -889,8 +961,13 @@ function extractTableData(tableId) {
     return data;
 }
 
+
+// ========================
+// * NOTIFICATION SYSTEM *
+// ========================
+// FUNCTION: แสดงการแจ้งเตือนให้ผู้ใช้
+
 function showNotification(message, type = 'info') {
-    // Remove any existing notifications
     const existingNotifications = document.querySelectorAll('.notification');
     existingNotifications.forEach(notification => {
         if (document.body.contains(notification)) {
@@ -898,7 +975,6 @@ function showNotification(message, type = 'info') {
         }
     });
     
-    // Create notification element
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
     notification.style.cssText = `
@@ -917,7 +993,6 @@ function showNotification(message, type = 'info') {
         word-wrap: break-word;
     `;
     
-    // Set background color based on type
     const colors = {
         success: '#28a745',
         info: '#17a2b8',
@@ -926,7 +1001,6 @@ function showNotification(message, type = 'info') {
     };
     notification.style.backgroundColor = colors[type] || colors.info;
     
-    // Adjust text color for warning
     if (type === 'warning') {
         notification.style.color = '#333';
     }
@@ -934,7 +1008,6 @@ function showNotification(message, type = 'info') {
     notification.textContent = message;
     document.body.appendChild(notification);
     
-    // Remove notification after timeout
     const timeout = type === 'error' ? 5000 : 3000;
     setTimeout(() => {
         if (document.body.contains(notification)) {
@@ -948,12 +1021,16 @@ function showNotification(message, type = 'info') {
     }, timeout);
 }
 
-// Table search functionality
+
+// ========================
+// * TABLE SEARCH FUNCTIONALITY *
+// ========================
+// FUNCTION: เริ่มต้นฟังก์ชันค้นหาในตาราง
+
 function initializeTableSearch() {
     const searchInputs = document.querySelectorAll('.table-search');
     
     searchInputs.forEach(input => {
-        // Remove existing listeners to avoid duplicates
         const newInput = input.cloneNode(true);
         input.parentNode.replaceChild(newInput, input);
         
@@ -976,7 +1053,6 @@ function initializeTableSearch() {
                 const cells = row.getElementsByTagName('td');
                 let found = false;
                 
-                // Skip if this is an error/no data row
                 if (cells.length === 1 && cells[0].getAttribute('colspan')) {
                     continue;
                 }
@@ -996,9 +1072,7 @@ function initializeTableSearch() {
                 }
             }
             
-            // Show message if no results found
             if (visibleRows === 0 && searchTerm.trim() !== '') {
-                // Check if no results row already exists
                 let noResultsRow = tbody.querySelector('.no-results-row');
                 if (!noResultsRow) {
                     noResultsRow = tbody.insertRow();
@@ -1008,7 +1082,6 @@ function initializeTableSearch() {
                 }
                 noResultsRow.style.display = '';
             } else {
-                // Hide no results row if it exists
                 const noResultsRow = tbody.querySelector('.no-results-row');
                 if (noResultsRow) {
                     noResultsRow.style.display = 'none';
@@ -1019,7 +1092,11 @@ function initializeTableSearch() {
 }
 
 
-// Add CSS for notification animations and improved styling
+// ========================
+// * CSS STYLES & ANIMATIONS *
+// ========================
+// FUNCTION: เพิ่ม CSS styles สำหรับการแสดงผล
+
 if (!document.getElementById('notification-styles')) {
     const style = document.createElement('style');
     style.id = 'notification-styles';
@@ -1080,7 +1157,6 @@ if (!document.getElementById('notification-styles')) {
             font-style: italic;
         }
         
-        /* Improve table search input styling */
         .table-search {
             transition: all 0.3s ease;
         }
@@ -1090,7 +1166,6 @@ if (!document.getElementById('notification-styles')) {
             box-shadow: 0 0 0 2px rgba(153, 0, 0, 0.2);
         }
         
-        /* Loading spinner animation */
         .loading-spinner {
             margin-bottom: 15px;
         }
@@ -1098,7 +1173,12 @@ if (!document.getElementById('notification-styles')) {
     document.head.appendChild(style);
 }
 
-// Global error handlers
+
+// ========================
+// * GLOBAL ERROR HANDLERS *
+// ========================
+// FUNCTION: จัดการข้อผิดพลาดทั่วโลก
+
 window.addEventListener('error', function(e) {
     console.error('Global error:', e.error);
     showNotification('เกิดข้อผิดพลาดในระบบ', 'error');
@@ -1109,7 +1189,12 @@ window.addEventListener('unhandledrejection', function(e) {
     showNotification('เกิดข้อผิดพลาดในการโหลดข้อมูล', 'error');
 });
 
-// Ensure all functions are available globally
+
+// ========================
+// * GLOBAL FUNCTION EXPORTS *
+// ========================
+// FUNCTION: ส่งออกฟังก์ชันเพื่อใช้จากภายนอก
+
 window.showReport = showReport;
 window.resetFilters = resetFilters;
 window.applyFilters = applyFilters;
