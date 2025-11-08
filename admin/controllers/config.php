@@ -11,8 +11,8 @@ date_default_timezone_set('Asia/Bangkok'); // เวลาไทย (UTC+7)
 // ========================
 // SESSION CONFIGURATION
 // ========================
-ini_set('session.gc_maxlifetime', 14400); // 4 hours = 14400 seconds
-session_set_cookie_params(14400); // 4 hours cookie lifetime
+ini_set('session.gc_maxlifetime', 36000); // 10 hours = 86400 seconds
+session_set_cookie_params(36000); // 10 hours cookie lifetime
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -52,8 +52,8 @@ function isLoggedIn() {
         return false;
     }
 
-    // ตรวจสอบเวลาหมดอายุ (4 ชั่วโมง)
-    if (time() - $_SESSION['login_time'] > 14400) {
+    // ตรวจสอบเวลาหมดอายุ (10 ชั่วโมง)
+    if (time() - $_SESSION['login_time'] > 36000) {
         session_unset();
         session_destroy();
         return false;
@@ -68,7 +68,7 @@ function isLoggedIn() {
 function requireLogin() {
     if (!isLoggedIn()) {
         $redirect_params = isset($_SESSION['login_time']) &&
-                          (time() - $_SESSION['login_time'] > 14400)
+                          (time() - $_SESSION['login_time'] > 36000)
                           ? '?timeout=1'
                           : '?access=denied';
 

@@ -55,7 +55,7 @@ try {
         $admin = getAdminData($pdo, $_SESSION['admin_id']);
 
         if ($admin) {
-            $timeRemaining = 14400 - (time() - $_SESSION['login_time']);
+            $timeRemaining = 36000 - (time() - $_SESSION['login_time']);
             $response = createResponse(
                 true,
                 [
