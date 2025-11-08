@@ -90,11 +90,25 @@ if (!empty($product_id)) {
         $stmt_img->execute([$product_id]);
         $images = $stmt_img->fetchAll();
 
-        // แปลงเป็น relative path ใช้ backslash
+        // ใช้ URL แบบที่เบราว์เซอร์เข้าถึงได้ (คงไว้เป็น absolute หรือบังคับเป็น '/'
         foreach ($images as &$img) {
             if (!empty($img['image_url'])) {
-                $relative_path = str_replace('http://localhost/steelproject/', '', $img['image_url']);
-                $img['image_url'] = str_replace('/', '\\', $relative_path);
+                // 1) แปลง backslash เป็น forward slash เสมอ
+                $normalized = str_replace('\\', '/', $img['image_url']);
+
+                // 2) ถ้าเป็น absolute URL อยู่แล้วให้ใช้เลย
+                if (preg_match('#^https?://#i', $normalized)) {
+                    $img['image_url'] = $normalized;
+                } else {
+                    // 3) หากเป็น relative path ให้ตัด base ที่แข็งไว้ถ้ามี และบังคับขึ้นต้นด้วย '/'
+                    $relative = str_replace('http://localhost/steelproject/', '', $normalized);
+                    if ($relative === $normalized) {
+                        // ไม่ได้มี base URL ติดมาอยู่แล้ว
+                        $img['image_url'] = '/' . ltrim($relative, '/');
+                    } else {
+                        $img['image_url'] = '/' . ltrim($relative, '/');
+                    }
+                }
             }
         }
         unset($img);
@@ -199,6 +213,20 @@ try {
         $stmt_img = $pdo->prepare($sql_images);
         $stmt_img->execute([$product['product_id']]);
         $images = $stmt_img->fetchAll();
+
+        // ทำให้ URL รูปเป็น web-safe สำหรับหน้า list
+        foreach ($images as &$img) {
+            if (!empty($img['image_url'])) {
+                $normalized = str_replace('\\', '/', $img['image_url']);
+                if (preg_match('#^https?://#i', $normalized)) {
+                    $img['image_url'] = $normalized;
+                } else {
+                    $relative = str_replace('http://localhost/steelproject/', '', $normalized);
+                    $img['image_url'] = '/' . ltrim($relative, '/');
+                }
+            }
+        }
+        unset($img);
 
         // แปลงข้อมูลให้เป็นตัวเลขที่เหมาะสม
         $product['price'] = floatval($product['price']);

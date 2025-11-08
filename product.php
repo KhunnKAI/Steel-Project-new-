@@ -166,6 +166,8 @@
             text-align: center;
             flex: 1;
             transition: all 0.3s;
+            min-height: 48px;
+            white-space: nowrap;
         }
 
         .btn-primary {

@@ -329,6 +329,12 @@
             font-weight: bold;
             font-size: 12px;
             transition: all 0.3s ease;
+            min-height: 40px;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
         }
 
         .add-to-cart-btn:hover {
@@ -355,7 +361,12 @@
             transition: all 0.3s ease;
             text-decoration: none;
             text-align: center;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 40px;
+            white-space: nowrap;
+            line-height: 1;
         }
 
         .view-detail-btn:hover {
