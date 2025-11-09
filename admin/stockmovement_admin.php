@@ -588,7 +588,6 @@ if (!isset($current_admin['position']) || !in_array($current_admin['position'], 
                         <option value="">ทั้งหมด</option>
                         <option value="in">รับเข้า</option>
                         <option value="out">เบิกออก</option>
-                        <option value="adjust">ปรับปรุง</option>
                     </select>
                 </div>
                 <div class="filter-group">
