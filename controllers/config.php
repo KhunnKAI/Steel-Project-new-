@@ -1,4 +1,8 @@
 <?php
+
+// Set timezone to Bangkok/Thailand (UTC+7)
+date_default_timezone_set('Asia/Bangkok');
+
 // config.php - Database configuration
 class Database {
     private $host = "26.94.44.21:3307";
@@ -22,6 +26,10 @@ class Database {
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $this->conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
             $this->conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+            
+            // Set MySQL timezone to Bangkok
+            $this->conn->exec("SET time_zone = '+07:00'");
+
         } catch(PDOException $exception) {
             error_log("Connection error: " . $exception->getMessage());
             die("Database connection failed. Please check your configuration.");
